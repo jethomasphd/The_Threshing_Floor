@@ -1,0 +1,16 @@
+<!-- Error message partial — swapped into any HTMX target on error -->
+<div class="card" style="border-left: 3px solid var(--error);">
+  <div class="flex items-start gap-3">
+    <i data-lucide="alert-triangle" class="w-5 h-5 text-error flex-shrink-0 mt-0.5"></i>
+    <div>
+      <h3 class="font-body text-sm font-semibold text-error mb-1">{{ title | default('Something went wrong') }}</h3>
+      <p class="text-bone-muted text-sm mb-0" style="line-height: 1.5;">{{ message }}</p>
+      {% if show_setup_link is defined and show_setup_link %}
+      <a href="/about" class="btn btn-secondary btn-sm mt-3">
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+        Set Up Credentials
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</div>

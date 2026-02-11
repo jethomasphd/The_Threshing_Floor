@@ -1,0 +1,81 @@
+<!-- Subreddit search results — swapped into #search-results by HTMX -->
+{% if subreddits %}
+<div class="mb-4">
+  <p class="text-bone-muted text-sm">
+    Found <span class="font-mono text-ember">{{ subreddits|length }}</span> subreddit{{ 's' if subreddits|length != 1 else '' }} matching your search
+  </p>
+</div>
+
+<div class="card-grid">
+  {% for sub in subreddits %}
+  <div class="card subreddit-card">
+    <div class="flex items-start justify-between gap-2 mb-3">
+      <div class="min-w-0">
+        <h3 class="text-ember font-display text-lg font-semibold truncate" title="r/{{ sub.name }}">
+          r/{{ sub.name }}
+        </h3>
+        {% if sub.title %}
+        <p class="text-bone-muted text-sm truncate mt-0.5" title="{{ sub.title }}">{{ sub.title }}</p>
+        {% endif %}
+      </div>
+      {% if sub.nsfw is defined and sub.nsfw %}
+      <span class="badge badge-error flex-shrink-0">NSFW</span>
+      {% endif %}
+    </div>
+
+    <p class="text-bone text-sm mb-3" style="line-height: 1.5;">
+      {{ sub.description[:150] }}{% if sub.description|length > 150 %}...{% endif %}
+      {% if not sub.description %}
+      <span class="text-ash italic">No description available</span>
+      {% endif %}
+    </p>
+
+    <div class="flex items-center gap-4 mb-4">
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="users" class="w-3.5 h-3.5 text-ash"></i>
+        <span class="font-mono text-sm text-bone-muted" title="{{ '{:,}'.format(sub.subscribers) }} subscribers">
+          {{ format_subscribers(sub.subscribers) }}
+        </span>
+      </div>
+      {% if sub.created_utc %}
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="calendar" class="w-3.5 h-3.5 text-ash"></i>
+        <span class="font-mono text-sm text-bone-muted" title="Created {{ format_timestamp(sub.created_utc) }}">
+          {{ format_timestamp(sub.created_utc) }}
+        </span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="flex gap-2">
+      <button class="btn btn-primary btn-sm flex-1"
+              hx-get="/api/subreddits/{{ sub.name }}/detail"
+              hx-target="#subreddit-detail"
+              hx-swap="innerHTML"
+              hx-indicator="#detail-loading-{{ loop.index }}">
+        <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+        Preview
+      </button>
+      <a href="/thresh?subreddit={{ sub.name }}" class="btn btn-secondary btn-sm flex-1">
+        <i data-lucide="wheat" class="w-3.5 h-3.5"></i>
+        Collect
+      </a>
+    </div>
+
+    <!-- Per-card loading indicator -->
+    <div id="detail-loading-{{ loop.index }}" class="htmx-indicator mt-2">
+      <div class="flex items-center gap-2 justify-center py-1">
+        <img src="/static/img/sigil.svg" alt="" class="loading-sigil" style="width: 20px; height: 20px;">
+        <span class="text-xs text-bone-muted">Loading...</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="min-height: 20vh; padding: 2rem;">
+  <i data-lucide="search-x" class="w-12 h-12 text-ash mb-3" style="opacity: 0.5;"></i>
+  <h2 class="empty-state-heading" style="font-size: 1.25rem;">No Subreddits Found</h2>
+  <p class="empty-state-text">Try a different search term, or check the spelling. Broader terms often yield more results.</p>
+</div>
+{% endif %}
