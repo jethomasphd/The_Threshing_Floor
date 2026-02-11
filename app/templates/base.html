@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}The Threshing Floor{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link rel="stylesheet" href="/static/css/thresh.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        ember: '#e8642c',
+                        bone: {
+                            DEFAULT: '#f5f0e8',
+                            muted: '#a8a08c',
+                        },
+                        night: '#1a1814',
+                    },
+                    fontFamily: {
+                        display: ['"Georgia"', 'serif'],
+                    },
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-night text-bone min-h-screen">
+    <nav class="border-b border-bone/10 px-6 py-3 flex items-center gap-6">
+        <a href="/" class="font-display text-xl text-ember font-bold">The Threshing Floor</a>
+        <div class="flex gap-4 text-sm">
+            <a href="/" class="hover:text-ember transition-colors">Floor</a>
+            <a href="/explore" class="hover:text-ember transition-colors">Explore</a>
+            <a href="/thresh" class="hover:text-ember transition-colors">Thresh</a>
+            <a href="/harvest" class="hover:text-ember transition-colors">Harvest</a>
+            <a href="/winnow" class="hover:text-ember transition-colors">Winnow</a>
+            <a href="/glean" class="hover:text-ember transition-colors">Glean</a>
+            <a href="/about" class="hover:text-ember transition-colors">About</a>
+        </div>
+    </nav>
+    <main class="max-w-6xl mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
