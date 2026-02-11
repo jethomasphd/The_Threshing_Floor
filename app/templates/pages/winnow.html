@@ -1,6 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Winnow — Filter & Analyze{% endblock %}
+{% block title %}Winnow — Analyze | Thresh{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">Winnow</h1>
-<p class="text-bone-muted">Filter and analyze — coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">Winnow</h1>
+  <p class="page-subtitle">The wind that carries away chaff — word frequency, temporal patterns, keyword analysis</p>
+</div>
+
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">No Data to Winnow</h2>
+  <p class="empty-state-text">Collect data first, then return here to analyze it. Winnow reveals word frequencies, temporal patterns, and keyword co-occurrences across your dataset.</p>
+  <a href="/thresh" class="btn btn-primary">Collect Data First</a>
+</div>
 {% endblock %}

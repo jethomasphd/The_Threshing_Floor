@@ -1,6 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Explore — Browse Subreddits{% endblock %}
+{% block title %}Explore — Find Subreddits | Thresh{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">Explore</h1>
-<p class="text-bone-muted">Browse subreddits — coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">Explore</h1>
+  <p class="page-subtitle">Scout the field before harvest — search and preview subreddits</p>
+</div>
+
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Discover Your Research Territory</h2>
+  <p class="empty-state-text">Search for subreddits by name or topic. Preview their content, review metadata, and decide what to collect for your research.</p>
+  <button class="btn btn-primary" disabled>Search Subreddits</button>
+</div>
 {% endblock %}

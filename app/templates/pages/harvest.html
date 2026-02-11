@@ -1,6 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Harvest — View Data{% endblock %}
+{% block title %}Harvest — View Results | Thresh{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">Harvest</h1>
-<p class="text-bone-muted">View collected data — coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">Harvest</h1>
+  <p class="page-subtitle">Gather what was threshed — browse, filter, and inspect collected data</p>
+</div>
+
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Nothing Harvested Yet</h2>
+  <p class="empty-state-text">Once you run a collection from the Thresh page, your gathered posts and comments will appear here with sortable tables, statistics, and engagement charts.</p>
+  <a href="/thresh" class="btn btn-primary">Start a Collection</a>
+</div>
 {% endblock %}

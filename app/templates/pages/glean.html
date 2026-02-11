@@ -1,6 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Glean — Export & Provenance{% endblock %}
+{% block title %}Glean — Export | Thresh{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">Glean</h1>
-<p class="text-bone-muted">Export and provenance — coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">Glean</h1>
+  <p class="page-subtitle">Gather cleaned grain into bundles — export with full provenance documentation</p>
+</div>
+
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Nothing to Export</h2>
+  <p class="empty-state-text">After collecting and reviewing your data, export it here as CSV, JSON, or JSONL. Every export includes a provenance document for academic reproducibility.</p>
+  <a href="/thresh" class="btn btn-primary">Collect Data First</a>
+</div>
 {% endblock %}

@@ -1,6 +1,38 @@
 {% extends "base.html" %}
 {% block title %}About — The Threshing Floor{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">About</h1>
-<p class="text-bone-muted">The Threshing Floor — an academic Reddit research tool. Details coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">About</h1>
+  <p class="page-subtitle">Documentation, ethical considerations, and the story behind the tool</p>
+</div>
+
+<div class="card-grid">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">What Is Thresh?</h3>
+    </div>
+    <div class="card-body">
+      <p class="text-bone-muted">Thresh is a local-first research tool that wraps the Reddit API behind a guided interface. It helps graduate researchers collect, explore, and export Reddit data for dissertation work — without writing code.</p>
+      <p class="text-bone-muted">Named for the biblical threshing floor: the place where grain is separated from chaff through deliberate labor.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Ethical Use</h3>
+    </div>
+    <div class="card-body">
+      <p class="text-bone-muted">Reddit data involves real people. Before collecting, consider re-identification risks, your IRB requirements, and Reddit's API Terms of Service. Default exports anonymize usernames.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Citation</h3>
+    </div>
+    <div class="card-body">
+      <p class="font-mono text-sm text-bone-muted">Thomas, J. E. (2025). <em>The Threshing Floor (Thresh)</em> [Computer software]. Version 0.1.0.</p>
+    </div>
+  </div>
+</div>
 {% endblock %}

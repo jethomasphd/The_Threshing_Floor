@@ -1,6 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Thresh — Collect Data{% endblock %}
+{% block title %}Thresh — Collect Data | Thresh{% endblock %}
 {% block content %}
-<h1 class="text-3xl font-display text-ember mb-4">Thresh</h1>
-<p class="text-bone-muted">Configure and run collection — coming soon.</p>
+<div class="page-header">
+  <h1 class="page-title">Thresh</h1>
+  <p class="page-subtitle">Beat the grain — configure and run your data collection</p>
+</div>
+
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Ready to Collect</h2>
+  <p class="empty-state-text">Configure your collection parameters — subreddit, sort method, date range, and depth. Thresh handles pagination, rate limits, and deduplication so you can focus on your research question.</p>
+  <a href="/explore" class="btn btn-primary">Choose a Subreddit First</a>
+</div>
 {% endblock %}
