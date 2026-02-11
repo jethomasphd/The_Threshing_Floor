@@ -461,3 +461,13 @@ def get_reddit_client() -> RedditClient:
         settings = get_settings()
         _reddit_client = RedditClient(settings)
     return _reddit_client
+
+
+def _reset_client() -> None:
+    """Reset the singleton RedditClient so it reinitializes on next access.
+
+    Called after credentials are saved so the app picks up new settings.
+    """
+    global _reddit_client
+    _reddit_client = None
+    logger.info("Reddit client singleton reset — will reinitialize on next access")

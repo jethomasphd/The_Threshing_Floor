@@ -128,6 +128,9 @@
             <span class="sidebar-label-primary">About</span>
             <span class="sidebar-label-sub">Documentation</span>
           </div>
+          {% if credentials_configured is defined and not credentials_configured %}
+          <span class="setup-needed-dot" title="Setup needed"></span>
+          {% endif %}
         </a>
       </li>
     </ul>
@@ -163,6 +166,15 @@
 
   <!-- Main content -->
   <main id="main-content" class="main-content">
+    {% if credentials_configured is defined and not credentials_configured and request.url.path != '/about' %}
+    <div class="setup-banner">
+      <div class="setup-banner-content">
+        <i data-lucide="info" style="width: 18px; height: 18px; flex-shrink: 0; color: var(--ember);"></i>
+        <span>Reddit API credentials are not configured yet.</span>
+        <a href="/about" class="setup-banner-link">Set up now</a>
+      </div>
+    </div>
+    {% endif %}
     {% block content %}{% endblock %}
   </main>
 
