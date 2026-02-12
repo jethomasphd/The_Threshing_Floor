@@ -1,7 +1,6 @@
 """API routes — HTML partial endpoints for HTMX and programmatic access."""
 
 import logging
-import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,10 +8,10 @@ from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
-from sqlalchemy import func, desc, asc
+from sqlalchemy import desc, asc
 from sqlalchemy.orm import Session
 
-from app.config import Settings, get_settings
+from app.config import get_settings
 from app.models.database import SessionLocal, get_db
 from app.models.schemas import CollectionConfig
 from app.models.tables import CollectedComment, CollectedPost, CollectionJob, ExportRecord, SavedQuery
@@ -105,7 +104,7 @@ async def setup_validate(
             success=False,
             message="Authentication failed. Please double-check your Client ID and Client Secret.",
         ))
-    except prawcore.exceptions.ResponseException as e:
+    except prawcore.exceptions.ResponseException:
         return HTMLResponse(_render_setup_result(
             success=False,
             message="Reddit rejected the credentials. Verify that your app type is set to \"script\" and your Client ID and Secret are correct.",
@@ -1731,8 +1730,6 @@ async def save_query(
         include_comments: Whether to collect comments.
         comment_depth: Comment tree expansion depth.
     """
-    templates = request.app.state.templates
-
     # Clean subreddit name
     subreddit_clean = subreddit.strip()
     if subreddit_clean.startswith("r/"):
@@ -1872,8 +1869,6 @@ async def run_saved_query(
         background_tasks: FastAPI background task runner.
         db: Database session.
     """
-    templates = request.app.state.templates
-
     saved_query = db.query(SavedQuery).filter(SavedQuery.id == query_id).first()
 
     if saved_query is None:
@@ -1927,7 +1922,6 @@ async def run_saved_query(
     )
 
     # Return a confirmation that replaces the card
-    query = saved_query  # Template expects `query` variable
     return HTMLResponse(
         f'<div class="saved-query-card" id="saved-query-{saved_query.id}">'
         f'<div class="p-3 rounded" style="background: rgba(74, 155, 110, 0.1); '

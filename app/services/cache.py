@@ -7,7 +7,6 @@ Default TTL is 900 seconds (15 minutes) per CLAUDE.md requirements.
 import logging
 import sqlite3
 import time
-from pathlib import Path
 from typing import Optional
 
 from app.config import get_settings
