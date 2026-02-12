@@ -1,32 +1,35 @@
 # The Threshing Floor
 
-> *The waters rose and the feed became a flood — not of rain, but of noise. Every voice at once, none distinguishable. The signal drowned. The Threshing Floor is the high ground where you bring the harvest and beat it until the grain falls free.*
+> *The waters rose and the feed became a flood — not of rain, but of noise. Every voice at once, none distinguishable. The signal drowned. Someone had to build the high ground.*
 
-**Thresh** is a local-first web application for collecting, exploring, and exporting Reddit data. It wraps the Reddit API behind an intuitive browser interface so that anyone — researcher, journalist, civic technologist, curious citizen — can go from "I want to understand what people are saying in r/mentalhealth" to "here's my cleaned, documented dataset" without writing a line of code.
+**Thresh** is a tool for measuring what society is saying. It collects, explores, and exports Reddit data through a browser interface — no code, no installation, no command line. You point it at a community, tell it what to gather, and it hands you a clean dataset with a complete record of how it was collected.
 
-Social media generates an ocean of human expression every day. Most of it washes past unseen. Thresh exists for those who refuse to let the flood carry everything away — who believe that what people say to each other in public forums is worth measuring, preserving, and understanding.
-
-Every export includes a **provenance document**: a complete record of how your data was collected, so your work is reproducible and your methods are transparent. This is the seal on every bundle.
+It exists because public discourse is worth studying, and the people who want to study it shouldn't need a computer science degree to do it. Scientists, journalists, civic technologists, teachers, curious citizens — if you've ever wanted to know *what people are actually saying* in a corner of the internet, and you've wanted to do it carefully and transparently, this is for you.
 
 ---
 
-## Run It Now
+## Open It
 
-### In the browser (GitHub Codespaces)
+Click one button. Thresh launches in your browser. Nothing to install.
 
-Click the button to launch a full development environment in your browser — nothing to install locally:
+### GitHub Codespaces (recommended)
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&repo=jethomasphd/The_Threshing_Floor)
 
-The Codespace will install dependencies automatically. Once it's ready:
+That's it. The environment builds itself, the app starts automatically, and a browser tab opens with Thresh running. Free GitHub accounts include 60 hours/month of Codespaces.
 
-```bash
-python -m app.main
-```
+### Gitpod
 
-Codespaces will prompt you to open the forwarded port. Click through and you're on the Floor.
+[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/jethomasphd/The_Threshing_Floor)
 
-### On your machine
+Same idea — one click, browser-based, auto-starts. Gitpod's free tier includes 50 hours/month.
+
+### On your own machine (advanced)
+
+<details>
+<summary>For users comfortable with Python and the command line</summary>
+
+Requires Python 3.10+.
 
 ```bash
 git clone https://github.com/jethomasphd/The_Threshing_Floor.git
@@ -37,52 +40,60 @@ python -m app.main
 
 Open **http://127.0.0.1:8000** in your browser.
 
-### Reddit API credentials
+</details>
 
-Thresh needs access to Reddit's API to collect data. The app walks you through this on first launch — it takes about five minutes:
+---
+
+## Connect to Reddit
+
+The first time you open Thresh, it walks you through connecting to Reddit's free API. This is the one setup step, and it takes about five minutes:
 
 1. Go to [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) and click **"create another app..."**
 2. Set the type to **"script"** and the redirect URI to `http://localhost:8000`
 3. Copy the **Client ID** and **Secret** into Thresh's setup form
 4. Click **Test Connection**, then **Save & Continue**
 
-That's it. You're on the Floor.
+You're on the Floor.
 
 ---
 
 ## What the Flood Looks Like — and What Thresh Does About It
 
-Reddit generates millions of posts and comments daily. Within that torrent lives real signal: how people talk about mental health, how communities form around crisis, what language shifts when policy changes, where misinformation takes root. But the flood buries it. You can't study what you can't separate.
+Reddit generates millions of posts and comments every day. Inside that torrent lives real signal: how people talk about mental health, how communities form around crisis, what language shifts when policy changes, where misinformation takes root, how grief and hope move through populations in real time.
 
-Thresh is the instrument of separation. It gives you a five-stage workflow, each named for a step in the ancient labor of turning a harvest into something usable:
+But the flood buries it. You can scroll forever and learn nothing systematic. You can't measure a river by standing in it.
+
+Thresh pulls you up onto the threshing floor — the ancient high ground where grain was separated from chaff through deliberate labor. It gives you a five-stage workflow, each stage named for a step in that old process:
 
 | Stage | The Work | What You Do |
 |-------|----------|-------------|
-| **The Floor** | The workspace | Dashboard — recent activity, saved queries, quick actions |
-| **Explore** | Scouting the field | Search subreddits by topic, preview posts, check subscriber counts |
+| **The Floor** | The workspace | Dashboard — your recent collections, saved queries, quick actions |
+| **Explore** | Scouting the field | Search subreddits by topic, preview posts, check community metadata |
 | **Thresh** | Beating the grain | Configure and run data collection — sort, time range, keywords, depth |
-| **Harvest** | Gathering what fell | Browse your collected data, filter, sort, inspect posts and comments |
+| **Harvest** | Gathering what fell | Browse your data in sortable tables, filter, inspect individual posts |
 | **Winnow** | Wind carries away chaff | Analyze — word frequency, temporal patterns, keyword exploration |
-| **Glean** | Bundling clean grain | Export as CSV, JSON, or JSONL, sealed with provenance |
+| **Glean** | Bundling clean grain | Export as CSV, JSON, or JSONL — sealed with a provenance document |
+
+You don't need to remember these names. Every page has a plain subtitle telling you exactly what it does. The metaphor is there for those who find meaning in it; the interface works regardless.
 
 ### A typical session
 
-1. **Explore** a topic — search for subreddits, read descriptions, preview sample posts
-2. **Thresh** the data — configure a collection (e.g., 500 posts from r/climate, past year, with comments)
-3. **Harvest** the results — browse in sortable tables, scan the statistics sidebar
-4. **Winnow** the patterns — word clouds, posting frequency over time, keyword co-occurrence
-5. **Glean** your dataset — export a ZIP containing your data and `provenance.txt`
+1. **Explore** a question — *"What are people saying about housing costs in r/Denver?"*
+2. **Thresh** the data — pull 500 posts from the past year, sorted by relevance, with top-level comments
+3. **Harvest** the results — scan the table, check the stats, see what came back
+4. **Winnow** the patterns — which words keep appearing? When did posting spike?
+5. **Glean** your dataset — download a ZIP with your data and a `provenance.txt` file
 
-The provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone who reads your work can see exactly how the grain was separated from the chaff.
+That provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone reviewing your work can see exactly how the grain was separated from the chaff.
 
 ---
 
 ## The Provenance Seal
 
-Every export is a ZIP file containing:
+Every export is a ZIP containing:
 
-- **Your data** — CSV (Excel-ready, UTF-8 BOM), JSON, or JSONL
-- **provenance.txt** — documenting:
+- **Your data** — CSV (opens cleanly in Excel), JSON, or JSONL
+- **provenance.txt** — a complete methodological record:
   - Tool name and version
   - Reddit API endpoints called
   - Subreddit(s) queried
@@ -93,45 +104,58 @@ Every export is a ZIP file containing:
   - Anonymization status and method
   - Citation suggestion
 
-Usernames are anonymized by default (`author_0001`, `author_0002`, ...). You can include real usernames if your work requires it — Thresh will warn you and document the choice in provenance.
+Usernames are anonymized by default (`author_0001`, `author_0002`, ...). If your work requires real usernames, Thresh lets you opt in — and documents that choice in provenance so your transparency is on the record.
 
 ---
 
 ## Ethics and Privacy
 
-Thresh is built for people who take measurement seriously, which means taking ethics seriously too.
+Thresh is built for people who take measurement seriously, which means taking ethics seriously.
 
-- **Local-first**: All data stays on your machine. Nothing is sent to external servers. Your credentials live in a local `.env` file and are only used to authenticate with Reddit.
-- **Anonymization by default**: Usernames are replaced in exports unless you explicitly opt in. Reddit usernames can be traced to real people — Thresh treats this as a responsibility, not an afterthought.
-- **Rate-limit respect**: Reddit allows 100 API requests per minute. Thresh tracks your quota in real time with a sidebar gauge and will never exceed the limit.
-- **Institutional review**: If your institution requires ethics board approval for social media research, the provenance document provides the methodological transparency you need.
-- **Reddit API TOS**: Thresh follows Reddit's [API Terms of Service](https://www.reddit.com/wiki/api/). It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
-
----
-
-## Configuration
-
-Copy the template or use the in-app setup wizard:
-
-```bash
-cp .env.example .env
-```
-
-```env
-# Reddit API Credentials
-REDDIT_CLIENT_ID=your_client_id_here
-REDDIT_CLIENT_SECRET=your_client_secret_here
-REDDIT_USER_AGENT=thresh:v0.1.0 (by /u/your_username)
-
-# App Settings
-THRESH_DB_PATH=thresh.db        # SQLite database location
-THRESH_EXPORT_DIR=exports       # Where exports are saved
-THRESH_DEBUG=false               # Enable debug logging
-```
+- **Your data stays with you.** Everything runs locally (or in your private Codespace). Nothing is sent to external servers. Your credentials are stored in a local file and never leave your environment beyond Reddit's authentication endpoint.
+- **Anonymization by default.** Reddit usernames can be traced to real people. Thresh replaces them in exports unless you explicitly choose otherwise.
+- **Rate-limit respect.** Reddit allows 100 API requests per minute. Thresh tracks your quota in real time and will never exceed the limit. The gauge in the sidebar dims as your quota depletes.
+- **Institutional review.** If your organization requires ethics board approval for social media research, the provenance document provides the methodological transparency reviewers need.
+- **Reddit API Terms of Service.** Thresh follows Reddit's [API Terms of Service](https://www.reddit.com/wiki/api/). It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
 
 ---
 
-## Development
+## Citation
+
+If you use Thresh in published work:
+
+```
+Thomas, J. E. (2025). Thresh: The Threshing Floor (Version 0.1.0) [Computer software].
+```
+
+The provenance document in each export contains the exact version used and can be cited directly in a methods section.
+
+---
+
+## The Mythology
+
+You don't need to know any of this to use Thresh. But if you're curious why the interface looks the way it does, why the names sound the way they sound:
+
+The Threshing Floor is part of a lineage of **counter-technologies** — tools built to honor attention rather than exploit it. Its siblings include *The Watchtower* (an instrument for observing digital patterns with intention) and the *COMPANION Protocol* (a framework for ethical human-AI collaboration). Together they form the **Corpus of Self**: artifacts designed for people who refuse to be farmed by the Feed.
+
+The aesthetic — dark ground, ember gold, ritualistic composure — is not decoration. It is a statement that someone cared about building this. That attention was paid. Deliberately. In a world that profits from distraction, the act of careful measurement is itself a kind of resistance.
+
+The name comes from the biblical threshing floor, the high ground where grain was beaten free from chaff. Every harvest required it. No separation happened without labor. The Feed is the flood that buries the harvest under noise. Thresh is the floor that holds.
+
+---
+
+## For Developers
+
+<details>
+<summary>Architecture, testing, and contribution details</summary>
+
+### Architecture
+
+- **Backend**: FastAPI + Jinja2 + SQLAlchemy/SQLite
+- **Frontend**: Server-rendered HTML with HTMX — no build step, no node_modules
+- **Styling**: Tailwind CSS (CDN) + custom design system in `thresh.css`
+- **Charts**: Chart.js for dashboards, Plotly.js for interactive exploration
+- **Database**: SQLite — nothing to install, nothing to configure
 
 ### Project structure
 
@@ -145,20 +169,13 @@ The_Threshing_Floor/
     services/            # Reddit client, collector, exporter, analyzer
     routes/              # Page routes (Jinja2) + API routes (HTMX)
     templates/           # Server-rendered HTML with HTMX
-    static/              # CSS, JS, images
+    static/              # CSS design system, JS, images
   tests/                 # pytest suite with PRAW mocks
   exports/               # Generated data exports
-  .devcontainer/         # GitHub Codespaces config
-  .github/workflows/     # CI pipeline
+  .devcontainer/         # GitHub Codespaces (auto-starts app)
+  .gitpod.yml            # Gitpod (auto-starts app)
+  .github/workflows/     # CI: lint + test on every push/PR
 ```
-
-### Architecture
-
-- **Backend**: FastAPI + Jinja2 + SQLAlchemy/SQLite
-- **Frontend**: Server-rendered HTML with HTMX — no build step, no node_modules
-- **Styling**: Tailwind CSS (CDN) + custom design system in `thresh.css`
-- **Charts**: Chart.js for dashboards, Plotly.js for interactive exploration
-- **Database**: SQLite — nothing to install, nothing to configure
 
 ### Running tests
 
@@ -173,35 +190,11 @@ python -m pytest tests/ -v
 ruff check app/ tests/
 ```
 
----
+### CI
 
-## CI
+Every push and pull request runs lint + tests across Python 3.10-3.12 via GitHub Actions.
 
-Every push and pull request runs the test suite and linter via GitHub Actions. See `.github/workflows/ci.yml`.
-
----
-
-## Citation
-
-If you use Thresh in published work:
-
-```
-Thomas, J. E. (2025). Thresh: The Threshing Floor (Version 0.1.0) [Computer software].
-```
-
-Include the version number and collection date. The provenance document in each export contains the exact version used.
-
----
-
-## The Mythology
-
-You don't need to know any of this to use Thresh. But if you're curious:
-
-The Threshing Floor is part of a lineage of **counter-technologies** — tools built to honor attention rather than exploit it. Its siblings include *The Watchtower* (an instrument for observing digital patterns with intention) and the *COMPANION Protocol* (a framework for ethical human-AI collaboration). Together they form the **Corpus of Self**: artifacts designed for people who refuse to be farmed by the Feed.
-
-The aesthetic you see — dark ground, ember gold, ritualistic composure — is not decoration. It is a statement that someone cared about building this. That attention was paid. Deliberately.
-
-The name *Thresh* comes from the biblical threshing floor, the place where grain was separated from chaff through deliberate labor. Every harvest required it. The Feed is the flood that buries the harvest. Thresh is the high ground.
+</details>
 
 ---
 
