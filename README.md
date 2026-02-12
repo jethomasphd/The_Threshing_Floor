@@ -44,16 +44,27 @@ Open **http://127.0.0.1:8000** in your browser.
 
 ---
 
-## Connect to Reddit
+## No Setup Needed
 
-The first time you open Thresh, it walks you through connecting to Reddit's free API. This is the one setup step, and it takes about five minutes:
+Open Thresh and start exploring. There are no API keys to configure, no credentials to obtain, no approval queues to wait in. Thresh reads Reddit's public pages directly — the same data you see in your browser — and structures it into clean datasets.
+
+You're on the Floor.
+
+### Optional: Reddit API Credentials (Power Users)
+
+<details>
+<summary>For higher rate limits and authenticated access</summary>
+
+If you're collecting at scale and want higher rate limits, you can optionally connect Thresh to Reddit's API:
 
 1. Go to [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) and click **"create another app..."**
 2. Set the type to **"script"** and the redirect URI to `http://localhost:8000`
-3. Copy the **Client ID** and **Secret** into Thresh's setup form
-4. Click **Test Connection**, then **Save & Continue**
+3. Copy the **Client ID** and **Secret** into Thresh's About page under "Optional: Reddit API Credentials"
+4. Click **Test Connection**, then **Save**
 
-You're on the Floor.
+Without credentials, Thresh uses polite rate-limited requests to Reddit's public endpoints. With credentials, you get Reddit's official 100 requests/minute allowance via their API.
+
+</details>
 
 ---
 
@@ -95,7 +106,7 @@ Every export is a ZIP containing:
 - **Your data** — CSV (opens cleanly in Excel), JSON, or JSONL
 - **provenance.txt** — a complete methodological record:
   - Tool name and version
-  - Reddit API endpoints called
+  - Data source (public web data or authenticated API)
   - Subreddit(s) queried
   - All query parameters (sort, time filter, keywords, limits)
   - Collection timestamp (UTC)
@@ -112,11 +123,11 @@ Usernames are anonymized by default (`author_0001`, `author_0002`, ...). If your
 
 Thresh is built for people who take measurement seriously, which means taking ethics seriously.
 
-- **Your data stays with you.** Everything runs locally (or in your private Codespace). Nothing is sent to external servers. Your credentials are stored in a local file and never leave your environment beyond Reddit's authentication endpoint.
+- **Your data stays with you.** Everything runs locally (or in your private Codespace). Nothing is sent to external servers. If you choose to configure API credentials, they are stored in a local file and never leave your environment.
 - **Anonymization by default.** Reddit usernames can be traced to real people. Thresh replaces them in exports unless you explicitly choose otherwise.
-- **Rate-limit respect.** Reddit allows 100 API requests per minute. Thresh tracks your quota in real time and will never exceed the limit. The gauge in the sidebar dims as your quota depletes.
+- **Rate-limit respect.** Thresh paces its requests to be a polite visitor. With optional API credentials, you get Reddit's official 100 requests/minute allowance; without them, Thresh self-limits to well under that threshold and backs off on any throttling signal.
 - **Institutional review.** If your organization requires ethics board approval for social media research, the provenance document provides the methodological transparency reviewers need.
-- **Reddit API Terms of Service.** Thresh follows Reddit's [API Terms of Service](https://www.reddit.com/wiki/api/). It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
+- **Reddit Terms of Service.** Thresh accesses only public data — the same content visible to any browser. It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
 
 ---
 
@@ -152,6 +163,7 @@ The name comes from the biblical threshing floor, the high ground where grain wa
 ### Architecture
 
 - **Backend**: FastAPI + Jinja2 + SQLAlchemy/SQLite
+- **Data access**: Public JSON endpoints by default (`RedditScraper`), optional PRAW upgrade (`RedditClient`)
 - **Frontend**: Server-rendered HTML with HTMX — no build step, no node_modules
 - **Styling**: Tailwind CSS (CDN) + custom design system in `thresh.css`
 - **Charts**: Chart.js for dashboards, Plotly.js for interactive exploration
@@ -166,11 +178,11 @@ The_Threshing_Floor/
     main.py              # Entry point (uvicorn)
     config.py            # Settings from .env
     models/              # SQLAlchemy ORM + Pydantic schemas
-    services/            # Reddit client, collector, exporter, analyzer
+    services/            # Web scraper, Reddit client, collector, exporter, analyzer
     routes/              # Page routes (Jinja2) + API routes (HTMX)
     templates/           # Server-rendered HTML with HTMX
     static/              # CSS design system, JS, images
-  tests/                 # pytest suite with PRAW mocks
+  tests/                 # pytest suite (scraper + PRAW mocks)
   exports/               # Generated data exports
   .devcontainer/         # GitHub Codespaces (auto-starts app)
   .gitpod.yml            # Gitpod (auto-starts app)
