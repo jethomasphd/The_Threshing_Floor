@@ -1,0 +1,104 @@
+<!-- Harvest stats sidebar partial — loaded into #harvest-stats-container -->
+<div class="harvest-stats-panel">
+  <!-- Summary stats -->
+  <div class="card harvest-stat-card" style="margin-bottom: 1rem;">
+    <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+      <h4 class="card-title" style="font-size: 1.1rem;">
+        <i data-lucide="bar-chart-3" class="w-4 h-4 inline-block text-ember" style="vertical-align: -2px; margin-right: 0.25rem;"></i>
+        Collection Stats
+      </h4>
+    </div>
+    <div class="card-body">
+      <div class="harvest-stats-grid">
+        <div class="stat">
+          <span class="stat-value">{{ total_posts }}</span>
+          <span class="stat-label">Posts Collected</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ total_comments }}</span>
+          <span class="stat-label">Comments</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ avg_score }}</span>
+          <span class="stat-label">Avg Score</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value">{{ avg_comments }}</span>
+          <span class="stat-label">Avg Comments</span>
+        </div>
+      </div>
+
+      <hr class="divider" style="margin: 0.75rem 0;">
+
+      <!-- Date range -->
+      <div style="margin-bottom: 0.5rem;">
+        <span class="label" style="margin-bottom: 0.25rem; display: block;">Date Range</span>
+        <span class="font-mono text-sm text-bone">
+          {% if total_posts > 0 %}
+            {{ date_range_start }} — {{ date_range_end }}
+          {% else %}
+            N/A
+          {% endif %}
+        </span>
+      </div>
+
+      <!-- Subreddit -->
+      <div>
+        <span class="label" style="margin-bottom: 0.25rem; display: block;">Subreddit</span>
+        <span class="font-mono text-sm text-ember">r/{{ job.subreddit }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top Authors -->
+  {% if top_authors and top_authors|length > 0 %}
+  <div class="card harvest-stat-card" style="margin-bottom: 1rem;">
+    <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+      <h4 class="card-title" style="font-size: 1.1rem;">
+        <i data-lucide="users" class="w-4 h-4 inline-block text-ember" style="vertical-align: -2px; margin-right: 0.25rem;"></i>
+        Top Authors
+      </h4>
+    </div>
+    <div class="card-body">
+      <div class="flex flex-col gap-2">
+        {% for author, count in top_authors %}
+        <div class="flex items-center justify-between">
+          <span class="font-mono text-xs text-bone-muted truncate" style="max-width: 160px;">{{ author }}</span>
+          <span class="badge badge-ember font-mono" style="font-size: 0.6875rem;">{{ count }} post{{ 's' if count != 1 else '' }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Timeline Chart -->
+  <div class="card harvest-stat-card" style="margin-bottom: 1rem;">
+    <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+      <h4 class="card-title" style="font-size: 1.1rem;">
+        <i data-lucide="calendar" class="w-4 h-4 inline-block text-ember" style="vertical-align: -2px; margin-right: 0.25rem;"></i>
+        Posts Over Time
+      </h4>
+    </div>
+    <div class="card-body">
+      <div style="position: relative; height: 180px;">
+        <canvas id="harvest-timeline-chart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score Distribution Chart -->
+  <div class="card harvest-stat-card">
+    <div class="card-header" style="margin-bottom: 0.75rem; padding-bottom: 0.5rem;">
+      <h4 class="card-title" style="font-size: 1.1rem;">
+        <i data-lucide="pie-chart" class="w-4 h-4 inline-block text-ember" style="vertical-align: -2px; margin-right: 0.25rem;"></i>
+        Score Distribution
+      </h4>
+    </div>
+    <div class="card-body">
+      <div style="position: relative; height: 200px;">
+        <canvas id="harvest-score-chart"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
