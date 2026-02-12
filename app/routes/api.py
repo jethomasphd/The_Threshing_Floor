@@ -2019,3 +2019,273 @@ async def export_download(
         media_type="application/zip",
         filename=path.name,
     )
+
+
+# ---------------------------------------------------------------------------
+# Winnow — Analysis API Endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/winnow/{job_id}/word-frequency")
+async def winnow_word_frequency(
+    job_id: int,
+    top_n: int = Query(50, ge=1, le=200, description="Number of top words"),
+    include_comments: bool = Query(True, description="Include comment text"),
+    min_length: int = Query(3, ge=2, le=10, description="Minimum word length"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return top word frequencies for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        top_n: Number of top words to return.
+        include_comments: Whether to include comment text.
+        min_length: Minimum word length.
+        db: Database session.
+
+    Returns:
+        JSON with ``words`` (list of word strings) and ``counts`` (list of ints).
+    """
+    from app.services.analyzer import AnalyzerService
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        freq = analyzer.get_word_frequencies(
+            job_id=job_id,
+            top_n=top_n,
+            include_comments=include_comments,
+            min_word_length=min_length,
+        )
+        words = [w for w, _ in freq]
+        counts = [c for _, c in freq]
+        return JSONResponse({"words": words, "counts": counts})
+    except Exception as e:
+        logger.error(f"Winnow word frequency error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute word frequencies."},
+        )
+
+
+@router.get("/winnow/{job_id}/bigrams")
+async def winnow_bigrams(
+    job_id: int,
+    top_n: int = Query(30, ge=1, le=100, description="Number of top bigrams"),
+    include_comments: bool = Query(True, description="Include comment text"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return top bigram frequencies for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        top_n: Number of top bigrams to return.
+        include_comments: Whether to include comment text.
+        db: Database session.
+
+    Returns:
+        JSON with ``bigrams`` (list of phrase strings) and ``counts`` (list of ints).
+    """
+    from app.services.analyzer import AnalyzerService
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        freq = analyzer.get_bigram_frequencies(
+            job_id=job_id,
+            top_n=top_n,
+            include_comments=include_comments,
+        )
+        bigrams = [b for b, _ in freq]
+        counts = [c for _, c in freq]
+        return JSONResponse({"bigrams": bigrams, "counts": counts})
+    except Exception as e:
+        logger.error(f"Winnow bigrams error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute bigram frequencies."},
+        )
+
+
+@router.get("/winnow/{job_id}/temporal")
+async def winnow_temporal(
+    job_id: int,
+    interval: str = Query("day", description="Interval: hour, day, week, month"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return temporal post distribution for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        interval: Time interval for grouping.
+        db: Database session.
+
+    Returns:
+        JSON with ``dates`` (list of date strings) and ``counts`` (list of ints).
+    """
+    from app.services.analyzer import AnalyzerService
+
+    # Validate interval
+    valid_intervals = ("hour", "day", "week", "month")
+    if interval not in valid_intervals:
+        interval = "day"
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        dist = analyzer.get_temporal_distribution(job_id=job_id, interval=interval)
+        dates = [d["date"] for d in dist]
+        counts = [d["count"] for d in dist]
+        return JSONResponse({"dates": dates, "counts": counts})
+    except Exception as e:
+        logger.error(f"Winnow temporal error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute temporal distribution."},
+        )
+
+
+@router.get("/winnow/{job_id}/keywords")
+async def winnow_keywords(
+    job_id: int,
+    keywords: str = Query("", description="Comma-separated keywords"),
+    interval: str = Query("day", description="Interval: hour, day, week, month"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return keyword trend data for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        keywords: Comma-separated list of keywords to track.
+        interval: Time interval for grouping.
+        db: Database session.
+
+    Returns:
+        JSON with ``trends`` mapping keyword to list of
+        ``{date, count}`` dicts.
+    """
+    from app.services.analyzer import AnalyzerService
+
+    valid_intervals = ("hour", "day", "week", "month")
+    if interval not in valid_intervals:
+        interval = "day"
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    # Parse keywords
+    kw_list = [k.strip() for k in keywords.split(",") if k.strip()]
+    if not kw_list:
+        return JSONResponse({"trends": {}})
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        trends = analyzer.get_keyword_trends(
+            job_id=job_id,
+            keywords=kw_list,
+            interval=interval,
+        )
+        return JSONResponse({"trends": trends})
+    except Exception as e:
+        logger.error(f"Winnow keywords error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute keyword trends."},
+        )
+
+
+@router.get("/winnow/{job_id}/authors")
+async def winnow_authors(
+    job_id: int,
+    top_n: int = Query(20, ge=1, le=100, description="Number of top authors"),
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return top author statistics for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        top_n: Number of top authors.
+        db: Database session.
+
+    Returns:
+        JSON with ``authors`` list of author stat dicts.
+    """
+    from app.services.analyzer import AnalyzerService
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        authors = analyzer.get_author_stats(job_id=job_id, top_n=top_n)
+        return JSONResponse({"authors": authors})
+    except Exception as e:
+        logger.error(f"Winnow authors error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute author statistics."},
+        )
+
+
+@router.get("/winnow/{job_id}/engagement")
+async def winnow_engagement(
+    job_id: int,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return overall engagement statistics for a collection job.
+
+    Args:
+        job_id: The collection job ID.
+        db: Database session.
+
+    Returns:
+        JSON with engagement stats dict.
+    """
+    from app.services.analyzer import AnalyzerService
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": f"Collection job {job_id} not found."},
+        )
+
+    try:
+        analyzer = AnalyzerService(db_session=db)
+        stats = analyzer.get_engagement_stats(job_id=job_id)
+        # Also fetch score distribution for histogram
+        histogram = analyzer.get_score_distribution(job_id=job_id, bins=20)
+        stats["score_histogram"] = histogram
+        return JSONResponse(stats)
+    except Exception as e:
+        logger.error(f"Winnow engagement error for job {job_id}: {e}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to compute engagement statistics."},
+        )

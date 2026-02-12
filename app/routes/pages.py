@@ -198,11 +198,41 @@ async def harvest(
 
 
 @router.get("/winnow")
-async def winnow(request: Request):
-    """Winnow — filter and analyze."""
+async def winnow(
+    request: Request,
+    job_id: Optional[int] = Query(None, description="Pre-select a collection job"),
+    db: Session = Depends(get_db),
+):
+    """Winnow — analysis tools for collected data.
+
+    The wind that carries away chaff: word frequency, temporal patterns,
+    keyword tracking, and engagement statistics.
+
+    Loads completed collection jobs so the user can select one to
+    analyse. Accepts an optional ``?job_id=`` query param to pre-select.
+
+    Args:
+        request: The incoming FastAPI request.
+        job_id: Optional job ID to pre-select for analysis.
+        db: Database session.
+    """
     templates = request.app.state.templates
+
+    # Load completed jobs
+    jobs = (
+        db.query(CollectionJob)
+        .filter(CollectionJob.status == "completed")
+        .order_by(CollectionJob.completed_at.desc())
+        .all()
+    )
+
     return templates.TemplateResponse(
-        "pages/winnow.html", _page_context(request),
+        "pages/winnow.html",
+        _page_context(
+            request,
+            jobs=jobs,
+            selected_job_id=job_id,
+        ),
     )
 
 

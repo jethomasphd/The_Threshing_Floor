@@ -1526,6 +1526,116 @@ a:focus-visible {
 }
 
 
+/* --- Winnow — Analysis Page --- */
+
+/* Tab navigation buttons */
+.winnow-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--bone-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  margin-bottom: -1px;
+}
+
+.winnow-tab-btn:hover {
+  color: var(--bone);
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.winnow-tab-btn.active {
+  color: var(--ember);
+  border-bottom-color: var(--ember);
+}
+
+.winnow-tab-btn.active i,
+.winnow-tab-btn.active svg {
+  color: var(--ember);
+}
+
+.winnow-tab-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+/* Interval selector active state (reused for temporal + keywords) */
+.winnow-interval-btn.active,
+.winnow-kw-interval-btn.active {
+  color: var(--ember);
+  background-color: rgba(201, 162, 39, 0.1);
+}
+
+/* Words layout: chart + bigrams side by side */
+.winnow-words-layout {
+  display: grid;
+  grid-template-columns: 1fr 360px;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* Engagement stats grid */
+.winnow-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+
+.winnow-stat-card {
+  padding: 1rem;
+}
+
+.winnow-stat-card .stat-value {
+  font-size: 1.5rem;
+}
+
+.winnow-stat-card .stat-label {
+  font-size: 0.6875rem;
+}
+
+/* Responsive: stack on smaller screens */
+@media (max-width: 1024px) {
+  .winnow-words-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .winnow-stats-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .winnow-tab-btn {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .winnow-words-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .winnow-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .winnow-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
 /* --- Print --- */
 @media print {
   .sidebar,
