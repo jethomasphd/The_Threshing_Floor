@@ -1,0 +1,65 @@
+<!-- Dashboard Recent Jobs — HTMX partial -->
+{% if recent_jobs %}
+<div class="table-wrapper">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Subreddit</th>
+        <th>Status</th>
+        <th>Posts</th>
+        <th>Comments</th>
+        <th>Date</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in recent_jobs %}
+      <tr>
+        <td>
+          <span class="text-ember font-mono">r/{{ job.subreddit }}</span>
+        </td>
+        <td>
+          {% if job.status == 'completed' %}
+            <span class="badge badge-success">completed</span>
+          {% elif job.status == 'running' %}
+            <span class="badge badge-warning">running</span>
+          {% elif job.status == 'pending' %}
+            <span class="badge badge-ash">pending</span>
+          {% elif job.status == 'failed' %}
+            <span class="badge badge-error">failed</span>
+          {% endif %}
+        </td>
+        <td><span class="font-mono">{{ job.collected_posts }}</span></td>
+        <td><span class="font-mono">{{ job.collected_comments }}</span></td>
+        <td>
+          <span class="text-bone-muted text-xs">
+            {% if job.started_at %}
+              {{ job.started_at.strftime('%b %d, %Y') }}
+            {% elif job.completed_at %}
+              {{ job.completed_at.strftime('%b %d, %Y') }}
+            {% else %}
+              --
+            {% endif %}
+          </span>
+        </td>
+        <td>
+          {% if job.status == 'completed' %}
+          <a href="/harvest?job_id={{ job.id }}" class="btn btn-ghost btn-sm" title="View in Harvest">
+            <i data-lucide="eye" style="width:14px;height:14px;"></i>
+          </a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="text-center py-8">
+  <img src="/static/img/sigil.svg" alt="" class="mx-auto mb-3 opacity-30" width="48" height="48">
+  <p class="text-bone-muted text-sm">No collections yet.</p>
+  <p class="text-ash text-xs mt-1">
+    <a href="/thresh" class="text-link">Start your first collection</a> to see activity here.
+  </p>
+</div>
+{% endif %}

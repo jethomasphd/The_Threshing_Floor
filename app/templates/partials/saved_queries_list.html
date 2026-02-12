@@ -1,0 +1,15 @@
+<!-- Saved Queries List — HTMX partial for the dashboard sidebar -->
+{% if saved_queries %}
+  {% for query in saved_queries %}
+    {% include "partials/saved_query_card.html" %}
+  {% endfor %}
+{% else %}
+<div class="text-center py-8">
+  <img src="/static/img/sigil.svg" alt="" class="mx-auto mb-3 opacity-30" width="48" height="48">
+  <p class="text-bone-muted text-sm">No saved queries yet.</p>
+  <p class="text-ash text-xs mt-1">
+    Save your first collection configuration from the
+    <a href="/thresh" class="text-link">Thresh</a> page.
+  </p>
+</div>
+{% endif %}
