@@ -52,7 +52,7 @@ def empty_settings() -> Settings:
 @pytest.fixture
 def client(mock_settings: Settings) -> RedditClient:
     """RedditClient with a mocked PRAW instance."""
-    with patch("app.services.reddit_client.praw.Reddit") as mock_reddit_cls:
+    with patch("praw.Reddit") as mock_reddit_cls:
         mock_reddit = MagicMock()
         mock_reddit_cls.return_value = mock_reddit
         with patch("app.services.reddit_client.Cache"):
