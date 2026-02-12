@@ -2,11 +2,12 @@
   "name": "The Threshing Floor",
   "image": "mcr.microsoft.com/devcontainers/python:3.12",
   "postCreateCommand": "pip install -r requirements.txt && pip install -e '.[dev]'",
+  "postStartCommand": "nohup python -m app.main > /tmp/thresh.log 2>&1 &",
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {
       "label": "Thresh",
-      "onAutoForward": "openBrowser"
+      "onAutoForward": "openBrowserAtEnd"
     }
   },
   "customizations": {
