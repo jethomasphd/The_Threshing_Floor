@@ -10,11 +10,10 @@ import re
 import logging
 from collections import Counter
 from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.tables import CollectionJob, CollectedPost, CollectedComment
+from app.models.tables import CollectedPost, CollectedComment
 
 logger = logging.getLogger(__name__)
 

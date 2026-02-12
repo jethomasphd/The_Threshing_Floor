@@ -5,9 +5,7 @@ Tests verify that RedditClient methods return proper Pydantic models
 and handle errors gracefully.
 """
 
-import time
-from types import SimpleNamespace
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import prawcore
 import pytest
