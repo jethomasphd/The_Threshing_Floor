@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}About — The Threshing Floor{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">About</h1>
+  <p class="page-subtitle">Documentation, ethical considerations, and the story behind the tool</p>
+</div>
+
+<!-- ===== Setup Wizard (shown only when credentials are not configured) ===== -->
+{% if not credentials_configured %}
+<div class="card card-highlight mb-8" style="border-color: rgba(201, 162, 39, 0.35); margin-bottom: 2rem;">
+  <div class="card-body">
+    <h2 class="font-display text-ember" style="font-size: 1.75rem; margin-bottom: 0.5rem;">Welcome to the Threshing Floor</h2>
+    <p class="text-bone" style="margin-bottom: 1.5rem;">
+      Before you can begin collecting data, Thresh needs access to Reddit's API.<br>
+      This takes about five minutes. Follow the steps below.
+    </p>
+
+    <!-- Step-by-step instructions -->
+    <div class="setup-steps" style="margin-bottom: 1.5rem;">
+      <div class="setup-step" style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="setup-step-number" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: rgba(201, 162, 39, 0.15); color: var(--ember); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1rem;">1</div>
+        <div>
+          <h4 style="font-size: 1rem; font-weight: 600; color: var(--bone); margin-bottom: 0.25rem;">Create a Reddit App</h4>
+          <p class="text-bone-muted" style="font-size: 0.9375rem; margin-bottom: 0.5rem;">
+            Go to <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener noreferrer" style="color: var(--link);">reddit.com/prefs/apps</a> and click <strong>"create another app..."</strong> at the bottom.
+          </p>
+          <ul style="list-style: none; padding: 0; margin: 0;">
+            <li class="text-bone-muted" style="font-size: 0.875rem; padding: 0.2rem 0;">
+              <span class="text-ash" style="margin-right: 0.5rem;">&#8226;</span> Name: anything you like (e.g., <code style="font-size: 0.8125em;">thresh-research</code>)
+            </li>
+            <li class="text-bone-muted" style="font-size: 0.875rem; padding: 0.2rem 0;">
+              <span class="text-ash" style="margin-right: 0.5rem;">&#8226;</span> Type: select <strong>"script"</strong>
+            </li>
+            <li class="text-bone-muted" style="font-size: 0.875rem; padding: 0.2rem 0;">
+              <span class="text-ash" style="margin-right: 0.5rem;">&#8226;</span> Redirect URI: <code style="font-size: 0.8125em;">http://localhost:8000</code>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="setup-step" style="display: flex; gap: 1rem; margin-bottom: 1.25rem;">
+        <div class="setup-step-number" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: rgba(201, 162, 39, 0.15); color: var(--ember); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1rem;">2</div>
+        <div>
+          <h4 style="font-size: 1rem; font-weight: 600; color: var(--bone); margin-bottom: 0.25rem;">Copy Your Credentials</h4>
+          <p class="text-bone-muted" style="font-size: 0.9375rem;">
+            After creating the app, copy the <strong>Client ID</strong> (the short string under the app name) and the <strong>Secret</strong> (labeled "secret"). Enter them in the form below.
+          </p>
+        </div>
+      </div>
+
+      <div class="setup-step" style="display: flex; gap: 1rem; margin-bottom: 0.5rem;">
+        <div class="setup-step-number" style="flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%; background: rgba(201, 162, 39, 0.15); color: var(--ember); display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-weight: 600; font-size: 1rem;">3</div>
+        <div>
+          <h4 style="font-size: 1rem; font-weight: 600; color: var(--bone); margin-bottom: 0.25rem;">Test &amp; Save</h4>
+          <p class="text-bone-muted" style="font-size: 0.9375rem;">
+            Click <strong>"Test Connection"</strong> to verify everything works, then <strong>"Save &amp; Continue"</strong> to start using Thresh.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Credential form -->
+    <hr class="divider divider-ember" style="margin: 1.5rem 0;">
+
+    <form id="setup-form">
+      <div class="form-group">
+        <label class="label" for="client_id">Client ID</label>
+        <input type="text" id="client_id" name="client_id" class="input" style="max-width: 480px;" placeholder="e.g., AbCdEf12345678" autocomplete="off">
+        <p class="text-xs text-ash" style="margin-top: 0.25rem;">The short string displayed under your app name on Reddit's app page</p>
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="client_secret">Client Secret</label>
+        <input type="password" id="client_secret" name="client_secret" class="input" style="max-width: 480px;" placeholder="Your app's secret key" autocomplete="off">
+        <p class="text-xs text-ash" style="margin-top: 0.25rem;">Listed as "secret" on your Reddit app page</p>
+      </div>
+
+      <div class="form-group">
+        <label class="label" for="user_agent">User Agent</label>
+        <input type="text" id="user_agent" name="user_agent" class="input" style="max-width: 480px;" value="thresh:v0.1.0 (by /u/your_username)" placeholder="thresh:v0.1.0 (by /u/your_username)" autocomplete="off">
+        <p class="text-xs text-ash" style="margin-top: 0.25rem;">A descriptive name for your app &mdash; Reddit requires this to identify API consumers</p>
+      </div>
+
+      <div class="flex gap-3" style="display: flex; gap: 0.75rem; margin-top: 1.25rem;">
+        <button type="button"
+                class="btn btn-secondary"
+                hx-post="/api/setup/validate"
+                hx-include="#setup-form"
+                hx-target="#setup-result"
+                hx-swap="innerHTML"
+                hx-indicator="#validate-spinner">
+          <span id="validate-spinner" class="htmx-indicator" style="display:none;">
+            <svg class="loading-sigil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" xmlns="http://www.w3.org/2000/svg"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          </span>
+          Test Connection
+        </button>
+        <button type="button"
+                id="save-btn"
+                class="btn btn-primary"
+                disabled
+                hx-post="/api/setup/save"
+                hx-include="#setup-form"
+                hx-target="#setup-result"
+                hx-swap="innerHTML">
+          Save &amp; Continue
+        </button>
+      </div>
+
+      <div id="setup-result" style="margin-top: 1rem;"></div>
+    </form>
+  </div>
+</div>
+{% else %}
+<!-- Credentials are configured — show a subtle confirmation -->
+<div class="card" style="margin-bottom: 2rem; border-color: rgba(74, 155, 110, 0.25);">
+  <div class="card-body" style="display: flex; align-items: center; gap: 0.75rem;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <span class="text-success" style="font-size: 0.9375rem; font-weight: 500;">Reddit API credentials are configured.</span>
+    <span class="text-ash" style="font-size: 0.8125rem;">To update them, edit the <code>.env</code> file in the project root and restart the app.</span>
+  </div>
+</div>
+{% endif %}
+
+<!-- ===== Documentation Sections ===== -->
+
+<!-- What is Thresh? -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">What Is Thresh?</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-bone-muted">
+      Thresh is a local-first web application that helps graduate researchers collect, explore, and export Reddit data for dissertation work &mdash; without writing code.
+    </p>
+    <p class="text-bone-muted">
+      It wraps <a href="https://praw.readthedocs.io/" target="_blank" rel="noopener noreferrer">PRAW (Python Reddit API Wrapper)</a> behind an intuitive browser interface so you can go from "I want to study r/mentalhealth discourse" to "here's my cleaned, documented dataset" in minutes.
+    </p>
+    <p class="text-bone-muted" style="margin-bottom: 0;">
+      All data stays on your computer. Nothing is sent to external servers. Every export includes a provenance document for academic reproducibility.
+    </p>
+  </div>
+</div>
+
+<!-- How It Works -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">How It Works</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-bone-muted" style="margin-bottom: 1rem;">Thresh guides you through a five-stage research workflow:</p>
+
+    <div class="workflow-steps">
+      <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.875rem;">
+        <span class="badge badge-ember" style="flex-shrink: 0; font-family: var(--font-display); font-size: 0.875rem;">1</span>
+        <div>
+          <strong class="text-bone">Explore</strong>
+          <span class="text-bone-muted"> &mdash; Search and preview subreddits. See subscriber counts, descriptions, and sample posts before committing to a collection.</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.875rem;">
+        <span class="badge badge-ember" style="flex-shrink: 0; font-family: var(--font-display); font-size: 0.875rem;">2</span>
+        <div>
+          <strong class="text-bone">Thresh</strong>
+          <span class="text-bone-muted"> &mdash; Configure your collection: choose sort order, time range, keywords, and how many posts to gather. Then run the collection.</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.875rem;">
+        <span class="badge badge-ember" style="flex-shrink: 0; font-family: var(--font-display); font-size: 0.875rem;">3</span>
+        <div>
+          <strong class="text-bone">Harvest</strong>
+          <span class="text-bone-muted"> &mdash; Browse your collected data. Filter, sort, and inspect individual posts and comments.</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 0.875rem;">
+        <span class="badge badge-ember" style="flex-shrink: 0; font-family: var(--font-display); font-size: 0.875rem;">4</span>
+        <div>
+          <strong class="text-bone">Winnow</strong>
+          <span class="text-bone-muted"> &mdash; Analyze your data with word frequency, temporal patterns, and keyword exploration.</span>
+        </div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 1rem;">
+        <span class="badge badge-ember" style="flex-shrink: 0; font-family: var(--font-display); font-size: 0.875rem;">5</span>
+        <div>
+          <strong class="text-bone">Glean</strong>
+          <span class="text-bone-muted"> &mdash; Export your dataset as CSV, JSON, or JSONL. Every export is bundled with a provenance document detailing exactly how the data was collected.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- The Metaphor -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">The Metaphor</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-bone-muted">
+      The name comes from the biblical <em>threshing floor</em> &mdash; the place where grain is separated from chaff through deliberate labor. The social media feed buries signal under noise. Thresh is the instrument of separation.
+    </p>
+    <p class="text-bone-muted" style="margin-bottom: 0.75rem;">
+      Each page carries a name from this metaphor, but every name has a plain subtitle so you are never lost:
+    </p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Meaning</th>
+            <th>Function</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>The Floor</td><td>The workspace</td><td>Dashboard &mdash; recent activity, quick-start</td></tr>
+          <tr><td>Explore</td><td>Scouting the field</td><td>Subreddit discovery and preview</td></tr>
+          <tr><td>Thresh</td><td>Beating the grain</td><td>Data collection configuration</td></tr>
+          <tr><td>Harvest</td><td>Gathering what was threshed</td><td>Results viewing and filtering</td></tr>
+          <tr><td>Winnow</td><td>The wind carries away chaff</td><td>Analysis &mdash; frequencies, patterns</td></tr>
+          <tr><td>Glean</td><td>Gathering cleaned grain</td><td>Export with provenance</td></tr>
+          <tr><td>Provenance</td><td>The seal on every bundle</td><td>Methodology documentation</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Ethical Considerations -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">Ethical Considerations</h3>
+  </div>
+  <div class="card-body">
+    <div style="margin-bottom: 1rem;">
+      <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--bone); margin-bottom: 0.375rem;">
+        <i data-lucide="alert-triangle" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.375rem; color: var(--warning);"></i>
+        Re-identification Risks
+      </h4>
+      <p class="text-bone-muted" style="margin-bottom: 0;">
+        Reddit usernames can often be traced back to real people through post history, cross-platform references, or unique writing patterns. Thresh anonymizes usernames by default in all exports. If you choose to include usernames, consider the ethical implications carefully, especially for sensitive subreddits.
+      </p>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--bone); margin-bottom: 0.375rem;">
+        <i data-lucide="file-check" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.375rem; color: var(--link);"></i>
+        IRB Guidance
+      </h4>
+      <p class="text-bone-muted" style="margin-bottom: 0;">
+        If your institution requires Institutional Review Board (IRB) approval for social media research, Thresh supports that workflow. The provenance document included with every export provides the methodological transparency your IRB will need. Consult your advisor and IRB office before beginning data collection.
+      </p>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--bone); margin-bottom: 0.375rem;">
+        <i data-lucide="shield" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.375rem; color: var(--success);"></i>
+        Reddit API Terms of Service
+      </h4>
+      <p class="text-bone-muted" style="margin-bottom: 0;">
+        Thresh respects Reddit's API rate limits (100 requests per minute) and follows their <a href="https://www.reddit.com/wiki/api/" target="_blank" rel="noopener noreferrer">API Terms of Service</a>. The rate limit gauge in the sidebar tracks your remaining quota in real time.
+      </p>
+    </div>
+
+    <div>
+      <h4 style="font-size: 0.9375rem; font-weight: 600; color: var(--bone); margin-bottom: 0.375rem;">
+        <i data-lucide="hard-drive" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle; margin-right: 0.375rem; color: var(--ember);"></i>
+        Data Handling
+      </h4>
+      <p class="text-bone-muted" style="margin-bottom: 0;">
+        All data is stored locally on your machine in a SQLite database. Nothing is sent to external servers. Your Reddit API credentials are stored in a local <code>.env</code> file and are never transmitted beyond Reddit's authentication endpoint. You control your data at all times.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- Citation -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">Citation</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-bone-muted" style="margin-bottom: 0.75rem;">If you use Thresh in your research, please cite it as:</p>
+    <pre><code>Thomas, J. E. (2025). Thresh: The Threshing Floor (Version 0.1.0) [Computer software].</code></pre>
+    <p class="text-bone-muted text-sm" style="margin-bottom: 0;">
+      For BibTeX or other formats, include the version number and the date of your data collection. The provenance document in each export contains the exact version used.
+    </p>
+  </div>
+</div>
+
+<!-- Mythology / Lineage -->
+<div class="card" style="margin-bottom: 1.25rem;">
+  <div class="card-header">
+    <h3 class="card-title">Lineage</h3>
+  </div>
+  <div class="card-body">
+    <p class="text-bone-muted">
+      Thresh is a <em>Jacob E. Thomas</em> artifact &mdash; part of a lineage of counter-technologies built to honor attention rather than exploit it.
+    </p>
+    <p class="text-bone-muted">
+      Its siblings include <strong>The Watchtower</strong>, a tool for observing digital patterns with intention, and the <strong>COMPANION Protocol</strong>, a framework for ethical human-AI collaboration. Together they form the <strong>Corpus of Self</strong>: instruments designed for people who refuse to be farmed by the Feed.
+    </p>
+    <p class="text-bone-muted" style="margin-bottom: 0;">
+      The aesthetic you see here &mdash; dark ground, ember gold, ritualistic composure &mdash; is not decoration. It signals that someone cared about building this, that attention was paid deliberately. That is the point of the whole mythology.
+    </p>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,44 @@
+<!-- Job Card — displays a completed or failed collection job -->
+{% if error %}
+<div class="p-3 rounded mb-3" style="background: rgba(196, 75, 75, 0.1); border-left: 3px solid var(--error);">
+  <p class="text-error text-sm mb-0">{{ error }}</p>
+</div>
+{% elif job %}
+<div class="job-card mb-3">
+  <div class="flex items-start justify-between gap-2">
+    <div class="min-w-0">
+      <span class="text-ember font-mono text-sm">r/{{ job.subreddit }}</span>
+      <div class="flex items-center gap-2 mt-1">
+        {% if job.status == 'completed' %}
+          <span class="badge badge-success">completed</span>
+        {% elif job.status == 'failed' %}
+          <span class="badge badge-error">failed</span>
+        {% elif job.status == 'running' %}
+          <span class="badge badge-warning">running</span>
+        {% elif job.status == 'pending' %}
+          <span class="badge badge-ash">pending</span>
+        {% endif %}
+      </div>
+    </div>
+    {% if job.status == 'completed' %}
+    <a href="/harvest?job_id={{ job.id }}" class="btn btn-ghost btn-sm" title="View in Harvest">
+      <i data-lucide="eye" style="width:14px;height:14px;"></i>
+    </a>
+    {% endif %}
+  </div>
+
+  <div class="flex items-center gap-4 mt-2 text-xs text-bone-muted">
+    <span class="font-mono">{{ job.collected_posts }} posts</span>
+    {% if job.collected_comments > 0 %}
+    <span class="font-mono">{{ job.collected_comments }} comments</span>
+    {% endif %}
+    {% if job.started_at %}
+    <span>{{ job.started_at.strftime('%b %d') }}</span>
+    {% endif %}
+  </div>
+
+  {% if job.status == 'failed' and job.error_message %}
+  <p class="text-error text-xs mt-2 mb-0">{{ job.error_message[:120] }}{% if job.error_message|length > 120 %}...{% endif %}</p>
+  {% endif %}
+</div>
+{% endif %}

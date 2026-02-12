@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Winnow — Analyze | Thresh{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Winnow</h1>
+  <p class="page-subtitle">The wind that carries away chaff — word frequency, temporal patterns, keyword analysis</p>
+</div>
+
+{% if jobs and jobs|length > 0 %}
+<!-- Job Selector -->
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+  <div class="flex items-center gap-4 flex-wrap">
+    <label for="winnow-job-select" class="label" style="margin-bottom: 0; white-space: nowrap;">
+      <i data-lucide="database" class="w-4 h-4 inline-block" style="vertical-align: -3px; margin-right: 0.25rem;"></i>
+      Collection
+    </label>
+    <select id="winnow-job-select"
+            class="select"
+            style="max-width: 480px; flex: 1;"
+            onchange="loadWinnowJob(this.value)">
+      <option value="">Select a collection job to analyze...</option>
+      {% for job in jobs %}
+      <option value="{{ job.id }}"
+              {% if selected_job_id and selected_job_id == job.id %}selected{% endif %}>
+        r/{{ job.subreddit }} — {{ job.collected_posts }} posts
+        {%- if job.collected_comments %}, {{ job.collected_comments }} comments{% endif %}
+        {%- if job.completed_at %} — {{ job.completed_at.strftime('%b %d, %Y at %H:%M') }}{% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<!-- Prompt to select a job -->
+<div id="winnow-select-prompt" class="empty-state" style="min-height: 30vh;">
+  <i data-lucide="wind" class="w-12 h-12 text-ash" style="opacity: 0.3; margin-bottom: 1rem;"></i>
+  <p class="text-bone-muted text-sm">Select a collection above to begin analysis.</p>
+</div>
+
+<!-- Analysis area (hidden until job selected) -->
+<div id="winnow-analysis" style="display: none;">
+
+  <!-- Tab Navigation -->
+  <div class="winnow-tabs" style="margin-bottom: 1.5rem;">
+    <div class="flex items-center gap-1 flex-wrap" style="border-bottom: 1px solid var(--smoke); padding-bottom: 0;">
+      <button class="winnow-tab-btn active" data-tab="words" onclick="switchWinnowTab('words')">
+        <i data-lucide="type" class="w-4 h-4"></i>
+        Word Frequency
+      </button>
+      <button class="winnow-tab-btn" data-tab="temporal" onclick="switchWinnowTab('temporal')">
+        <i data-lucide="clock" class="w-4 h-4"></i>
+        Temporal Patterns
+      </button>
+      <button class="winnow-tab-btn" data-tab="keywords" onclick="switchWinnowTab('keywords')">
+        <i data-lucide="search" class="w-4 h-4"></i>
+        Keyword Tracking
+      </button>
+      <button class="winnow-tab-btn" data-tab="engagement" onclick="switchWinnowTab('engagement')">
+        <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+        Engagement
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- TAB PANEL: Word Frequency                                       -->
+  <!-- ============================================================= -->
+  <div id="winnow-panel-words" class="winnow-tab-panel" style="display: block;">
+    <!-- Controls -->
+    <div class="card" style="margin-bottom: 1.25rem; padding: 0.75rem 1rem;">
+      <div class="flex items-end gap-4 flex-wrap">
+        <label class="checkbox">
+          <input type="checkbox" id="winnow-wf-comments" checked onchange="updateWordFreqOptions()">
+          Include comments
+        </label>
+        <div>
+          <label class="label" for="winnow-wf-minlength" style="margin-bottom: 0.25rem;">Min Length</label>
+          <select id="winnow-wf-minlength" class="select" style="width: 80px;" onchange="updateWordFreqOptions()">
+            <option value="2">2</option>
+            <option value="3" selected>3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+          </select>
+        </div>
+        <div>
+          <label class="label" for="winnow-wf-topn" style="margin-bottom: 0.25rem;">Top N</label>
+          <select id="winnow-wf-topn" class="select" style="width: 90px;" onchange="updateWordFreqOptions()">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="75">75</option>
+            <option value="100">100</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two columns: chart + bigrams -->
+    <div class="winnow-words-layout">
+      <!-- Word frequency chart -->
+      <div class="card" style="padding: 1rem; overflow: hidden;">
+        <div id="winnow-wordfreq-chart" style="width: 100%; min-height: 400px;"></div>
+      </div>
+
+      <!-- Bigrams table -->
+      <div class="card" style="padding: 1rem;">
+        <h3 style="font-family: var(--font-display); font-size: 1.125rem; color: var(--bone); margin-bottom: 0.75rem;">
+          Top Bigrams
+        </h3>
+        <p class="text-xs text-ash" style="margin-bottom: 0.75rem;">Most common two-word phrases</p>
+        <div id="winnow-bigrams-table"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- TAB PANEL: Temporal Patterns                                    -->
+  <!-- ============================================================= -->
+  <div id="winnow-panel-temporal" class="winnow-tab-panel" style="display: none;">
+    <!-- Interval selector -->
+    <div class="card" style="margin-bottom: 1.25rem; padding: 0.75rem 1rem;">
+      <div class="flex items-center gap-2">
+        <span class="label" style="margin-bottom: 0;">Interval:</span>
+        <button class="btn btn-ghost btn-sm winnow-interval-btn" data-interval="hour" onclick="setTemporalInterval('hour')">Hourly</button>
+        <button class="btn btn-ghost btn-sm winnow-interval-btn active" data-interval="day" onclick="setTemporalInterval('day')">Daily</button>
+        <button class="btn btn-ghost btn-sm winnow-interval-btn" data-interval="week" onclick="setTemporalInterval('week')">Weekly</button>
+        <button class="btn btn-ghost btn-sm winnow-interval-btn" data-interval="month" onclick="setTemporalInterval('month')">Monthly</button>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card" style="padding: 1rem;">
+      <div id="winnow-temporal-chart" style="width: 100%; min-height: 450px;"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- TAB PANEL: Keyword Tracking                                     -->
+  <!-- ============================================================= -->
+  <div id="winnow-panel-keywords" class="winnow-tab-panel" style="display: none;">
+    <!-- Keyword input -->
+    <div class="card" style="margin-bottom: 1.25rem; padding: 0.75rem 1rem;">
+      <div class="flex items-end gap-3 flex-wrap">
+        <div style="flex: 1; min-width: 200px;">
+          <label class="label" for="winnow-keyword-input" style="margin-bottom: 0.25rem;">Add Keyword</label>
+          <div class="input-group">
+            <i data-lucide="search" class="input-group-icon"></i>
+            <input type="text" id="winnow-keyword-input" class="input"
+                   placeholder="Type a keyword and press Enter..." autocomplete="off">
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="addKeyword()">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          Add
+        </button>
+        <div class="flex items-center gap-2">
+          <span class="label" style="margin-bottom: 0;">Interval:</span>
+          <button class="btn btn-ghost btn-sm winnow-kw-interval-btn" data-interval="hour" onclick="setKeywordInterval('hour')">Hourly</button>
+          <button class="btn btn-ghost btn-sm winnow-kw-interval-btn active" data-interval="day" onclick="setKeywordInterval('day')">Daily</button>
+          <button class="btn btn-ghost btn-sm winnow-kw-interval-btn" data-interval="week" onclick="setKeywordInterval('week')">Weekly</button>
+          <button class="btn btn-ghost btn-sm winnow-kw-interval-btn" data-interval="month" onclick="setKeywordInterval('month')">Monthly</button>
+        </div>
+      </div>
+      <!-- Keyword tags -->
+      <div id="winnow-keyword-tags" class="flex items-center gap-2 flex-wrap" style="margin-top: 0.5rem; min-height: 1.5rem;"></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="card" style="padding: 1rem;">
+      <div id="winnow-keywords-chart" style="width: 100%; min-height: 400px;">
+        <div class="flex flex-col items-center justify-center" style="padding: 2rem; min-height: 200px;">
+          <i data-lucide="search" style="width: 32px; height: 32px; color: var(--ash); opacity: 0.4; margin-bottom: 0.75rem;"></i>
+          <p class="text-bone-muted text-sm">Add keywords above to track their frequency over time.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================= -->
+  <!-- TAB PANEL: Engagement                                           -->
+  <!-- ============================================================= -->
+  <div id="winnow-panel-engagement" class="winnow-tab-panel" style="display: none;">
+    <div id="winnow-engagement-content">
+      <div class="empty-state" style="min-height: 30vh;">
+        <i data-lucide="bar-chart-2" class="w-12 h-12 text-ash" style="opacity: 0.3; margin-bottom: 1rem;"></i>
+        <p class="text-bone-muted text-sm">Select a collection to view engagement statistics.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /#winnow-analysis -->
+
+{% else %}
+<!-- Empty state — no completed jobs -->
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Nothing to Winnow Yet</h2>
+  <p class="empty-state-text">Collect data first, then return here to analyze it. Winnow reveals word frequencies, temporal patterns, and keyword co-occurrences across your dataset.</p>
+  <a href="/thresh" class="btn btn-primary">
+    <i data-lucide="wheat" class="w-4 h-4"></i>
+    Collect Data First
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/winnow.js" defer></script>
+<script defer>
+  // Set initial state from server
+  winnowState.jobId = {{ selected_job_id if selected_job_id else 'null' }};
+</script>
+{% endblock %}

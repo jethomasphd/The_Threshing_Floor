@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}The Threshing Floor{% endblock %}</title>
+
+  <!-- Fonts: Cormorant Garamond (display), IBM Plex Sans (body), IBM Plex Mono (data) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ground: '#0A0A0F',
+            surface: '#131318',
+            'surface-raised': '#1A1A22',
+            ember: '#C9A227',
+            'ember-dim': '#8B7121',
+            'ember-glow': '#E8C547',
+            ash: '#6B6B7B',
+            smoke: '#3D3D4A',
+            bone: '#E8E4DC',
+            'bone-muted': '#A8A49C',
+          },
+          fontFamily: {
+            display: ['Cormorant Garamond', 'Georgia', 'serif'],
+            body: ['IBM Plex Sans', '-apple-system', 'sans-serif'],
+            mono: ['IBM Plex Mono', 'Courier New', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/thresh.css">
+
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+
+  <!-- Plotly.js (interactive charts for Winnow) -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/static/img/favicon.svg">
+
+  {% block head %}{% endblock %}
+</head>
+<body class="bg-ground text-bone font-body min-h-screen">
+
+  <!-- Navigation Sidebar -->
+  <nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <a href="/" class="sidebar-brand">
+        <img src="/static/img/sigil.svg" alt="Thresh" class="sidebar-sigil" width="36" height="36">
+        <span class="sidebar-title">The Threshing Floor</span>
+      </a>
+    </div>
+
+    <ul class="sidebar-nav">
+      <li>
+        <a href="/" class="sidebar-link {% if request.url.path == '/' %}active{% endif %}">
+          <i data-lucide="layout-dashboard" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">The Floor</span>
+            <span class="sidebar-label-sub">Dashboard</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/explore" class="sidebar-link {% if request.url.path == '/explore' %}active{% endif %}">
+          <i data-lucide="compass" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">Explore</span>
+            <span class="sidebar-label-sub">Find Subreddits</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/thresh" class="sidebar-link {% if request.url.path == '/thresh' %}active{% endif %}">
+          <i data-lucide="wheat" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">Thresh</span>
+            <span class="sidebar-label-sub">Collect Data</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/harvest" class="sidebar-link {% if request.url.path == '/harvest' %}active{% endif %}">
+          <i data-lucide="package" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">Harvest</span>
+            <span class="sidebar-label-sub">View Results</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/winnow" class="sidebar-link {% if request.url.path == '/winnow' %}active{% endif %}">
+          <i data-lucide="wind" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">Winnow</span>
+            <span class="sidebar-label-sub">Analyze</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/glean" class="sidebar-link {% if request.url.path == '/glean' %}active{% endif %}">
+          <i data-lucide="download" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">Glean</span>
+            <span class="sidebar-label-sub">Export</span>
+          </div>
+        </a>
+      </li>
+      <li>
+        <a href="/about" class="sidebar-link {% if request.url.path == '/about' %}active{% endif %}">
+          <i data-lucide="book-open" class="sidebar-icon"></i>
+          <div class="sidebar-label">
+            <span class="sidebar-label-primary">About</span>
+            <span class="sidebar-label-sub">Documentation</span>
+          </div>
+          {% if credentials_configured is defined and not credentials_configured %}
+          <span class="setup-needed-dot" title="Setup needed"></span>
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <span class="text-xs font-mono text-ash">Thresh v0.1.0</span>
+    </div>
+  </nav>
+
+  <!-- Mobile bottom navigation -->
+  <nav id="mobile-nav" class="mobile-nav">
+    <a href="/" class="mobile-nav-link {% if request.url.path == '/' %}active{% endif %}">
+      <i data-lucide="layout-dashboard"></i>
+      <span>Floor</span>
+    </a>
+    <a href="/explore" class="mobile-nav-link {% if request.url.path == '/explore' %}active{% endif %}">
+      <i data-lucide="compass"></i>
+      <span>Explore</span>
+    </a>
+    <a href="/thresh" class="mobile-nav-link {% if request.url.path == '/thresh' %}active{% endif %}">
+      <i data-lucide="wheat"></i>
+      <span>Thresh</span>
+    </a>
+    <a href="/harvest" class="mobile-nav-link {% if request.url.path == '/harvest' %}active{% endif %}">
+      <i data-lucide="package"></i>
+      <span>Harvest</span>
+    </a>
+    <a href="/glean" class="mobile-nav-link {% if request.url.path == '/glean' %}active{% endif %}">
+      <i data-lucide="download"></i>
+      <span>Export</span>
+    </a>
+  </nav>
+
+  <!-- Main content -->
+  <main id="main-content" class="main-content">
+    {% if credentials_configured is defined and not credentials_configured and request.url.path != '/about' %}
+    <div class="setup-banner">
+      <div class="setup-banner-content">
+        <i data-lucide="info" style="width: 18px; height: 18px; flex-shrink: 0; color: var(--ember);"></i>
+        <span>Reddit API credentials are not configured yet.</span>
+        <a href="/about" class="setup-banner-link">Set up now</a>
+      </div>
+    </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Global JS -->
+  <script src="/static/js/thresh.js" defer></script>
+  <script src="/static/js/charts.js" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

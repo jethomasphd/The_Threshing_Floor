@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+{% block title %}Harvest — View Results | Thresh{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Harvest</h1>
+  <p class="page-subtitle">Gathering what was threshed — browse, filter, and inspect collected data</p>
+</div>
+
+{% if jobs and jobs|length > 0 %}
+<!-- Job Selector -->
+<div class="harvest-job-selector card" style="margin-bottom: 1.5rem; padding: 1rem 1.25rem;">
+  <div class="flex items-center gap-4 flex-wrap">
+    <label for="job-select" class="label" style="margin-bottom: 0; white-space: nowrap;">
+      <i data-lucide="database" class="w-4 h-4 inline-block" style="vertical-align: -3px; margin-right: 0.25rem;"></i>
+      Collection
+    </label>
+    <select id="job-select"
+            class="select"
+            style="max-width: 480px; flex: 1;"
+            onchange="loadHarvestJob(this.value)">
+      <option value="">Select a collection job...</option>
+      {% for job in jobs %}
+      <option value="{{ job.id }}"
+              {% if selected_job_id and selected_job_id == job.id %}selected{% endif %}>
+        r/{{ job.subreddit }} — {{ job.collected_posts }} posts
+        {% if job.completed_at %}
+          — {{ job.completed_at.strftime('%b %d, %Y at %H:%M') }}
+        {% endif %}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+</div>
+
+<!-- Two-column layout: Table + Stats -->
+<div class="harvest-layout">
+  <!-- Main data table area -->
+  <div class="harvest-main">
+    <!-- Filter bar -->
+    <div id="harvest-filters" class="harvest-filters card" style="margin-bottom: 1rem; padding: 0.75rem 1rem; display: none;">
+      <form id="filter-form" class="flex items-end gap-3 flex-wrap">
+        <div class="flex-1" style="min-width: 200px;">
+          <label class="label" for="filter-q">Keyword</label>
+          <div class="input-group">
+            <i data-lucide="search" class="input-group-icon"></i>
+            <input type="text" id="filter-q" name="q" class="input"
+                   placeholder="Search titles..." autocomplete="off">
+          </div>
+        </div>
+        <div style="min-width: 120px;">
+          <label class="label" for="filter-min-score">Min Score</label>
+          <input type="number" id="filter-min-score" name="min_score" class="input"
+                 placeholder="0" min="0">
+        </div>
+        <div>
+          <button type="button" class="btn btn-primary btn-sm" onclick="applyHarvestFilters()">
+            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+            Filter
+          </button>
+        </div>
+        <div>
+          <button type="button" class="btn btn-ghost btn-sm" onclick="clearHarvestFilters()">
+            Clear
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Posts table target -->
+    <div id="harvest-table-container">
+      <div class="empty-state" style="min-height: 30vh;">
+        <i data-lucide="table" class="w-12 h-12 text-ash" style="opacity: 0.3; margin-bottom: 1rem;"></i>
+        <p class="text-bone-muted text-sm">Select a collection above to view its data.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats sidebar -->
+  <div class="harvest-sidebar" id="harvest-sidebar" style="display: none;">
+    <div id="harvest-stats-container">
+      <!-- Stats panel loaded via HTMX -->
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Empty state — no completed jobs -->
+<div class="empty-state">
+  <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
+  <h2 class="empty-state-heading">Nothing Harvested Yet</h2>
+  <p class="empty-state-text">Once you run a collection from the Thresh page, your gathered posts and comments will appear here with sortable tables, statistics, and engagement charts.</p>
+  <a href="/thresh" class="btn btn-primary">
+    <i data-lucide="wheat" class="w-4 h-4"></i>
+    Start a Collection
+  </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script defer>
+  // Current harvest state
+  var harvestState = {
+    jobId: {{ selected_job_id if selected_job_id else 'null' }},
+    page: 1,
+    perPage: 50,
+    sort: 'created_utc',
+    order: 'desc',
+    q: '',
+    minScore: ''
+  };
+
+  // Load a job's data
+  function loadHarvestJob(jobId) {
+    if (!jobId) {
+      document.getElementById('harvest-table-container').innerHTML =
+        '<div class="empty-state" style="min-height: 30vh;">' +
+        '<i data-lucide="table" class="w-12 h-12 text-ash" style="opacity: 0.3; margin-bottom: 1rem;"></i>' +
+        '<p class="text-bone-muted text-sm">Select a collection above to view its data.</p></div>';
+      document.getElementById('harvest-sidebar').style.display = 'none';
+      document.getElementById('harvest-filters').style.display = 'none';
+      harvestState.jobId = null;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+
+    harvestState.jobId = jobId;
+    harvestState.page = 1;
+    harvestState.q = '';
+    harvestState.minScore = '';
+    document.getElementById('filter-q').value = '';
+    document.getElementById('filter-min-score').value = '';
+
+    // Show filters and sidebar
+    document.getElementById('harvest-filters').style.display = 'block';
+    document.getElementById('harvest-sidebar').style.display = 'block';
+
+    // Load posts table
+    loadHarvestPosts();
+
+    // Load stats sidebar
+    loadHarvestStats();
+  }
+
+  function buildPostsUrl() {
+    var url = '/api/harvest/' + harvestState.jobId + '/posts?';
+    url += 'page=' + harvestState.page;
+    url += '&per_page=' + harvestState.perPage;
+    url += '&sort=' + harvestState.sort;
+    url += '&order=' + harvestState.order;
+    if (harvestState.q) url += '&q=' + encodeURIComponent(harvestState.q);
+    if (harvestState.minScore) url += '&min_score=' + harvestState.minScore;
+    return url;
+  }
+
+  function loadHarvestPosts() {
+    var container = document.getElementById('harvest-table-container');
+    container.innerHTML =
+      '<div class="loading-state">' +
+      '<img src="/static/img/sigil.svg" alt="Loading" class="loading-sigil">' +
+      '<span class="loading-text">Loading posts...</span></div>';
+
+    fetch(buildPostsUrl())
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        container.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+      })
+      .catch(function(err) {
+        container.innerHTML =
+          '<div class="card" style="border-left: 3px solid var(--error); padding: 1rem;">' +
+          '<p class="text-error text-sm">Failed to load posts. Please try again.</p></div>';
+      });
+  }
+
+  function loadHarvestStats() {
+    var container = document.getElementById('harvest-stats-container');
+    container.innerHTML =
+      '<div class="loading-state" style="padding: 2rem 1rem;">' +
+      '<img src="/static/img/sigil.svg" alt="Loading" class="loading-sigil">' +
+      '<span class="loading-text">Computing stats...</span></div>';
+
+    fetch('/api/harvest/' + harvestState.jobId + '/stats')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        container.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+        // Load charts after stats panel is rendered
+        loadHarvestCharts();
+      })
+      .catch(function(err) {
+        container.innerHTML =
+          '<div class="card" style="border-left: 3px solid var(--error); padding: 1rem;">' +
+          '<p class="text-error text-sm">Failed to load stats.</p></div>';
+      });
+  }
+
+  function loadHarvestCharts() {
+    if (!harvestState.jobId) return;
+
+    // Load timeline chart data
+    fetch('/api/harvest/' + harvestState.jobId + '/charts/timeline')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.labels && data.labels.length > 0) {
+          initHarvestTimelineChart(data);
+        }
+      });
+
+    // Load score distribution chart data
+    fetch('/api/harvest/' + harvestState.jobId + '/charts/scores')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.labels && data.labels.length > 0) {
+          initHarvestScoreChart(data);
+        }
+      });
+  }
+
+  // Sort by column header
+  function sortHarvest(column) {
+    if (harvestState.sort === column) {
+      harvestState.order = harvestState.order === 'desc' ? 'asc' : 'desc';
+    } else {
+      harvestState.sort = column;
+      harvestState.order = 'desc';
+    }
+    harvestState.page = 1;
+    loadHarvestPosts();
+  }
+
+  // Pagination
+  function harvestPage(page) {
+    harvestState.page = page;
+    loadHarvestPosts();
+    // Scroll to top of table
+    document.getElementById('harvest-table-container').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // Filters
+  function applyHarvestFilters() {
+    harvestState.q = document.getElementById('filter-q').value;
+    var minScoreVal = document.getElementById('filter-min-score').value;
+    harvestState.minScore = minScoreVal ? parseInt(minScoreVal) : '';
+    harvestState.page = 1;
+    loadHarvestPosts();
+  }
+
+  function clearHarvestFilters() {
+    document.getElementById('filter-q').value = '';
+    document.getElementById('filter-min-score').value = '';
+    harvestState.q = '';
+    harvestState.minScore = '';
+    harvestState.page = 1;
+    loadHarvestPosts();
+  }
+
+  // Comment expansion toggle
+  function toggleComments(postRedditId, rowEl) {
+    var detailRow = document.getElementById('comments-' + postRedditId);
+    if (detailRow) {
+      // Toggle visibility
+      if (detailRow.style.display === 'none') {
+        detailRow.style.display = 'table-row';
+        rowEl.classList.add('harvest-row-expanded');
+      } else {
+        detailRow.style.display = 'none';
+        rowEl.classList.remove('harvest-row-expanded');
+      }
+      return;
+    }
+
+    // Create the detail row
+    var tr = document.createElement('tr');
+    tr.id = 'comments-' + postRedditId;
+    tr.className = 'harvest-comment-row';
+    var td = document.createElement('td');
+    td.colSpan = 6;
+    td.style.padding = '0';
+    td.innerHTML =
+      '<div class="loading-state" style="padding: 1rem;">' +
+      '<img src="/static/img/sigil.svg" alt="Loading" class="loading-sigil" style="width: 24px; height: 24px;">' +
+      '<span class="loading-text text-xs">Loading comments...</span></div>';
+    tr.appendChild(td);
+
+    // Insert after the clicked row
+    rowEl.parentNode.insertBefore(tr, rowEl.nextSibling);
+    rowEl.classList.add('harvest-row-expanded');
+
+    // Fetch comments
+    fetch('/api/harvest/' + harvestState.jobId + '/posts/' + postRedditId + '/comments')
+      .then(function(r) { return r.text(); })
+      .then(function(html) {
+        td.innerHTML = html;
+        if (window.lucide) lucide.createIcons();
+      })
+      .catch(function(err) {
+        td.innerHTML =
+          '<div style="padding: 1rem;"><p class="text-error text-xs">Failed to load comments.</p></div>';
+      });
+  }
+
+  // Allow Enter key on filter inputs
+  document.addEventListener('DOMContentLoaded', function() {
+    var filterForm = document.getElementById('filter-form');
+    if (filterForm) {
+      filterForm.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          applyHarvestFilters();
+        }
+      });
+    }
+
+    // Auto-load if job is pre-selected
+    if (harvestState.jobId) {
+      loadHarvestJob(harvestState.jobId);
+    }
+  });
+</script>
+{% endblock %}

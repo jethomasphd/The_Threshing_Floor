@@ -1,0 +1,170 @@
+<!-- Harvest posts data table partial — swapped into #harvest-table-container -->
+{% if posts and posts|length > 0 %}
+<div class="table-wrapper">
+  <table class="data-table harvest-table">
+    <thead>
+      <tr>
+        <th class="harvest-th-sortable" onclick="sortHarvest('title')" title="Sort by title"
+            style="cursor: pointer; min-width: 200px;">
+          Title
+          {% if sort == 'title' %}
+            <i data-lucide="{{ 'chevron-up' if order == 'asc' else 'chevron-down' }}"
+               class="w-3 h-3 inline-block" style="vertical-align: -2px; color: var(--ember);"></i>
+          {% endif %}
+        </th>
+        <th class="harvest-th-sortable" onclick="sortHarvest('author')" title="Sort by author"
+            style="cursor: pointer; width: 120px;">
+          Author
+          {% if sort == 'author' %}
+            <i data-lucide="{{ 'chevron-up' if order == 'asc' else 'chevron-down' }}"
+               class="w-3 h-3 inline-block" style="vertical-align: -2px; color: var(--ember);"></i>
+          {% endif %}
+        </th>
+        <th class="harvest-th-sortable" onclick="sortHarvest('score')" title="Sort by score"
+            style="cursor: pointer; width: 80px; text-align: right;">
+          Score
+          {% if sort == 'score' %}
+            <i data-lucide="{{ 'chevron-up' if order == 'asc' else 'chevron-down' }}"
+               class="w-3 h-3 inline-block" style="vertical-align: -2px; color: var(--ember);"></i>
+          {% endif %}
+        </th>
+        <th class="harvest-th-sortable" onclick="sortHarvest('num_comments')" title="Sort by comments"
+            style="cursor: pointer; width: 90px; text-align: right;">
+          Comments
+          {% if sort == 'num_comments' %}
+            <i data-lucide="{{ 'chevron-up' if order == 'asc' else 'chevron-down' }}"
+               class="w-3 h-3 inline-block" style="vertical-align: -2px; color: var(--ember);"></i>
+          {% endif %}
+        </th>
+        <th class="harvest-th-sortable" onclick="sortHarvest('created_utc')" title="Sort by date"
+            style="cursor: pointer; width: 120px;">
+          Date
+          {% if sort == 'created_utc' %}
+            <i data-lucide="{{ 'chevron-up' if order == 'asc' else 'chevron-down' }}"
+               class="w-3 h-3 inline-block" style="vertical-align: -2px; color: var(--ember);"></i>
+          {% endif %}
+        </th>
+        <th style="width: 40px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for post in posts %}
+      <tr class="harvest-post-row {% if post.reddit_id in posts_with_comments %}harvest-has-comments{% endif %}"
+          {% if post.reddit_id in posts_with_comments %}
+          onclick="toggleComments('{{ post.reddit_id }}', this)"
+          style="cursor: pointer;"
+          title="Click to expand comments"
+          {% endif %}>
+        <td>
+          <div class="harvest-title-cell">
+            <a href="https://www.reddit.com{{ post.permalink }}"
+               target="_blank"
+               rel="noopener noreferrer"
+               class="harvest-post-link"
+               onclick="event.stopPropagation();"
+               title="{{ post.title }}">
+              {{ post.title[:80] }}{% if post.title|length > 80 %}...{% endif %}
+            </a>
+          </div>
+        </td>
+        <td>
+          <span class="font-mono text-bone-muted" style="font-size: 0.75rem;">
+            {{ post.author }}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <span class="font-mono {% if post.score >= 100 %}text-ember{% elif post.score >= 10 %}text-bone{% else %}text-bone-muted{% endif %}">
+            {{ format_score(post.score) }}
+          </span>
+        </td>
+        <td style="text-align: right;">
+          <span class="font-mono text-bone-muted">
+            {{ post.num_comments }}
+          </span>
+          {% if post.reddit_id in posts_with_comments %}
+          <i data-lucide="message-square" class="w-3 h-3 inline-block text-ember-dim" style="vertical-align: -2px; margin-left: 2px;" title="Comments collected"></i>
+          {% endif %}
+        </td>
+        <td>
+          <span class="font-mono text-bone-muted" style="font-size: 0.75rem;"
+                title="{{ format_datetime(post.created_utc) }}">
+            {{ format_timestamp(post.created_utc) }}
+          </span>
+        </td>
+        <td>
+          {% if post.reddit_id in posts_with_comments %}
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-ash harvest-expand-icon"></i>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<div class="harvest-pagination">
+  <div class="harvest-pagination-info font-mono text-xs text-bone-muted">
+    {% if total_count > 0 %}
+      Showing {{ start_index }}-{{ end_index }} of {{ total_count }} posts
+    {% else %}
+      No posts found
+    {% endif %}
+  </div>
+  <div class="harvest-pagination-controls">
+    {% if page > 1 %}
+    <button class="btn btn-ghost btn-sm" onclick="harvestPage({{ page - 1 }})">
+      <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+      Prev
+    </button>
+    {% endif %}
+
+    {% set start_page = [1, page - 2] | max %}
+    {% set end_page = [total_pages, page + 2] | min %}
+
+    {% if start_page > 1 %}
+    <button class="btn btn-ghost btn-sm" onclick="harvestPage(1)">1</button>
+    {% if start_page > 2 %}
+    <span class="text-ash text-xs px-1">...</span>
+    {% endif %}
+    {% endif %}
+
+    {% for p in range(start_page, end_page + 1) %}
+    <button class="btn {% if p == page %}btn-primary{% else %}btn-ghost{% endif %} btn-sm"
+            onclick="harvestPage({{ p }})"
+            {% if p == page %}aria-current="page"{% endif %}>
+      {{ p }}
+    </button>
+    {% endfor %}
+
+    {% if end_page < total_pages %}
+    {% if end_page < total_pages - 1 %}
+    <span class="text-ash text-xs px-1">...</span>
+    {% endif %}
+    <button class="btn btn-ghost btn-sm" onclick="harvestPage({{ total_pages }})">{{ total_pages }}</button>
+    {% endif %}
+
+    {% if page < total_pages %}
+    <button class="btn btn-ghost btn-sm" onclick="harvestPage({{ page + 1 }})">
+      Next
+      <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+{% elif q or min_score is not none %}
+<!-- Filtered but no results -->
+<div class="flex flex-col items-center py-8 text-center">
+  <i data-lucide="search-x" class="w-10 h-10 text-ash mb-3" style="opacity: 0.4;"></i>
+  <p class="text-bone-muted text-sm mb-1">No posts match your filters.</p>
+  <p class="text-ash text-xs">Try adjusting your keyword or minimum score.</p>
+  <button class="btn btn-ghost btn-sm mt-3" onclick="clearHarvestFilters()">Clear Filters</button>
+</div>
+{% else %}
+<!-- No posts at all -->
+<div class="flex flex-col items-center py-8 text-center">
+  <i data-lucide="inbox" class="w-10 h-10 text-ash mb-3" style="opacity: 0.4;"></i>
+  <p class="text-bone-muted text-sm">This collection has no posts.</p>
+</div>
+{% endif %}
