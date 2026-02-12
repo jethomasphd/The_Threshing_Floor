@@ -1,0 +1,42 @@
+<!-- Export preview partial — shows summary of what will be exported -->
+<div class="space-y-4">
+  <!-- Subreddit & Job info -->
+  <div class="flex items-center gap-2 mb-3">
+    <span class="badge badge-ember">r/{{ job.subreddit }}</span>
+    <span class="text-xs text-ash">Job #{{ job.id }}</span>
+  </div>
+
+  <!-- Stats grid -->
+  <div class="grid gap-3" style="grid-template-columns: 1fr 1fr;">
+    <div class="stat">
+      <span class="stat-value" style="font-size: 1.5rem;">{{ post_count }}</span>
+      <span class="stat-label">Posts</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" style="font-size: 1.5rem;">{{ comment_count }}</span>
+      <span class="stat-label">Comments</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" style="font-size: 1.5rem;">{{ unique_authors }}</span>
+      <span class="stat-label">Unique Authors</span>
+    </div>
+    <div class="stat">
+      <span class="stat-value" style="font-size: 1rem; font-family: var(--font-mono);">
+        {% if job.completed_at %}{{ job.completed_at.strftime('%b %d') }}{% else %}N/A{% endif %}
+      </span>
+      <span class="stat-label">Collected</span>
+    </div>
+  </div>
+
+  <!-- Date range -->
+  <div class="p-3 rounded" style="background: var(--surface-raised);">
+    <span class="label" style="margin-bottom: 0.25rem;">Post Date Range</span>
+    <p class="text-sm font-mono text-bone mb-0">{{ date_range_start }} — {{ date_range_end }}</p>
+  </div>
+
+  <!-- Provenance notice -->
+  <div class="flex items-center gap-2 p-2 rounded" style="background: rgba(201, 162, 39, 0.08); border: 1px solid rgba(201, 162, 39, 0.15);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ember); flex-shrink: 0;"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    <span class="text-xs font-body" style="color: var(--ember);">Every export includes provenance.txt for academic reproducibility</span>
+  </div>
+</div>

@@ -6,10 +6,175 @@
   <p class="page-subtitle">Gather cleaned grain into bundles — export with full provenance documentation</p>
 </div>
 
+{% if completed_jobs %}
+<div class="grid gap-6" style="grid-template-columns: 1fr 1fr;">
+  <!-- Left column: Export Configuration -->
+  <div>
+    <form id="export-form">
+      <div class="card mb-6">
+        <h2 class="font-display text-ember mb-4" style="font-size: 1.25rem;">Configure Export</h2>
+
+        <!-- Job selector -->
+        <div class="form-group">
+          <label class="label" for="job-select">Collection to Export</label>
+          <select
+            name="job_id"
+            id="job-select"
+            class="select w-full"
+            hx-get="/api/glean/preview"
+            hx-target="#export-preview"
+            hx-trigger="change"
+            hx-swap="innerHTML"
+          >
+            <option value="" disabled {% if not selected_job_id %}selected{% endif %}>Select a completed collection...</option>
+            {% for job in completed_jobs %}
+            <option
+              value="{{ job.id }}"
+              {% if selected_job_id and selected_job_id == job.id %}selected{% endif %}
+            >
+              r/{{ job.subreddit }} — {{ job.collected_posts }} posts
+              {% if job.collected_comments %}, {{ job.collected_comments }} comments{% endif %}
+              {% if job.completed_at %}({{ job.completed_at.strftime('%b %d, %Y') }}){% endif %}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Format selector -->
+        <div class="form-group">
+          <label class="label">Export Format</label>
+          <div class="flex gap-4 flex-wrap">
+            <label class="radio">
+              <input type="radio" name="format" value="csv" checked>
+              <span>CSV</span>
+              <span class="text-xs text-ash">(Excel-compatible)</span>
+            </label>
+            <label class="radio">
+              <input type="radio" name="format" value="json">
+              <span>JSON</span>
+              <span class="text-xs text-ash">(pretty-printed)</span>
+            </label>
+            <label class="radio">
+              <input type="radio" name="format" value="jsonl">
+              <span>JSONL</span>
+              <span class="text-xs text-ash">(streaming)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Include comments checkbox -->
+        <div class="form-group">
+          <label class="checkbox">
+            <input type="checkbox" name="include_comments" value="true">
+            <span>Include comments</span>
+          </label>
+        </div>
+
+        <!-- Anonymize checkbox -->
+        <div class="form-group">
+          <label class="checkbox">
+            <input type="checkbox" name="anonymize" value="true" checked>
+            <span>Anonymize usernames</span>
+          </label>
+          <p class="text-xs mt-1" style="color: var(--warning); padding-left: 1.625rem;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; vertical-align: middle; margin-right: 2px;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Disabling anonymization includes real Reddit usernames. Consider re-identification risks.
+          </p>
+        </div>
+
+        <hr class="divider">
+
+        <!-- Export button -->
+        <button
+          type="button"
+          class="btn btn-primary"
+          hx-post="/api/glean/export"
+          hx-include="#export-form"
+          hx-target="#export-result"
+          hx-swap="innerHTML"
+          hx-indicator="#export-spinner"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export with Provenance
+        </button>
+
+        <!-- Loading indicator -->
+        <div id="export-spinner" class="htmx-indicator mt-4">
+          <div class="loading-state" style="padding: 1rem;">
+            <img src="/static/img/sigil.svg" alt="" class="loading-sigil" style="width: 32px; height: 32px;">
+            <span class="loading-text">Preparing export bundle...</span>
+          </div>
+        </div>
+
+        <!-- Result target -->
+        <div id="export-result" class="mt-4"></div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Right column: Preview -->
+  <div>
+    <div class="card" id="export-preview-card">
+      <h2 class="font-display text-ember mb-4" style="font-size: 1.25rem;">Export Preview</h2>
+      <div id="export-preview">
+        {% if selected_job_id %}
+        <!-- Auto-load preview for pre-selected job -->
+        <div
+          hx-get="/api/glean/preview?job_id={{ selected_job_id }}"
+          hx-trigger="load"
+          hx-target="#export-preview"
+          hx-swap="innerHTML"
+        >
+          <div class="loading-state" style="padding: 1rem;">
+            <img src="/static/img/sigil.svg" alt="" class="loading-sigil" style="width: 32px; height: 32px;">
+            <span class="loading-text">Loading preview...</span>
+          </div>
+        </div>
+        {% else %}
+        <p class="text-bone-muted text-sm">Select a collection above to preview what will be exported.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Previous Exports -->
+<div class="card mt-6">
+  <h2 class="font-display text-ember mb-4" style="font-size: 1.25rem;">Previous Exports</h2>
+  <div id="exports-list"
+    hx-get="/api/glean/exports"
+    hx-trigger="load"
+    hx-swap="innerHTML"
+  >
+    <div class="loading-state" style="padding: 1rem;">
+      <img src="/static/img/sigil.svg" alt="" class="loading-sigil" style="width: 32px; height: 32px;">
+      <span class="loading-text">Loading exports...</span>
+    </div>
+  </div>
+</div>
+
+{% else %}
+<!-- Empty state: no completed jobs -->
 <div class="empty-state">
   <img src="/static/img/sigil.svg" alt="" class="empty-state-sigil">
   <h2 class="empty-state-heading">Nothing to Export</h2>
   <p class="empty-state-text">After collecting and reviewing your data, export it here as CSV, JSON, or JSONL. Every export includes a provenance document for academic reproducibility.</p>
-  <a href="/thresh" class="btn btn-primary">Collect Data First</a>
+  <a href="/thresh" class="btn btn-primary">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12S5 5 12 5s10 7 10 7-3 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+    Collect Data First
+  </a>
 </div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Re-initialize Lucide icons after HTMX swaps
+  document.body.addEventListener('htmx:afterSwap', function() {
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  });
+</script>
 {% endblock %}

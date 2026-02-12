@@ -2,6 +2,7 @@
 
 import logging
 import re
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -10,12 +11,13 @@ import praw
 import prawcore
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
+from sqlalchemy import func, desc, asc
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.models.database import SessionLocal, get_db
 from app.models.schemas import CollectionConfig
-from app.models.tables import CollectedComment, CollectedPost, CollectionJob
+from app.models.tables import CollectedComment, CollectedPost, CollectionJob, ExportRecord, SavedQuery
 from app.services.collector import CollectionService
 from app.services.reddit_client import get_reddit_client
 
@@ -978,4 +980,1042 @@ async def get_recent_jobs(
     return templates.TemplateResponse(
         "partials/recent_jobs.html",
         {"request": request, "jobs": jobs},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Harvest — Results Viewer API Endpoints
+# ---------------------------------------------------------------------------
+
+def _harvest_context(request: Request, **kwargs: object) -> dict:
+    """Build a template context dict with Harvest helper functions.
+
+    Args:
+        request: FastAPI request object.
+        **kwargs: Additional context variables.
+
+    Returns:
+        Context dictionary for Jinja2 rendering.
+    """
+    ctx: dict = {
+        "request": request,
+        "format_score": _format_score,
+        "format_timestamp": _format_timestamp,
+        "format_datetime": _format_datetime,
+        "format_relative_time": _format_relative_time,
+    }
+    ctx.update(kwargs)
+    return ctx
+
+
+@router.get("/harvest/jobs", response_class=HTMLResponse)
+async def harvest_jobs(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """List all completed collection jobs as an HTML partial.
+
+    Used by the Harvest page job selector dropdown. Returns option
+    elements for the select input.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    jobs = (
+        db.query(CollectionJob)
+        .filter(CollectionJob.status == "completed")
+        .order_by(CollectionJob.completed_at.desc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "partials/harvest_job_options.html",
+        _harvest_context(request, jobs=jobs),
+    )
+
+
+@router.get("/harvest/{job_id}/posts", response_class=HTMLResponse)
+async def harvest_posts(
+    request: Request,
+    job_id: int,
+    page: int = Query(1, ge=1, description="Page number"),
+    per_page: int = Query(50, ge=10, le=200, description="Results per page"),
+    sort: str = Query("created_utc", description="Sort column"),
+    order: str = Query("desc", description="Sort order (asc/desc)"),
+    q: Optional[str] = Query(None, description="Keyword search filter"),
+    min_score: Optional[int] = Query(None, description="Minimum score filter"),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Get paginated posts for a collection job as an HTML table partial.
+
+    Supports sorting by any column, keyword search on title, and
+    minimum score filtering.
+
+    Args:
+        request: FastAPI request.
+        job_id: The collection job ID.
+        page: Page number (1-indexed).
+        per_page: Results per page.
+        sort: Column name to sort by.
+        order: Sort direction (asc/desc).
+        q: Optional keyword to filter titles.
+        min_score: Optional minimum score filter.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    # Validate the job exists
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return templates.TemplateResponse(
+            "partials/error_message.html",
+            _harvest_context(
+                request,
+                title="Job Not Found",
+                message=f"Collection job {job_id} does not exist.",
+            ),
+        )
+
+    # Build query
+    query = db.query(CollectedPost).filter(CollectedPost.job_id == job_id)
+
+    # Apply keyword filter
+    if q and q.strip():
+        query = query.filter(CollectedPost.title.ilike(f"%{q.strip()}%"))
+
+    # Apply minimum score filter
+    if min_score is not None:
+        query = query.filter(CollectedPost.score >= min_score)
+
+    # Count total results (after filters)
+    total_count = query.count()
+
+    # Validate sort column
+    valid_sort_columns = {
+        "title": CollectedPost.title,
+        "author": CollectedPost.author,
+        "score": CollectedPost.score,
+        "num_comments": CollectedPost.num_comments,
+        "created_utc": CollectedPost.created_utc,
+    }
+    sort_column = valid_sort_columns.get(sort, CollectedPost.created_utc)
+
+    # Apply sorting
+    if order == "asc":
+        query = query.order_by(asc(sort_column))
+    else:
+        query = query.order_by(desc(sort_column))
+
+    # Apply pagination
+    offset = (page - 1) * per_page
+    posts = query.offset(offset).limit(per_page).all()
+
+    # Calculate pagination metadata
+    total_pages = max(1, (total_count + per_page - 1) // per_page)
+    start_index = offset + 1 if total_count > 0 else 0
+    end_index = min(offset + per_page, total_count)
+
+    # Check which posts have comments
+    posts_with_comments: set[str] = set()
+    if posts:
+        reddit_ids = [p.reddit_id for p in posts]
+        comment_counts = (
+            db.query(CollectedComment.post_reddit_id)
+            .filter(
+                CollectedComment.job_id == job_id,
+                CollectedComment.post_reddit_id.in_(reddit_ids),
+            )
+            .distinct()
+            .all()
+        )
+        posts_with_comments = {row[0] for row in comment_counts}
+
+    return templates.TemplateResponse(
+        "partials/harvest_table.html",
+        _harvest_context(
+            request,
+            posts=posts,
+            posts_with_comments=posts_with_comments,
+            job_id=job_id,
+            page=page,
+            per_page=per_page,
+            total_count=total_count,
+            total_pages=total_pages,
+            start_index=start_index,
+            end_index=end_index,
+            sort=sort,
+            order=order,
+            q=q or "",
+            min_score=min_score,
+        ),
+    )
+
+
+@router.get("/harvest/{job_id}/stats", response_class=HTMLResponse)
+async def harvest_stats(
+    request: Request,
+    job_id: int,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Compute and render statistics sidebar for a collection job.
+
+    Calculates total posts, date range, average score, average comments,
+    top authors, and prepares chart canvas IDs.
+
+    Args:
+        request: FastAPI request.
+        job_id: The collection job ID.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    # Validate job
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return templates.TemplateResponse(
+            "partials/error_message.html",
+            _harvest_context(
+                request,
+                title="Job Not Found",
+                message=f"Collection job {job_id} does not exist.",
+            ),
+        )
+
+    # Get all posts for this job
+    posts = (
+        db.query(CollectedPost)
+        .filter(CollectedPost.job_id == job_id)
+        .all()
+    )
+
+    total_posts = len(posts)
+
+    if total_posts == 0:
+        return templates.TemplateResponse(
+            "partials/stats_panel.html",
+            _harvest_context(
+                request,
+                job=job,
+                job_id=job_id,
+                total_posts=0,
+                date_range_start="N/A",
+                date_range_end="N/A",
+                avg_score=0,
+                avg_comments=0,
+                top_authors=[],
+                total_comments=job.collected_comments,
+            ),
+        )
+
+    # Date range
+    timestamps = [p.created_utc for p in posts]
+    min_ts = min(timestamps)
+    max_ts = max(timestamps)
+
+    # Averages
+    scores = [p.score for p in posts]
+    comments = [p.num_comments for p in posts]
+    avg_score = sum(scores) / total_posts
+    avg_comments = sum(comments) / total_posts
+
+    # Top 5 authors
+    author_counts: Counter[str] = Counter()
+    for p in posts:
+        if p.author != "[deleted]":
+            author_counts[p.author] += 1
+    top_authors = author_counts.most_common(5)
+
+    return templates.TemplateResponse(
+        "partials/stats_panel.html",
+        _harvest_context(
+            request,
+            job=job,
+            job_id=job_id,
+            total_posts=total_posts,
+            date_range_start=_format_timestamp(min_ts),
+            date_range_end=_format_timestamp(max_ts),
+            avg_score=round(avg_score, 1),
+            avg_comments=round(avg_comments, 1),
+            top_authors=top_authors,
+            total_comments=job.collected_comments,
+        ),
+    )
+
+
+@router.get("/harvest/{job_id}/posts/{post_reddit_id}/comments", response_class=HTMLResponse)
+async def harvest_comments(
+    request: Request,
+    job_id: int,
+    post_reddit_id: str,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Get threaded comments for a post as an HTML partial.
+
+    Retrieves comments from the database and renders them in a
+    threaded layout with depth-based indentation.
+
+    Args:
+        request: FastAPI request.
+        job_id: The collection job ID.
+        post_reddit_id: The Reddit post ID.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    comments = (
+        db.query(CollectedComment)
+        .filter(
+            CollectedComment.job_id == job_id,
+            CollectedComment.post_reddit_id == post_reddit_id,
+        )
+        .order_by(CollectedComment.created_utc.asc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "partials/comment_tree.html",
+        _harvest_context(
+            request,
+            comments=comments,
+            post_reddit_id=post_reddit_id,
+            job_id=job_id,
+        ),
+    )
+
+
+@router.get("/harvest/{job_id}/charts/timeline")
+async def harvest_timeline_chart(
+    job_id: int,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return JSON data for the posts-per-day timeline bar chart.
+
+    Groups posts by date and returns labels + counts for Chart.js.
+
+    Args:
+        job_id: The collection job ID.
+        db: Database session.
+
+    Returns:
+        JSON with labels (dates) and data (counts).
+    """
+    posts = (
+        db.query(CollectedPost)
+        .filter(CollectedPost.job_id == job_id)
+        .order_by(CollectedPost.created_utc.asc())
+        .all()
+    )
+
+    if not posts:
+        return JSONResponse({"labels": [], "data": []})
+
+    # Group by date
+    date_counts: Counter[str] = Counter()
+    for post in posts:
+        try:
+            dt = datetime.fromtimestamp(post.created_utc, tz=timezone.utc)
+            date_key = dt.strftime("%Y-%m-%d")
+            date_counts[date_key] += 1
+        except (ValueError, OSError):
+            continue
+
+    # Sort by date
+    sorted_dates = sorted(date_counts.keys())
+    labels = sorted_dates
+    data = [date_counts[d] for d in sorted_dates]
+
+    return JSONResponse({"labels": labels, "data": data})
+
+
+@router.get("/harvest/{job_id}/charts/scores")
+async def harvest_scores_chart(
+    job_id: int,
+    db: Session = Depends(get_db),
+) -> JSONResponse:
+    """Return JSON data for the score distribution doughnut chart.
+
+    Groups posts into score buckets: 0-10, 11-100, 101-1000, 1000+.
+
+    Args:
+        job_id: The collection job ID.
+        db: Database session.
+
+    Returns:
+        JSON with labels (buckets) and data (counts).
+    """
+    posts = (
+        db.query(CollectedPost)
+        .filter(CollectedPost.job_id == job_id)
+        .all()
+    )
+
+    if not posts:
+        return JSONResponse({"labels": [], "data": []})
+
+    buckets = {"0-10": 0, "11-100": 0, "101-1K": 0, "1K+": 0}
+
+    for post in posts:
+        score = post.score
+        if score <= 10:
+            buckets["0-10"] += 1
+        elif score <= 100:
+            buckets["11-100"] += 1
+        elif score <= 1000:
+            buckets["101-1K"] += 1
+        else:
+            buckets["1K+"] += 1
+
+    labels = list(buckets.keys())
+    data = list(buckets.values())
+
+    return JSONResponse({"labels": labels, "data": data})
+
+
+# ---------------------------------------------------------------------------
+# Glean — Export API Endpoints
+# ---------------------------------------------------------------------------
+
+
+def _glean_context(request: Request, **kwargs: object) -> dict:
+    """Build a template context dict for Glean partials.
+
+    Args:
+        request: FastAPI request object.
+        **kwargs: Additional context variables.
+
+    Returns:
+        Context dictionary for Jinja2 rendering.
+    """
+    ctx: dict = {
+        "request": request,
+        "format_timestamp": _format_timestamp,
+        "format_datetime": _format_datetime,
+    }
+    ctx.update(kwargs)
+    return ctx
+
+
+def _format_file_size(size_bytes: int) -> str:
+    """Format a file size in bytes to a human-readable string.
+
+    Args:
+        size_bytes: File size in bytes.
+
+    Returns:
+        Human-readable string like '2.4 KB' or '1.1 MB'.
+    """
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    else:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+
+
+@router.get("/glean/preview", response_class=HTMLResponse)
+async def glean_preview(
+    request: Request,
+    job_id: int = Query(..., description="Collection job ID to preview"),
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Preview what will be exported for a given collection job.
+
+    Returns an HTML partial showing post/comment counts, date range,
+    and subreddit info for the selected job.
+
+    Args:
+        request: FastAPI request.
+        job_id: The collection job to preview.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+    if job is None:
+        return templates.TemplateResponse(
+            "partials/error_message.html",
+            _glean_context(
+                request,
+                title="Job Not Found",
+                message=f"Collection job {job_id} does not exist.",
+            ),
+        )
+
+    # Count posts and comments
+    post_count = (
+        db.query(CollectedPost)
+        .filter(CollectedPost.job_id == job_id)
+        .count()
+    )
+    comment_count = (
+        db.query(CollectedComment)
+        .filter(CollectedComment.job_id == job_id)
+        .count()
+    )
+
+    # Date range of posts
+    posts = (
+        db.query(CollectedPost)
+        .filter(CollectedPost.job_id == job_id)
+        .all()
+    )
+    date_range_start = None
+    date_range_end = None
+    if posts:
+        timestamps = [p.created_utc for p in posts]
+        date_range_start = _format_timestamp(min(timestamps))
+        date_range_end = _format_timestamp(max(timestamps))
+
+    # Unique authors
+    unique_authors = len(set(p.author for p in posts if p.author != "[deleted]"))
+
+    return templates.TemplateResponse(
+        "partials/export_preview.html",
+        _glean_context(
+            request,
+            job=job,
+            post_count=post_count,
+            comment_count=comment_count,
+            date_range_start=date_range_start or "N/A",
+            date_range_end=date_range_end or "N/A",
+            unique_authors=unique_authors,
+        ),
+    )
+
+
+@router.post("/glean/export", response_class=HTMLResponse)
+async def glean_export(
+    request: Request,
+    db: Session = Depends(get_db),
+    job_id: int = Form(...),
+    format: str = Form("csv"),
+    include_comments: bool = Form(False),
+    anonymize: bool = Form(True),
+) -> HTMLResponse:
+    """Run an export for a collection job.
+
+    Accepts form data, builds the export bundle (data + provenance),
+    and returns a success partial with a download link.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+        job_id: ID of the collection job to export.
+        format: Export format (csv, json, jsonl).
+        include_comments: Whether to include comments in the export.
+        anonymize: Whether to anonymize author usernames.
+    """
+    from app.services.exporter import ExportService
+    from app.models.schemas import ExportConfig
+
+    templates = request.app.state.templates
+
+    # Validate format
+    valid_formats = ("csv", "json", "jsonl")
+    if format not in valid_formats:
+        return templates.TemplateResponse(
+            "partials/export_result.html",
+            _glean_context(
+                request,
+                success=False,
+                error_message=f"Invalid format: {format}. Choose csv, json, or jsonl.",
+            ),
+        )
+
+    # Build config
+    config = ExportConfig(
+        format=format,
+        include_comments=include_comments,
+        anonymize_authors=anonymize,
+    )
+
+    try:
+        service = ExportService(db_session=db)
+        zip_path = service.export_job(job_id=job_id, config=config)
+
+        # Get the export record we just created
+        export_record = (
+            db.query(ExportRecord)
+            .filter(ExportRecord.job_id == job_id)
+            .order_by(ExportRecord.exported_at.desc())
+            .first()
+        )
+
+        # Get file size
+        file_size = zip_path.stat().st_size
+        file_size_str = _format_file_size(file_size)
+
+        # Get the job for context
+        job = db.query(CollectionJob).filter(CollectionJob.id == job_id).first()
+
+        return templates.TemplateResponse(
+            "partials/export_result.html",
+            _glean_context(
+                request,
+                success=True,
+                export_record=export_record,
+                job=job,
+                file_size=file_size_str,
+                zip_filename=zip_path.name,
+                format_display=format,
+            ),
+        )
+
+    except ValueError as e:
+        logger.warning(f"Export validation error: {e}")
+        return templates.TemplateResponse(
+            "partials/export_result.html",
+            _glean_context(
+                request,
+                success=False,
+                error_message=str(e),
+            ),
+        )
+    except Exception as e:
+        logger.error(f"Export failed: {e}")
+        return templates.TemplateResponse(
+            "partials/export_result.html",
+            _glean_context(
+                request,
+                success=False,
+                error_message="An unexpected error occurred during export. Please try again.",
+            ),
+        )
+
+
+@router.get("/glean/download/{export_id}")
+async def glean_download(
+    export_id: int,
+    db: Session = Depends(get_db),
+):
+    """Download a previously generated export ZIP file.
+
+    Args:
+        export_id: The ExportRecord primary key.
+        db: Database session.
+
+    Returns:
+        FileResponse streaming the ZIP file, or a JSON error.
+    """
+    from app.services.exporter import ExportService
+    from fastapi.responses import FileResponse
+
+    service = ExportService(db_session=db)
+    path = service.get_export_path(export_id)
+
+    if path is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Export file not found. It may have been deleted."},
+        )
+
+    return FileResponse(
+        path=str(path),
+        media_type="application/zip",
+        filename=path.name,
+    )
+
+
+@router.get("/glean/exports", response_class=HTMLResponse)
+async def glean_exports_list(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """List previous exports as an HTML partial table.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+    """
+    from app.services.exporter import ExportService
+
+    templates = request.app.state.templates
+
+    service = ExportService(db_session=db)
+    exports = service.get_exports()
+
+    # Build job lookup for display
+    export_jobs: dict[int, CollectionJob] = {}
+    for export in exports:
+        if export.job_id not in export_jobs:
+            job = db.query(CollectionJob).filter(CollectionJob.id == export.job_id).first()
+            if job:
+                export_jobs[export.job_id] = job
+
+    return templates.TemplateResponse(
+        "partials/export_list.html",
+        _glean_context(
+            request,
+            exports=exports,
+            export_jobs=export_jobs,
+            format_file_size=_format_file_size,
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Dashboard — Floor API Endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.get("/dashboard/recent-jobs", response_class=HTMLResponse)
+async def dashboard_recent_jobs(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Get recent collection jobs as an HTML partial for the dashboard.
+
+    Returns the last 5 collection jobs in a table format suitable
+    for HTMX swap into the dashboard Recent Collections section.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    recent_jobs = (
+        db.query(CollectionJob)
+        .order_by(CollectionJob.id.desc())
+        .limit(5)
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "partials/dashboard_recent_jobs.html",
+        {"request": request, "recent_jobs": recent_jobs},
+    )
+
+
+@router.get("/dashboard/recent-exports", response_class=HTMLResponse)
+async def dashboard_recent_exports(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Get recent exports as an HTML partial for the dashboard.
+
+    Returns the last 5 export records in a table format suitable
+    for HTMX swap into the dashboard Recent Exports section.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    recent_exports = (
+        db.query(ExportRecord)
+        .order_by(ExportRecord.exported_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    # Build job lookup
+    export_jobs: dict[int, CollectionJob] = {}
+    for export in recent_exports:
+        if export.job_id not in export_jobs:
+            job = db.query(CollectionJob).filter(CollectionJob.id == export.job_id).first()
+            if job:
+                export_jobs[export.job_id] = job
+
+    return templates.TemplateResponse(
+        "partials/dashboard_recent_exports.html",
+        {
+            "request": request,
+            "recent_exports": recent_exports,
+            "export_jobs": export_jobs,
+        },
+    )
+
+
+# ---------------------------------------------------------------------------
+# Saved Queries API Endpoints
+# ---------------------------------------------------------------------------
+
+
+@router.post("/queries/save", response_class=HTMLResponse)
+async def save_query(
+    request: Request,
+    db: Session = Depends(get_db),
+    name: str = Form(...),
+    description: str = Form(""),
+    subreddit: str = Form(...),
+    sort: str = Form("hot"),
+    time_filter: str = Form("all"),
+    limit: int = Form(100),
+    query: Optional[str] = Form(None),
+    include_comments: bool = Form(False),
+    comment_depth: int = Form(0),
+) -> HTMLResponse:
+    """Save a collection configuration as a named query.
+
+    Creates a SavedQuery record in the database with the provided
+    collection parameters. Returns an HTML partial confirming the save.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+        name: Human-readable name for the saved query.
+        description: Optional description of the query's purpose.
+        subreddit: Target subreddit name.
+        sort: Sort method (hot/new/top/rising/controversial).
+        time_filter: Time filter for top/controversial.
+        limit: Maximum posts to collect.
+        query: Optional keyword search.
+        include_comments: Whether to collect comments.
+        comment_depth: Comment tree expansion depth.
+    """
+    templates = request.app.state.templates
+
+    # Clean subreddit name
+    subreddit_clean = subreddit.strip()
+    if subreddit_clean.startswith("r/"):
+        subreddit_clean = subreddit_clean[2:]
+    subreddit_clean = subreddit_clean.strip("/").strip()
+
+    if not name.strip():
+        return HTMLResponse(
+            '<div class="p-3 rounded" style="background: rgba(196, 75, 75, 0.1); '
+            'border-left: 3px solid var(--error);">'
+            '<p class="text-error text-sm mb-0">Please provide a name for this query.</p>'
+            '</div>'
+        )
+
+    if not subreddit_clean:
+        return HTMLResponse(
+            '<div class="p-3 rounded" style="background: rgba(196, 75, 75, 0.1); '
+            'border-left: 3px solid var(--error);">'
+            '<p class="text-error text-sm mb-0">Please provide a subreddit name.</p>'
+            '</div>'
+        )
+
+    # Clamp values
+    limit = max(1, min(limit, 1000))
+    comment_depth = max(0, min(comment_depth, 10))
+
+    saved_query = SavedQuery(
+        name=name.strip(),
+        description=description.strip() if description else "",
+        subreddit=subreddit_clean,
+        sort=sort,
+        time_filter=time_filter,
+        limit=limit,
+        query=query.strip() if query and query.strip() else "",
+        include_comments=include_comments,
+        comment_depth=comment_depth,
+    )
+    db.add(saved_query)
+    db.commit()
+    db.refresh(saved_query)
+
+    logger.info(f"Saved query '{saved_query.name}' (id={saved_query.id}) for r/{subreddit_clean}")
+
+    return HTMLResponse(
+        '<div class="p-3 rounded" style="background: rgba(74, 155, 110, 0.1); '
+        'border-left: 3px solid var(--success);">'
+        '<div class="flex items-center gap-2">'
+        '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" '
+        'fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" '
+        'stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>'
+        '<polyline points="22 4 12 14.01 9 11.01"/></svg>'
+        f'<p class="text-success text-sm mb-0">Query &ldquo;{saved_query.name}&rdquo; saved successfully.</p>'
+        '</div></div>'
+    )
+
+
+@router.get("/queries", response_class=HTMLResponse)
+async def list_queries(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """List all saved queries as HTML partials.
+
+    Returns saved query cards for HTMX swap into the dashboard
+    or any other listing context.
+
+    Args:
+        request: FastAPI request.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    saved_queries = (
+        db.query(SavedQuery)
+        .order_by(SavedQuery.created_at.desc())
+        .all()
+    )
+
+    return templates.TemplateResponse(
+        "partials/saved_queries_list.html",
+        {"request": request, "saved_queries": saved_queries},
+    )
+
+
+@router.delete("/queries/{query_id}", response_class=HTMLResponse)
+async def delete_query(
+    request: Request,
+    query_id: int,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Delete a saved query by ID.
+
+    Removes the SavedQuery record from the database. Returns an
+    empty string so the HTMX outerHTML swap removes the card.
+
+    Args:
+        request: FastAPI request.
+        query_id: The SavedQuery primary key.
+        db: Database session.
+    """
+    saved_query = db.query(SavedQuery).filter(SavedQuery.id == query_id).first()
+
+    if saved_query is None:
+        return HTMLResponse(
+            '<div class="p-3 rounded" style="background: rgba(196, 75, 75, 0.1); '
+            'border-left: 3px solid var(--error);">'
+            f'<p class="text-error text-sm mb-0">Query {query_id} not found.</p>'
+            '</div>'
+        )
+
+    name = saved_query.name
+    db.delete(saved_query)
+    db.commit()
+
+    logger.info(f"Deleted saved query '{name}' (id={query_id})")
+
+    # Return empty string — HTMX outerHTML swap removes the card
+    return HTMLResponse("")
+
+
+@router.post("/queries/{query_id}/run", response_class=HTMLResponse)
+async def run_saved_query(
+    request: Request,
+    query_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+) -> HTMLResponse:
+    """Re-run a saved query by creating a new collection job.
+
+    Loads the SavedQuery configuration, creates a new CollectionJob,
+    and starts a background collection task. Returns a confirmation
+    partial that replaces the saved query card temporarily.
+
+    Args:
+        request: FastAPI request.
+        query_id: The SavedQuery primary key.
+        background_tasks: FastAPI background task runner.
+        db: Database session.
+    """
+    templates = request.app.state.templates
+
+    saved_query = db.query(SavedQuery).filter(SavedQuery.id == query_id).first()
+
+    if saved_query is None:
+        return HTMLResponse(
+            '<div class="p-3 rounded" style="background: rgba(196, 75, 75, 0.1); '
+            'border-left: 3px solid var(--error);">'
+            f'<p class="text-error text-sm mb-0">Saved query {query_id} not found.</p>'
+            '</div>'
+        )
+
+    # Build collection config from saved query
+    config = CollectionConfig(
+        subreddit=saved_query.subreddit,
+        sort=saved_query.sort,
+        time_filter=saved_query.time_filter,
+        limit=saved_query.limit,
+        query=saved_query.query if saved_query.query else None,
+        include_comments=saved_query.include_comments,
+        comment_depth=saved_query.comment_depth,
+    )
+
+    # Create a pending job record linked to this saved query
+    job = CollectionJob(
+        saved_query_id=saved_query.id,
+        subreddit=config.subreddit,
+        status="pending",
+        total_posts=config.limit,
+        collected_posts=0,
+        total_comments=0,
+        collected_comments=0,
+    )
+    db.add(job)
+
+    # Update last_run_at
+    saved_query.last_run_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(job)
+    db.refresh(saved_query)
+
+    logger.info(
+        f"Re-running saved query '{saved_query.name}' (id={query_id}) "
+        f"as job {job.id}"
+    )
+
+    # Schedule background collection
+    background_tasks.add_task(
+        _run_collection_background,
+        config=config,
+        job_id=job.id,
+    )
+
+    # Return a confirmation that replaces the card
+    query = saved_query  # Template expects `query` variable
+    return HTMLResponse(
+        f'<div class="saved-query-card" id="saved-query-{saved_query.id}">'
+        f'<div class="p-3 rounded" style="background: rgba(74, 155, 110, 0.1); '
+        f'border-left: 3px solid var(--success);">'
+        f'<div class="flex items-center gap-2 mb-2">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" '
+        f'fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" '
+        f'stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>'
+        f'<polyline points="22 4 12 14.01 9 11.01"/></svg>'
+        f'<p class="text-success text-sm mb-0">Collection started for r/{saved_query.subreddit}</p>'
+        f'</div>'
+        f'<p class="text-xs text-ash mb-0">Job #{job.id} is running. '
+        f'<a href="/thresh" class="text-link">View progress</a></p>'
+        f'</div></div>'
+    )
+
+
+# ---------------------------------------------------------------------------
+# Export Download (alias for dashboard use)
+# ---------------------------------------------------------------------------
+
+@router.get("/exports/{export_id}/download")
+async def export_download(
+    export_id: int,
+    db: Session = Depends(get_db),
+):
+    """Download an export file by export record ID.
+
+    An alias for the Glean download endpoint, usable from the dashboard.
+
+    Args:
+        export_id: The ExportRecord primary key.
+        db: Database session.
+
+    Returns:
+        FileResponse streaming the ZIP file, or a JSON error.
+    """
+    from app.services.exporter import ExportService
+    from fastapi.responses import FileResponse
+
+    service = ExportService(db_session=db)
+    path = service.get_export_path(export_id)
+
+    if path is None:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Export file not found. It may have been deleted."},
+        )
+
+    return FileResponse(
+        path=str(path),
+        media_type="application/zip",
+        filename=path.name,
     )
