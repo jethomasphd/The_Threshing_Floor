@@ -1,4 +1,4 @@
-"""The Threshing Floor — academic Reddit research tool."""
+"""The Threshing Floor — separate the wheat from the feed."""
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "thresh"
 version = "0.1.0"
-description = "The Threshing Floor — academic Reddit research tool"
+description = "The Threshing Floor — separate the wheat from the feed"
 requires-python = ">=3.10"
 license = "MIT"
 authors = [{name = "Jacob E. Thomas"}]

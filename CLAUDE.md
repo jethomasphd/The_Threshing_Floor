@@ -4,15 +4,15 @@
 
 Thresh is a counter-technology. It belongs to the same lineage as The Watchtower and the COMPANION Protocol — tools built by Jacob E. Thomas that honor attention rather than exploit it.
 
-Specifically, Thresh is a local-first web application that helps a graduate student collect, explore, and export Reddit data for her dissertation research. It wraps PRAW (Python Reddit API Wrapper) behind an intuitive browser interface so she can go from "I want to study r/mentalhealth discourse" to "here's my cleaned, documented dataset" without writing code.
+Thresh is a local-first web application for collecting, exploring, and exporting Reddit data. It wraps PRAW (Python Reddit API Wrapper) behind an intuitive browser interface so that anyone — researcher, journalist, civic technologist, curious citizen — can go from "I want to understand what people are saying in r/mentalhealth" to "here's my cleaned, documented dataset" without writing code.
 
-The name comes from the biblical threshing floor — the place where grain is separated from chaff through deliberate labor. The Feed buries signal under noise. Thresh is the instrument of separation.
+The name comes from the biblical threshing floor — the place where grain is separated from chaff through deliberate labor. Social media is a flood of noise that buries signal. Thresh is the instrument of separation — the high ground where you bring the harvest and beat it until the grain falls free.
 
-The user is a graduate student. She may know some Python but should never need to touch it. Every interaction should feel guided, warm, and academically defensible. The aesthetic is atmospheric but the interface is clear.
+The user may be a scientist, a student, a journalist, or anyone who believes public discourse is worth measuring. They may know some Python but should never need to touch it. Every interaction should feel guided, warm, and defensible. The aesthetic is atmospheric but the interface is clear.
 
 ## The Metaphor System
 
-These names appear throughout the codebase, UI, and navigation. Every page has both its metaphor name and a plain subtitle so the student is never lost.
+These names appear throughout the codebase, UI, and navigation. Every page has both its metaphor name and a plain subtitle so the user is never lost.
 
 | Metaphor | Meaning | Page/Function |
 |----------|---------|---------------|
@@ -175,6 +175,6 @@ Layout shell. Must include: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM
 
 ## What Success Looks Like
 
-She clones the repo, runs pip install, walks through the credential setup, and within ten minutes is exploring subreddits and collecting her first dataset. When she exports, her advisor sees exactly how the data was collected. When she writes her methods chapter, provenance.txt gives her the language she needs.
+Someone clones the repo (or opens a Codespace), runs pip install, walks through the credential setup, and within ten minutes is exploring subreddits and collecting their first dataset. When they export, anyone reviewing the work sees exactly how the data was collected. Provenance.txt gives them the language they need for a methods section, a transparency report, or a replication attempt.
 
-The tool respects her time, respects Reddit's API, and produces academically defensible output. The aesthetic tells her that someone cared about building this — that it wasn't thrown together, that attention was paid. That's the point of the whole mythology: attention, paid deliberately.
+The tool respects their time, respects Reddit's API, and produces defensible output. The aesthetic tells them that someone cared about building this — that it wasn't thrown together, that attention was paid. That's the point of the whole mythology: attention, paid deliberately.
