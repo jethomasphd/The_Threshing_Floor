@@ -5,34 +5,19 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
 from app.models.database import get_db
 from app.models.tables import CollectionJob, ExportRecord, SavedQuery
 from app.services.collector import CollectionService
-from app.services.reddit_client import get_reddit_client
+from app.services.reddit_client import get_reddit_client, has_api_credentials
 
 router = APIRouter()
-
-
-def _is_configured() -> bool:
-    """Check whether Reddit API credentials are configured.
-
-    Returns:
-        True if all three credential fields are set.
-    """
-    settings = get_settings()
-    return bool(
-        settings.REDDIT_CLIENT_ID
-        and settings.REDDIT_CLIENT_SECRET
-        and settings.REDDIT_USER_AGENT
-    )
 
 
 def _page_context(request: Request, **extra: object) -> dict:
     """Build common template context for all page routes.
 
-    Includes `credentials_configured` so every template can react
-    to setup state (e.g. showing a banner or setup wizard).
+    Includes `credentials_configured` so templates can show the optional
+    API credential upgrade prompt where relevant.
 
     Args:
         request: The incoming FastAPI request.
@@ -43,7 +28,7 @@ def _page_context(request: Request, **extra: object) -> dict:
     """
     ctx: dict = {
         "request": request,
-        "credentials_configured": _is_configured(),
+        "credentials_configured": has_api_credentials(),
     }
     ctx.update(extra)
     return ctx
@@ -53,17 +38,12 @@ def _page_context(request: Request, **extra: object) -> dict:
 async def floor(request: Request, db: Session = Depends(get_db)):
     """The Floor — main dashboard.
 
-    Loads recent collection jobs, saved queries, and recent exports
-    to populate the dashboard. When no activity exists, the template
-    shows a welcome banner instead.
-
     Args:
         request: The incoming FastAPI request.
         db: Database session.
     """
     templates = request.app.state.templates
 
-    # Recent collection jobs (last 5)
     recent_jobs = (
         db.query(CollectionJob)
         .order_by(CollectionJob.id.desc())
@@ -71,14 +51,12 @@ async def floor(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # Saved queries
     saved_queries = (
         db.query(SavedQuery)
         .order_by(SavedQuery.created_at.desc())
         .all()
     )
 
-    # Recent exports (last 5)
     recent_exports = (
         db.query(ExportRecord)
         .order_by(ExportRecord.exported_at.desc())
@@ -86,7 +64,6 @@ async def floor(request: Request, db: Session = Depends(get_db)):
         .all()
     )
 
-    # Load associated job data for exports (subreddit name)
     export_jobs: dict[int, CollectionJob] = {}
     for export in recent_exports:
         if export.job_id not in export_jobs:
@@ -111,17 +88,11 @@ async def floor(request: Request, db: Session = Depends(get_db)):
 
 @router.get("/explore")
 async def explore(request: Request):
-    """Explore — scout the field, discover subreddits for research.
-
-    Passes credential status so the page can show a helpful setup
-    prompt if Reddit API credentials are not yet configured.
-    """
+    """Explore — scout the field, discover subreddits."""
     templates = request.app.state.templates
-    client = get_reddit_client()
-    is_configured = client._client is not None
     return templates.TemplateResponse(
         "pages/explore.html",
-        _page_context(request, is_configured=is_configured),
+        _page_context(request),
     )
 
 
@@ -133,10 +104,6 @@ async def thresh(
 ):
     """Thresh — configure and run collection.
 
-    Accepts an optional ?subreddit= query parameter to pre-fill
-    the collection form (e.g. when navigating from Explore).
-    Loads recent collection jobs for the sidebar panel.
-
     Args:
         request: The incoming FastAPI request.
         subreddit: Optional subreddit name to pre-fill in the form.
@@ -144,7 +111,6 @@ async def thresh(
     """
     templates = request.app.state.templates
 
-    # Load recent jobs
     client = get_reddit_client()
     service = CollectionService(reddit_client=client, db_session=db)
     recent_jobs = service.get_recent_jobs(limit=10)
@@ -167,11 +133,6 @@ async def harvest(
 ):
     """Harvest — view collected data.
 
-    Loads completed collection jobs so the user can select one to
-    browse. Accepts an optional ?job_id= query param to pre-select
-    a specific job (e.g. when navigating from the Thresh page after
-    a collection completes).
-
     Args:
         request: The incoming FastAPI request.
         job_id: Optional job ID to pre-select in the viewer.
@@ -179,7 +140,6 @@ async def harvest(
     """
     templates = request.app.state.templates
 
-    # Load completed jobs
     jobs = (
         db.query(CollectionJob)
         .filter(CollectionJob.status == "completed")
@@ -205,12 +165,6 @@ async def winnow(
 ):
     """Winnow — analysis tools for collected data.
 
-    The wind that carries away chaff: word frequency, temporal patterns,
-    keyword tracking, and engagement statistics.
-
-    Loads completed collection jobs so the user can select one to
-    analyse. Accepts an optional ``?job_id=`` query param to pre-select.
-
     Args:
         request: The incoming FastAPI request.
         job_id: Optional job ID to pre-select for analysis.
@@ -218,7 +172,6 @@ async def winnow(
     """
     templates = request.app.state.templates
 
-    # Load completed jobs
     jobs = (
         db.query(CollectionJob)
         .filter(CollectionJob.status == "completed")
@@ -244,10 +197,6 @@ async def glean(
 ):
     """Glean — export with provenance.
 
-    Loads completed collection jobs so the user can select one to
-    export. Also loads previous export records. Accepts an optional
-    ?job_id= query param to pre-select a specific job.
-
     Args:
         request: The incoming FastAPI request.
         job_id: Optional job ID to pre-select for export.
@@ -255,7 +204,6 @@ async def glean(
     """
     templates = request.app.state.templates
 
-    # Load completed jobs
     completed_jobs = (
         db.query(CollectionJob)
         .filter(CollectionJob.status == "completed")
@@ -263,7 +211,6 @@ async def glean(
         .all()
     )
 
-    # Load previous exports with their job info
     previous_exports = (
         db.query(ExportRecord)
         .order_by(ExportRecord.exported_at.desc())
@@ -271,7 +218,6 @@ async def glean(
         .all()
     )
 
-    # Build job lookup for export display
     export_jobs: dict[int, CollectionJob] = {}
     for export in previous_exports:
         if export.job_id not in export_jobs:
@@ -293,7 +239,7 @@ async def glean(
 
 @router.get("/about")
 async def about(request: Request):
-    """About — tool information, ethical guidelines, and credential setup."""
+    """About — tool information, ethical guidelines, and optional credential setup."""
     templates = request.app.state.templates
     return templates.TemplateResponse(
         "pages/about.html", _page_context(request),

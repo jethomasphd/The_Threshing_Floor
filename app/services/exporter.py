@@ -2,8 +2,8 @@
 
 The Glean engine. Produces CSV, JSON, or JSONL exports wrapped in a ZIP
 archive alongside a provenance.txt sidecar. Every bundle is sealed with
-full methodology documentation so the student's advisor sees exactly how
-the data was collected. Academic reproducibility depends on this.
+full methodology documentation so anyone reviewing the work sees exactly
+how the data was collected. Reproducibility depends on this.
 """
 
 import csv
@@ -385,7 +385,14 @@ class ExportService:
         version = settings.THRESH_VERSION
         now = _utcnow()
 
-        # Determine API endpoints used
+        # Determine collection method and endpoints used
+        from app.services.reddit_client import has_api_credentials
+
+        if has_api_credentials():
+            collection_method = "Reddit API (authenticated via PRAW)"
+        else:
+            collection_method = "Reddit public web data (no API key)"
+
         endpoints: list[str] = []
         if job.saved_query_id is not None:
             query = self.db.query(
@@ -447,9 +454,10 @@ PROVENANCE — The Threshing Floor
 
 Tool: Thresh (The Threshing Floor) v{version}
 Export Date: {_format_utc(now)}
+Collection Method: {collection_method}
 
 --- Collection Details ---
-Reddit API Endpoint(s): {", ".join(endpoints)}
+Data Source(s): {", ".join(endpoints)}
 Subreddit(s): r/{job.subreddit}
 Sort Method: {sort_method}
 Time Filter: {time_filter}
@@ -470,10 +478,9 @@ Author Mapping: {author_info}
 {rate_note}
 
 --- Ethical Notice ---
-This dataset was collected via Reddit's public API in compliance
-with Reddit's API Terms of Service. If using for research,
-consult your institution's IRB regarding human subjects review
-for publicly available social media data.
+This dataset was collected from publicly available Reddit data.
+If using for research, consult your organization's ethics board
+regarding human subjects review for social media data.
 
 --- Citation ---
 Thomas, J. E. (2025). Thresh: The Threshing Floor (Version {version})

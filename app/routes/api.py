@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-import praw
-import prawcore
 from fastapi import APIRouter, BackgroundTasks, Depends, Form, Query, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from sqlalchemy import func, desc, asc
@@ -88,6 +86,9 @@ async def setup_validate(
 
     # Try to authenticate with the provided credentials
     try:
+        import praw
+        import prawcore
+
         test_client = praw.Reddit(
             client_id=client_id.strip(),
             client_secret=client_secret.strip(),
@@ -153,6 +154,8 @@ async def setup_save(
 
     # Verify credentials actually work before saving
     try:
+        import praw
+
         test_client = praw.Reddit(
             client_id=client_id,
             client_secret=client_secret,
@@ -450,21 +453,6 @@ async def search_subreddits(
     templates = request.app.state.templates
     client = get_reddit_client()
 
-    if client._client is None:
-        return templates.TemplateResponse(
-            "partials/error_message.html",
-            _explore_context(
-                request,
-                title="Reddit API Not Configured",
-                message=(
-                    "Reddit API credentials are not set up yet. "
-                    "You need to configure your Client ID, Client Secret, "
-                    "and User Agent before you can search subreddits."
-                ),
-                show_setup_link=True,
-            ),
-        )
-
     try:
         subreddits = client.search_subreddits(query=q, limit=limit)
         return templates.TemplateResponse(
@@ -524,20 +512,6 @@ async def get_subreddit_detail(
     """
     templates = request.app.state.templates
     client = get_reddit_client()
-
-    if client._client is None:
-        return templates.TemplateResponse(
-            "partials/error_message.html",
-            _explore_context(
-                request,
-                title="Reddit API Not Configured",
-                message=(
-                    "Reddit API credentials are not set up yet. "
-                    "Configure them on the About page to preview subreddits."
-                ),
-                show_setup_link=True,
-            ),
-        )
 
     try:
         subreddit = client.get_subreddit_meta(name=name)
@@ -603,17 +577,6 @@ async def get_subreddit_posts(
     """
     templates = request.app.state.templates
     client = get_reddit_client()
-
-    if client._client is None:
-        return templates.TemplateResponse(
-            "partials/error_message.html",
-            _explore_context(
-                request,
-                title="Reddit API Not Configured",
-                message="Configure your Reddit API credentials to preview posts.",
-                show_setup_link=True,
-            ),
-        )
 
     # Validate sort parameter
     valid_sorts = ("hot", "new", "top", "rising", "controversial")

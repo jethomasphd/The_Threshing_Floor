@@ -3,28 +3,8 @@
 {% block content %}
 <div class="page-header">
   <h1 class="page-title">Explore</h1>
-  <p class="page-subtitle">Scout the field before harvest — discover subreddits for your research</p>
+  <p class="page-subtitle">Scout the field before harvest — discover subreddits by topic</p>
 </div>
-
-<!-- Credential warning -->
-{% if not is_configured %}
-<div class="card mb-6" style="border-left: 3px solid var(--warning);">
-  <div class="flex items-start gap-3">
-    <i data-lucide="alert-triangle" class="w-5 h-5 text-warning flex-shrink-0 mt-0.5"></i>
-    <div>
-      <h3 class="font-body text-sm font-semibold text-warning mb-1">Reddit API Credentials Required</h3>
-      <p class="text-bone-muted text-sm mb-2" style="line-height: 1.5;">
-        You need to set up your Reddit API credentials before you can search and preview subreddits.
-        This only takes a few minutes.
-      </p>
-      <a href="/about" class="btn btn-secondary btn-sm">
-        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
-        Set Up Credentials
-      </a>
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <!-- Search form -->
 <div class="card mb-6">
