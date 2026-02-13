@@ -1,5 +1,7 @@
 /**
  * Main application — routing, page rendering, event handling.
+ *
+ * No API keys. No OAuth. Just open and use.
  */
 'use strict';
 
@@ -42,16 +44,11 @@ Thresh.App = (function () {
      Rate Limit Sentinel
      ============================================ */
   function updateSentinel() {
-    if (!Thresh.Reddit.isConnected()) {
-      document.getElementById('sentinel-label').textContent = 'Not connected';
-      document.getElementById('sentinel-fill').style.width = '0%';
-      return;
-    }
     var s = Thresh.Reddit.getRateLimit();
     var fill = document.getElementById('sentinel-fill');
     fill.style.width = s.pct + '%';
     fill.className = 'sentinel-fill' + (s.pct < 20 ? ' depleted' : s.pct < 40 ? ' low' : '');
-    document.getElementById('sentinel-label').textContent = s.remaining + ' requests remaining';
+    document.getElementById('sentinel-label').textContent = s.remaining + '/' + 10 + ' req/min';
   }
 
   /* ============================================
@@ -71,13 +68,11 @@ Thresh.App = (function () {
     var page = getRoute();
     renderPage(page);
 
-    // Update active nav link
     document.querySelectorAll('.nav-link').forEach(function (link) {
       var p = link.getAttribute('data-page');
       link.classList.toggle('active', p === page);
     });
 
-    // Close mobile sidebar
     document.getElementById('sidebar').classList.remove('open');
   }
 
@@ -140,7 +135,6 @@ Thresh.App = (function () {
         statCard(stats.comments, 'Comments') +
         statCard(stats.exports, 'Exports') +
       '</div>' +
-      (Thresh.Reddit.isConnected() ? '' : connectPrompt()) +
       '<h2 class="mb-2">Recent Collections</h2>' +
       recentHtml;
   }
@@ -152,14 +146,6 @@ Thresh.App = (function () {
     '</div>';
   }
 
-  function connectPrompt() {
-    return '<div class="card mb-3" style="border-left: 3px solid var(--warning);">' +
-      '<p class="mb-1" style="color:var(--warning);font-weight:500;">Reddit API not connected</p>' +
-      '<p class="text-bone-muted" style="font-size:0.875rem;">Connect your Reddit account to search subreddits and collect data. ' +
-        '<a href="#/about" style="color:var(--ember);">Setup guide &rarr;</a></p>' +
-    '</div>';
-  }
-
   /* ---------- EXPLORE ---------- */
   function renderExplore() {
     $content.innerHTML =
@@ -167,15 +153,12 @@ Thresh.App = (function () {
         '<h1>Explore</h1>' +
         '<p class="subtitle">Scout the field. Discover subreddits before you harvest.</p>' +
       '</div>' +
-      (Thresh.Reddit.isConnected() ?
-        '<div class="flex gap-2 mb-3">' +
-          '<input id="explore-query" class="form-input" style="max-width:400px;" placeholder="Search subreddits..." ' +
-            'onkeydown="if(event.key===\'Enter\')Thresh.App.doExploreSearch()">' +
-          '<button class="btn btn-primary" onclick="Thresh.App.doExploreSearch()">Search</button>' +
-        '</div>' +
-        '<div id="explore-results"></div>'
-        : setupCard()
-      );
+      '<div class="flex gap-2 mb-3">' +
+        '<input id="explore-query" class="form-input" style="max-width:400px;" placeholder="Search subreddits..." ' +
+          'onkeydown="if(event.key===\'Enter\')Thresh.App.doExploreSearch()">' +
+        '<button class="btn btn-primary" onclick="Thresh.App.doExploreSearch()">Search</button>' +
+      '</div>' +
+      '<div id="explore-results"></div>';
   }
 
   async function doExploreSearch() {
@@ -209,7 +192,6 @@ Thresh.App = (function () {
 
   function navigateToThresh(subreddit) {
     navigate('thresh');
-    // After render, pre-fill the subreddit
     setTimeout(function () {
       var inp = document.getElementById('thresh-subreddit');
       if (inp) inp.value = subreddit;
@@ -234,49 +216,46 @@ Thresh.App = (function () {
         '<h1>Thresh</h1>' +
         '<p class="subtitle">Beat the grain. Configure and run a collection.</p>' +
       '</div>' +
-      (Thresh.Reddit.isConnected() ?
-        '<div class="card mb-3" style="max-width:560px;">' +
-          '<div class="form-group">' +
-            '<label class="form-label" for="thresh-subreddit">Subreddit</label>' +
-            '<input id="thresh-subreddit" class="form-input" placeholder="e.g., mentalhealth">' +
-          '</div>' +
-          '<div class="form-group">' +
-            '<label class="form-label" for="thresh-sort">Sort by</label>' +
-            '<select id="thresh-sort" class="form-select" onchange="Thresh.App.onSortChange()">' +
-              '<option value="hot">Hot</option>' +
-              '<option value="new">New</option>' +
-              '<option value="top">Top</option>' +
-              '<option value="rising">Rising</option>' +
-              '<option value="controversial">Controversial</option>' +
-            '</select>' +
-          '</div>' +
-          '<div class="form-group hidden" id="thresh-time-group">' +
-            '<label class="form-label" for="thresh-time">Time filter</label>' +
-            '<select id="thresh-time" class="form-select">' +
-              '<option value="day">Past 24 hours</option>' +
-              '<option value="week">Past week</option>' +
-              '<option value="month">Past month</option>' +
-              '<option value="year">Past year</option>' +
-              '<option value="all">All time</option>' +
-            '</select>' +
-          '</div>' +
-          '<div class="form-group">' +
-            '<label class="form-label">Limit: <span id="thresh-limit-val">25</span> posts</label>' +
-            '<input id="thresh-limit" class="form-range" type="range" min="10" max="100" step="5" value="25" ' +
-              'oninput="document.getElementById(\'thresh-limit-val\').textContent=this.value">' +
-          '</div>' +
-          '<div class="form-group">' +
-            '<label class="form-label" for="thresh-keyword">Keyword filter (optional)</label>' +
-            '<input id="thresh-keyword" class="form-input" placeholder="Only posts containing...">' +
-          '</div>' +
-          '<div class="form-group">' +
-            '<label class="form-check"><input type="checkbox" id="thresh-comments"> Include comments (slower)</label>' +
-          '</div>' +
-          '<button class="btn btn-primary" id="thresh-go" onclick="Thresh.App.doCollection()">Begin Collection</button>' +
-          '<div id="thresh-progress" class="mt-2"></div>' +
-        '</div>'
-        : setupCard()
-      ) +
+      '<div class="card mb-3" style="max-width:560px;">' +
+        '<div class="form-group">' +
+          '<label class="form-label" for="thresh-subreddit">Subreddit</label>' +
+          '<input id="thresh-subreddit" class="form-input" placeholder="e.g., mentalhealth">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label class="form-label" for="thresh-sort">Sort by</label>' +
+          '<select id="thresh-sort" class="form-select" onchange="Thresh.App.onSortChange()">' +
+            '<option value="hot">Hot</option>' +
+            '<option value="new">New</option>' +
+            '<option value="top">Top</option>' +
+            '<option value="rising">Rising</option>' +
+            '<option value="controversial">Controversial</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group hidden" id="thresh-time-group">' +
+          '<label class="form-label" for="thresh-time">Time filter</label>' +
+          '<select id="thresh-time" class="form-select">' +
+            '<option value="day">Past 24 hours</option>' +
+            '<option value="week">Past week</option>' +
+            '<option value="month">Past month</option>' +
+            '<option value="year">Past year</option>' +
+            '<option value="all">All time</option>' +
+          '</select>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label class="form-label">Limit: <span id="thresh-limit-val">25</span> posts</label>' +
+          '<input id="thresh-limit" class="form-range" type="range" min="10" max="100" step="5" value="25" ' +
+            'oninput="document.getElementById(\'thresh-limit-val\').textContent=this.value">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label class="form-label" for="thresh-keyword">Keyword filter (optional)</label>' +
+          '<input id="thresh-keyword" class="form-input" placeholder="Only posts containing...">' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label class="form-check"><input type="checkbox" id="thresh-comments"> Include comments (slower)</label>' +
+        '</div>' +
+        '<button class="btn btn-primary" id="thresh-go" onclick="Thresh.App.doCollection()">Begin Collection</button>' +
+        '<div id="thresh-progress" class="mt-2"></div>' +
+      '</div>' +
       '<hr class="section-divider mt-3 mb-3">' +
       '<h2 class="mb-2">Previous Collections</h2>' +
       historyHtml;
@@ -320,7 +299,8 @@ Thresh.App = (function () {
       var commentCount = 0;
       if (includeComments && posts.length > 0) {
         comments = {};
-        var maxCommentPosts = Math.min(posts.length, 20); // Limit to avoid rate limit
+        // Limit comment fetching to avoid rate limits (~10 req/min)
+        var maxCommentPosts = Math.min(posts.length, 8);
         for (var i = 0; i < maxCommentPosts; i++) {
           document.getElementById('thresh-status').textContent =
             'Fetching comments (' + (i + 1) + '/' + maxCommentPosts + ')...';
@@ -330,8 +310,8 @@ Thresh.App = (function () {
             comments[posts[i].id] = cmts;
             commentCount += cmts.length;
             updateSentinel();
-            // Small delay between requests
-            await new Promise(function (r) { setTimeout(r, 200); });
+            // Pause between requests to respect rate limits
+            await new Promise(function (r) { setTimeout(r, 800); });
           } catch (_e) {
             // Skip failed comment fetches
           }
@@ -504,12 +484,10 @@ Thresh.App = (function () {
 
     var posts = collection.posts;
 
-    // Score distribution
     var scores = posts.map(function (p) { return p.score; }).sort(function (a, b) { return a - b; });
     var avgScore = Math.round(scores.reduce(function (a, b) { return a + b; }, 0) / scores.length);
     var medianScore = scores[Math.floor(scores.length / 2)];
 
-    // Top authors
     var authorCounts = {};
     posts.forEach(function (p) {
       if (p.author && p.author !== '[deleted]') {
@@ -520,7 +498,6 @@ Thresh.App = (function () {
       .sort(function (a, b) { return b[1] - a[1]; })
       .slice(0, 10);
 
-    // Word frequency (titles)
     var wordCounts = {};
     var stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
       'of', 'with', 'by', 'from', 'is', 'it', 'this', 'that', 'was', 'are', 'be', 'has', 'had',
@@ -538,7 +515,6 @@ Thresh.App = (function () {
       .sort(function (a, b) { return b[1] - a[1]; })
       .slice(0, 15);
 
-    // Posts over time
     var timeBuckets = {};
     posts.forEach(function (p) {
       var d = new Date(p.created * 1000).toISOString().slice(0, 10);
@@ -573,62 +549,43 @@ Thresh.App = (function () {
         '</div>' +
       '</div>';
 
-    // Render charts after DOM update
     setTimeout(function () {
-      var chartColors = {
-        ember: 'rgba(201, 162, 39, 0.8)',
-        emberDim: 'rgba(201, 162, 39, 0.3)',
-        bone: 'rgba(232, 228, 220, 0.7)',
-        ash: 'rgba(107, 107, 123, 0.5)',
-      };
+      var ec = 'rgba(201, 162, 39, 0.8)';
+      var ed = 'rgba(201, 162, 39, 0.3)';
 
-      var defaults = Chart.defaults;
-      defaults.color = '#A8A49C';
-      defaults.borderColor = 'rgba(61, 61, 74, 0.5)';
-      defaults.font.family = "'IBM Plex Sans', sans-serif";
+      Chart.defaults.color = '#A8A49C';
+      Chart.defaults.borderColor = 'rgba(61, 61, 74, 0.5)';
+      Chart.defaults.font.family = "'IBM Plex Sans', sans-serif";
 
-      // Word frequency
+      var gridColor = 'rgba(61,61,74,0.3)';
+
       new Chart(document.getElementById('chart-words'), {
         type: 'bar',
-        data: {
-          labels: topWords.map(function (w) { return w[0]; }),
-          datasets: [{ label: 'Count', data: topWords.map(function (w) { return w[1]; }),
-            backgroundColor: chartColors.ember, borderRadius: 2 }],
-        },
+        data: { labels: topWords.map(function (w) { return w[0]; }),
+          datasets: [{ data: topWords.map(function (w) { return w[1]; }), backgroundColor: ec, borderRadius: 2 }] },
         options: { indexAxis: 'y', plugins: { legend: { display: false } },
-          scales: { x: { grid: { color: 'rgba(61,61,74,0.3)' } }, y: { grid: { display: false } } } },
+          scales: { x: { grid: { color: gridColor } }, y: { grid: { display: false } } } },
       });
 
-      // Posts over time
       new Chart(document.getElementById('chart-time'), {
         type: 'line',
-        data: {
-          labels: timeLabels,
-          datasets: [{ label: 'Posts', data: timeCounts,
-            borderColor: chartColors.ember, backgroundColor: chartColors.emberDim,
-            fill: true, tension: 0.3, pointRadius: 3 }],
-        },
+        data: { labels: timeLabels,
+          datasets: [{ data: timeCounts, borderColor: ec, backgroundColor: ed, fill: true, tension: 0.3, pointRadius: 3 }] },
         options: { plugins: { legend: { display: false } },
-          scales: { x: { grid: { color: 'rgba(61,61,74,0.3)' } }, y: { grid: { color: 'rgba(61,61,74,0.3)' }, beginAtZero: true } } },
+          scales: { x: { grid: { color: gridColor } }, y: { grid: { color: gridColor }, beginAtZero: true } } },
       });
 
-      // Top authors
       new Chart(document.getElementById('chart-authors'), {
         type: 'bar',
-        data: {
-          labels: topAuthors.map(function (a) { return a[0]; }),
-          datasets: [{ label: 'Posts', data: topAuthors.map(function (a) { return a[1]; }),
-            backgroundColor: chartColors.ember, borderRadius: 2 }],
-        },
+        data: { labels: topAuthors.map(function (a) { return a[0]; }),
+          datasets: [{ data: topAuthors.map(function (a) { return a[1]; }), backgroundColor: ec, borderRadius: 2 }] },
         options: { indexAxis: 'y', plugins: { legend: { display: false } },
-          scales: { x: { grid: { color: 'rgba(61,61,74,0.3)' } }, y: { grid: { display: false } } } },
+          scales: { x: { grid: { color: gridColor } }, y: { grid: { display: false } } } },
       });
 
-      // Score distribution (histogram)
       var bucketSize = Math.max(1, Math.floor((scores[scores.length - 1] - scores[0]) / 15));
-      var histLabels = [];
-      var histData = [];
-      if (bucketSize > 0) {
+      var histLabels = [], histData = [];
+      if (bucketSize > 0 && scores.length > 1) {
         for (var lo = scores[0]; lo <= scores[scores.length - 1]; lo += bucketSize) {
           var hi = lo + bucketSize;
           histLabels.push(lo + '-' + hi);
@@ -641,13 +598,10 @@ Thresh.App = (function () {
 
       new Chart(document.getElementById('chart-scores'), {
         type: 'bar',
-        data: {
-          labels: histLabels,
-          datasets: [{ label: 'Posts', data: histData,
-            backgroundColor: chartColors.ember, borderRadius: 2 }],
-        },
+        data: { labels: histLabels,
+          datasets: [{ data: histData, backgroundColor: ec, borderRadius: 2 }] },
         options: { plugins: { legend: { display: false } },
-          scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(61,61,74,0.3)' }, beginAtZero: true } } },
+          scales: { x: { grid: { display: false } }, y: { grid: { color: gridColor }, beginAtZero: true } } },
       });
     }, 50);
   }
@@ -736,8 +690,7 @@ Thresh.App = (function () {
 
   /* ---------- ABOUT ---------- */
   function renderAbout() {
-    var connected = Thresh.Reddit.isConnected();
-    var clientId = Thresh.Reddit.getClientId();
+    var currentProxy = Thresh.Reddit.getProxy();
 
     $content.innerHTML =
       '<div class="page-header">' +
@@ -748,42 +701,44 @@ Thresh.App = (function () {
       '<div class="card mb-3">' +
         '<h2 class="mb-1" style="color:var(--ember);">What This Is</h2>' +
         '<p>Thresh is a local-first tool for collecting, exploring, and exporting Reddit data. ' +
-        'It wraps the Reddit API behind an intuitive interface so that anyone &mdash; researcher, journalist, ' +
+        'It wraps Reddit\'s public JSON feeds behind an intuitive interface so that anyone &mdash; researcher, journalist, ' +
         'civic technologist, curious citizen &mdash; can go from "I want to understand what people are saying" ' +
-        'to "here\'s my cleaned, documented dataset" without writing code.</p>' +
+        'to "here\'s my cleaned, documented dataset" without writing code or creating API keys.</p>' +
         '<p class="mt-1 text-ash" style="font-size:0.875rem;">Built by Jacob E. Thomas.</p>' +
       '</div>' +
 
-      '<div class="card mb-3" id="setup-section">' +
-        '<h2 class="mb-1" style="color:var(--ember);">Reddit API Setup</h2>' +
-        (connected
-          ? '<p class="text-success mb-1">Connected to Reddit.</p>' +
-            '<p class="text-bone-muted" style="font-size:0.875rem;">Your session is active. Tokens expire after 1 hour.</p>' +
-            '<button class="btn btn-secondary btn-sm mt-1" onclick="Thresh.App.disconnectReddit()">Disconnect</button>'
-          : '<p class="text-bone-muted mb-2">To search subreddits and collect data, connect a Reddit API app. This takes about 30 seconds.</p>' +
-            '<div class="setup-step"><span class="setup-step-num">1</span>' +
-              '<div class="setup-step-content">Go to <a href="https://www.reddit.com/prefs/apps" target="_blank" rel="noopener">reddit.com/prefs/apps</a> and click <strong>"create another app"</strong></div></div>' +
-            '<div class="setup-step"><span class="setup-step-num">2</span>' +
-              '<div class="setup-step-content">Choose <strong>"web app"</strong>. Set the redirect URI to:<br>' +
-              '<code id="redirect-uri">' + esc(window.location.origin + window.location.pathname) + '</code></div></div>' +
-            '<div class="setup-step"><span class="setup-step-num">3</span>' +
-              '<div class="setup-step-content">Copy the <strong>client ID</strong> (the string under your app name) and paste it below.</div></div>' +
-            '<div class="form-group mt-2">' +
-              '<label class="form-label" for="setup-client-id">Client ID</label>' +
-              '<input id="setup-client-id" class="form-input" style="max-width:360px;" placeholder="Paste your client ID..." value="' + esc(clientId) + '">' +
-            '</div>' +
-            '<button class="btn btn-primary" onclick="Thresh.App.connectReddit()">Connect to Reddit</button>'
-        ) +
+      '<div class="card mb-3">' +
+        '<h2 class="mb-1" style="color:var(--ember);">How It Works</h2>' +
+        '<ul style="padding-left:1.25rem;color:var(--bone-muted);line-height:2;">' +
+          '<li>Reddit serves public JSON at any URL + <code style="color:var(--ember-glow);background:var(--surface-raised);padding:0.125rem 0.375rem;border-radius:2px;font-family:var(--font-data);">.json</code>. No API key needed.</li>' +
+          '<li>A lightweight CORS proxy relays requests so your browser can read them.</li>' +
+          '<li>All data is stored in your browser (IndexedDB). Nothing leaves your machine.</li>' +
+          '<li>Exports include a provenance document for academic reproducibility.</li>' +
+          '<li>Rate limited to ~10 requests/minute to respect Reddit\'s servers.</li>' +
+        '</ul>' +
+      '</div>' +
+
+      '<div class="card mb-3">' +
+        '<h2 class="mb-1" style="color:var(--ember);">CORS Proxy</h2>' +
+        '<p class="text-bone-muted mb-2" style="font-size:0.875rem;">' +
+          'Browsers block direct requests to reddit.com (CORS policy). Thresh routes through a public CORS proxy. ' +
+          'If the default stops working, you can set a different one here.</p>' +
+        '<div class="form-group">' +
+          '<label class="form-label" for="proxy-url">Proxy URL</label>' +
+          '<input id="proxy-url" class="form-input" style="max-width:460px;" ' +
+            'value="' + esc(currentProxy) + '" placeholder="https://api.allorigins.win/raw?url=">' +
+          '<p class="form-hint">Must accept a URL-encoded target as a query parameter.</p>' +
+        '</div>' +
+        '<button class="btn btn-secondary btn-sm" onclick="Thresh.App.saveProxy()">Save Proxy</button>' +
       '</div>' +
 
       '<div class="card mb-3">' +
         '<h2 class="mb-1" style="color:var(--ember);">Ethics & Privacy</h2>' +
         '<ul style="padding-left:1.25rem;color:var(--bone-muted);line-height:2;">' +
-          '<li>All data stays in your browser. Nothing is sent to any server except Reddit\'s API.</li>' +
+          '<li>All data stays in your browser. Nothing is sent to any server except the CORS proxy and Reddit.</li>' +
           '<li>Default exports anonymize usernames to reduce re-identification risk.</li>' +
           '<li>Reddit data is public, but context matters. Consider IRB review for research.</li>' +
           '<li>Respect <a href="https://www.reddit.com/wiki/api" target="_blank" rel="noopener">Reddit\'s API Terms</a>.</li>' +
-          '<li>OAuth tokens are stored in your browser and expire after 1 hour.</li>' +
         '</ul>' +
       '</div>' +
 
@@ -794,31 +749,11 @@ Thresh.App = (function () {
       '</div>';
   }
 
-  function connectReddit() {
-    var clientId = document.getElementById('setup-client-id').value.trim();
-    if (!clientId) { toast('Enter your Reddit client ID.', 'warning'); return; }
-    Thresh.Reddit.setClientId(clientId);
-    try {
-      Thresh.Reddit.authorize();
-    } catch (e) {
-      toast(e.message, 'error');
-    }
-  }
-
-  function disconnectReddit() {
-    Thresh.Reddit.clearToken();
-    toast('Disconnected from Reddit.', 'info');
-    renderAbout();
-    updateSentinel();
-  }
-
-  /* ---------- Setup Card (shared) ---------- */
-  function setupCard() {
-    return '<div class="setup-card">' +
-      '<h2>Connect to Reddit</h2>' +
-      '<p class="text-bone-muted mb-2">This feature requires a Reddit API connection. It takes about 30 seconds to set up.</p>' +
-      '<button class="btn btn-primary" onclick="Thresh.App.navigate(\'about\')">Setup Guide</button>' +
-    '</div>';
+  function saveProxy() {
+    var url = document.getElementById('proxy-url').value.trim();
+    if (!url) { toast('Enter a proxy URL.', 'warning'); return; }
+    Thresh.Reddit.setProxy(url);
+    toast('Proxy saved.', 'success');
   }
 
   /* ---------- Utility ---------- */
@@ -860,24 +795,15 @@ Thresh.App = (function () {
   async function init() {
     $content = document.getElementById('page-content');
 
-    // Handle OAuth callback (if returning from Reddit auth)
-    if (Thresh.Reddit.handleCallback()) {
-      toast('Connected to Reddit!', 'success');
-    }
-
-    // Init storage
     await Thresh.Storage.init();
 
-    // Route
     window.addEventListener('hashchange', onRouteChange);
     onRouteChange();
 
-    // Mobile menu
     document.getElementById('mobile-menu-btn').addEventListener('click', function () {
       document.getElementById('sidebar').classList.toggle('open');
     });
 
-    // Init Lucide icons
     if (window.lucide) {
       lucide.createIcons();
     }
@@ -885,10 +811,8 @@ Thresh.App = (function () {
     updateSentinel();
   }
 
-  // Boot
   document.addEventListener('DOMContentLoaded', init);
 
-  // Public API (for onclick handlers in templates)
   return {
     navigate: navigate,
     navigateToThresh: navigateToThresh,
@@ -901,8 +825,7 @@ Thresh.App = (function () {
     loadWinnow: loadWinnow,
     previewProvenance: previewProvenance,
     doExport: doExport,
-    connectReddit: connectReddit,
-    disconnectReddit: disconnectReddit,
+    saveProxy: saveProxy,
     toast: toast,
   };
 })();

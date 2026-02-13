@@ -1,226 +1,191 @@
 /**
- * Reddit API client — OAuth2 implicit flow + oauth.reddit.com (CORS-enabled).
+ * Reddit scraper — fetches public JSON from reddit.com via CORS proxy.
  *
- * Usage flow:
- *   1. User creates a Reddit "web app" at https://www.reddit.com/prefs/apps
- *   2. Sets redirect URI to their GitHub Pages URL
- *   3. Enters client ID in the app
- *   4. Clicks Connect → redirected to Reddit → back with token
- *   5. All API calls go to oauth.reddit.com with the token
+ * No API keys. No OAuth. No setup.
+ * Reddit serves JSON at any URL + ".json". A lightweight CORS proxy
+ * relays these requests so the browser can read them.
  */
 'use strict';
 
 window.Thresh = window.Thresh || {};
 
 Thresh.Reddit = (function () {
-  const OAUTH_BASE = 'https://oauth.reddit.com';
-  const AUTH_URL = 'https://www.reddit.com/api/v1/authorize';
-  const SCOPES = 'read';
-  const TOKEN_KEY = 'thresh_reddit_token';
-  const TOKEN_EXPIRY_KEY = 'thresh_reddit_token_expiry';
-  const CLIENT_ID_KEY = 'thresh_reddit_client_id';
+  const REDDIT = 'https://www.reddit.com';
+  const PROXY_KEY = 'thresh_cors_proxy';
+
+  /* Built-in proxy list — tried in order until one works. */
+  const DEFAULT_PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?',
+  ];
 
   /* ---------- Rate Limiter ---------- */
+  /* Reddit allows ~10 unauthenticated req/min. We track locally. */
   const rateLimiter = {
-    remaining: 60,
-    resetTime: 0,
-    used: 0,
-
-    /** Update from reddit response headers. */
-    update(headers) {
-      const rem = headers.get('x-ratelimit-remaining');
-      const reset = headers.get('x-ratelimit-reset');
-      if (rem !== null) this.remaining = Math.floor(parseFloat(rem));
-      if (reset !== null) this.resetTime = Date.now() + parseInt(reset, 10) * 1000;
-      this.used++;
-    },
+    timestamps: [],
+    MAX_PER_MIN: 10,
 
     canRequest() {
-      if (this.remaining <= 1 && Date.now() < this.resetTime) return false;
-      return true;
+      const now = Date.now();
+      this.timestamps = this.timestamps.filter(function (t) { return now - t < 60000; });
+      return this.timestamps.length < this.MAX_PER_MIN;
+    },
+
+    record() {
+      this.timestamps.push(Date.now());
     },
 
     getStatus() {
+      const now = Date.now();
+      this.timestamps = this.timestamps.filter(function (t) { return now - t < 60000; });
+      var remaining = Math.max(0, this.MAX_PER_MIN - this.timestamps.length);
       return {
-        remaining: this.remaining,
-        used: this.used,
-        resetTime: this.resetTime,
-        pct: Math.max(0, Math.min(100, (this.remaining / 60) * 100)),
+        remaining: remaining,
+        used: this.timestamps.length,
+        pct: (remaining / this.MAX_PER_MIN) * 100,
       };
     },
   };
 
-  /* ---------- Token helpers ---------- */
-  function getToken() {
-    const expiry = parseInt(localStorage.getItem(TOKEN_EXPIRY_KEY) || '0', 10);
-    if (Date.now() > expiry) {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(TOKEN_EXPIRY_KEY);
-      return null;
-    }
-    return localStorage.getItem(TOKEN_KEY);
+  /* ---------- Proxy helpers ---------- */
+
+  function getProxy() {
+    return localStorage.getItem(PROXY_KEY) || DEFAULT_PROXIES[0];
   }
 
-  function setToken(token, expiresIn) {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + expiresIn * 1000));
+  function setProxy(url) {
+    localStorage.setItem(PROXY_KEY, url.trim());
   }
 
-  function clearToken() {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(TOKEN_EXPIRY_KEY);
-  }
-
-  function getClientId() {
-    return localStorage.getItem(CLIENT_ID_KEY) || '';
-  }
-
-  function setClientId(id) {
-    localStorage.setItem(CLIENT_ID_KEY, id.trim());
-  }
-
-  function isConnected() {
-    return !!getToken();
-  }
-
-  /** Build the OAuth authorize URL and redirect the user. */
-  function authorize() {
-    const clientId = getClientId();
-    if (!clientId) throw new Error('Set your Reddit client ID first.');
-    const redirectUri = window.location.origin + window.location.pathname;
-    const state = Math.random().toString(36).substring(2);
-    sessionStorage.setItem('thresh_oauth_state', state);
-    const params = new URLSearchParams({
-      client_id: clientId,
-      response_type: 'token',
-      state: state,
-      redirect_uri: redirectUri,
-      scope: SCOPES,
-      duration: 'temporary',
-    });
-    window.location.href = AUTH_URL + '?' + params.toString();
-  }
-
-  /** Called on page load to capture token from URL fragment. */
-  function handleCallback() {
-    const hash = window.location.hash;
-    if (!hash || !hash.includes('access_token')) return false;
-
-    const params = new URLSearchParams(hash.substring(1));
-    const token = params.get('access_token');
-    const expiresIn = parseInt(params.get('expires_in') || '3600', 10);
-    const state = params.get('state');
-    const savedState = sessionStorage.getItem('thresh_oauth_state');
-
-    if (state && savedState && state !== savedState) {
-      console.warn('OAuth state mismatch — ignoring callback.');
-      return false;
+  /**
+   * Fetch JSON from a Reddit URL, trying proxies in order.
+   * On the first successful proxy, cache it for future calls.
+   */
+  async function fetchJSON(redditUrl) {
+    if (!rateLimiter.canRequest()) {
+      var s = rateLimiter.getStatus();
+      throw new Error('Rate limit reached (' + s.used + '/' + rateLimiter.MAX_PER_MIN +
+        ' in the last minute). Wait a few seconds and try again.');
     }
 
-    if (token) {
-      setToken(token, expiresIn);
-      sessionStorage.removeItem('thresh_oauth_state');
-      // Clean the URL fragment so it doesn't persist
-      history.replaceState(null, '', window.location.pathname);
-      return true;
+    // Try direct fetch first (works if user has a CORS extension or Reddit adds headers)
+    try {
+      var directResp = await fetch(redditUrl, { signal: AbortSignal.timeout(5000) });
+      if (directResp.ok) {
+        rateLimiter.record();
+        return directResp.json();
+      }
+    } catch (_e) {
+      // Expected — CORS block. Fall through to proxy.
     }
-    return false;
-  }
 
-  /* ---------- Fetch wrapper ---------- */
-  async function apiFetch(endpoint, params) {
-    const token = getToken();
-    if (!token) throw new Error('Not connected to Reddit. Please connect first.');
-    if (!rateLimiter.canRequest()) throw new Error('Rate limit reached. Please wait a moment.');
+    // Try saved proxy first, then fallbacks
+    var saved = localStorage.getItem(PROXY_KEY);
+    var proxyOrder = saved ? [saved] : DEFAULT_PROXIES.slice();
+    // Add any we haven't tried
+    for (var i = 0; i < DEFAULT_PROXIES.length; i++) {
+      if (proxyOrder.indexOf(DEFAULT_PROXIES[i]) === -1) proxyOrder.push(DEFAULT_PROXIES[i]);
+    }
 
-    const url = new URL(endpoint, OAUTH_BASE);
-    if (params) {
-      for (const [k, v] of Object.entries(params)) {
-        if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
+    var lastError = null;
+    for (var j = 0; j < proxyOrder.length; j++) {
+      var proxy = proxyOrder[j];
+      try {
+        var resp = await fetch(proxy + encodeURIComponent(redditUrl), {
+          signal: AbortSignal.timeout(10000),
+        });
+        if (resp.ok) {
+          rateLimiter.record();
+          // Remember working proxy
+          localStorage.setItem(PROXY_KEY, proxy);
+          return resp.json();
+        }
+        lastError = new Error('Proxy returned ' + resp.status);
+      } catch (e) {
+        lastError = e;
       }
     }
 
-    const resp = await fetch(url.toString(), {
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'User-Agent': 'web:thresh:v0.1.0',
-      },
-    });
+    throw new Error(
+      'Could not reach Reddit. All CORS proxies failed. ' +
+      'You can set a custom proxy on the About page. (' +
+      (lastError ? lastError.message : 'unknown error') + ')'
+    );
+  }
 
-    rateLimiter.update(resp.headers);
+  /* ---------- Build Reddit JSON URLs ---------- */
 
-    if (resp.status === 401) {
-      clearToken();
-      throw new Error('Reddit session expired. Please reconnect.');
+  function redditURL(path, params) {
+    var url = REDDIT + path + '.json';
+    if (params) {
+      var qs = [];
+      for (var k in params) {
+        if (params[k] !== undefined && params[k] !== null && params[k] !== '') {
+          qs.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+        }
+      }
+      // Add raw_json=1 so Reddit returns actual characters instead of HTML entities
+      qs.push('raw_json=1');
+      if (qs.length) url += '?' + qs.join('&');
+    } else {
+      url += '?raw_json=1';
     }
-    if (resp.status === 403) {
-      throw new Error('Access denied. The subreddit may be private or quarantined.');
-    }
-    if (resp.status === 404) {
-      throw new Error('Not found. Check that the subreddit name is correct.');
-    }
-    if (!resp.ok) {
-      throw new Error('Reddit API error: ' + resp.status);
-    }
-    return resp.json();
+    return url;
   }
 
   /* ---------- Public API ---------- */
 
-  /** Search for subreddits by query. */
   async function searchSubreddits(query, limit) {
     limit = Math.min(limit || 10, 25);
-    const data = await apiFetch('/subreddits/search', { q: query, limit, include_over_18: false });
+    var url = redditURL('/subreddits/search', { q: query, limit: limit, include_over_18: 'false' });
+    var data = await fetchJSON(url);
     return (data.data.children || []).map(function (c) {
-      const s = c.data;
+      var s = c.data;
       return {
         name: s.display_name,
         title: s.title || s.display_name,
         subscribers: s.subscribers || 0,
         description: s.public_description || '',
         over18: s.over18 || false,
-        icon: s.icon_img || s.community_icon || '',
         created: s.created_utc,
       };
     });
   }
 
-  /** Get detailed info about a subreddit. */
   async function getSubredditAbout(name) {
-    const data = await apiFetch('/r/' + encodeURIComponent(name) + '/about');
-    const s = data.data;
+    var url = redditURL('/r/' + encodeURIComponent(name) + '/about');
+    var data = await fetchJSON(url);
+    var s = data.data;
     return {
       name: s.display_name,
       title: s.title,
       subscribers: s.subscribers || 0,
       activeUsers: s.accounts_active || 0,
       description: s.public_description || '',
-      fullDescription: s.description || '',
       over18: s.over18 || false,
       created: s.created_utc,
     };
   }
 
-  /** Fetch posts from a subreddit. */
   async function getPosts(subreddit, sort, timeFilter, limit, query) {
     sort = sort || 'hot';
     limit = Math.min(limit || 25, 100);
 
-    let endpoint, params;
+    var path, params;
     if (query) {
-      endpoint = '/r/' + encodeURIComponent(subreddit) + '/search';
-      params = { q: query, sort, t: timeFilter || 'all', limit, restrict_sr: 'on' };
+      path = '/r/' + encodeURIComponent(subreddit) + '/search';
+      params = { q: query, sort: sort, t: timeFilter || 'all', limit: limit, restrict_sr: 'on' };
     } else {
-      endpoint = '/r/' + encodeURIComponent(subreddit) + '/' + sort;
-      params = { limit };
+      path = '/r/' + encodeURIComponent(subreddit) + '/' + sort;
+      params = { limit: limit };
       if ((sort === 'top' || sort === 'controversial') && timeFilter) {
         params.t = timeFilter;
       }
     }
 
-    const data = await apiFetch(endpoint, params);
+    var data = await fetchJSON(redditURL(path, params));
     return (data.data.children || []).map(function (c) {
-      const p = c.data;
+      var p = c.data;
       return {
         id: p.id,
         title: p.title,
@@ -240,24 +205,24 @@ Thresh.Reddit = (function () {
     });
   }
 
-  /** Fetch comments for a post. */
   async function getComments(postId, subreddit, depth, limit) {
     depth = depth || 3;
     limit = Math.min(limit || 50, 200);
-    const data = await apiFetch(
+    var url = redditURL(
       '/r/' + encodeURIComponent(subreddit) + '/comments/' + postId,
-      { depth, limit, sort: 'best' }
+      { depth: depth, limit: limit, sort: 'best' }
     );
+    var data = await fetchJSON(url);
 
-    // Reddit returns [post_listing, comment_listing]
-    const commentListing = data[1];
+    var commentListing = data[1];
     if (!commentListing || !commentListing.data) return [];
 
     function flatten(children) {
-      const out = [];
-      for (const c of children) {
+      var out = [];
+      for (var i = 0; i < children.length; i++) {
+        var c = children[i];
         if (c.kind !== 't1') continue;
-        const d = c.data;
+        var d = c.data;
         out.push({
           id: d.id,
           author: d.author || '[deleted]',
@@ -278,21 +243,12 @@ Thresh.Reddit = (function () {
   }
 
   return {
-    // OAuth
-    getClientId: getClientId,
-    setClientId: setClientId,
-    authorize: authorize,
-    handleCallback: handleCallback,
-    isConnected: isConnected,
-    clearToken: clearToken,
-
-    // API
     searchSubreddits: searchSubreddits,
     getSubredditAbout: getSubredditAbout,
     getPosts: getPosts,
     getComments: getComments,
-
-    // Rate limit
     getRateLimit: function () { return rateLimiter.getStatus(); },
+    getProxy: getProxy,
+    setProxy: setProxy,
   };
 })();

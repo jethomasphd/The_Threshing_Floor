@@ -34,8 +34,8 @@ Thresh.Export = (function () {
       'Export date:        ' + now.toISOString(),
       '',
       '── Data Source ──────────────────────────────────────',
-      'Platform:           Reddit (via OAuth2 API)',
-      'API endpoint:       oauth.reddit.com',
+      'Platform:           Reddit (public JSON feed)',
+      'API endpoint:       www.reddit.com/*.json',
       'Subreddit:          r/' + collection.subreddit,
     ];
 
@@ -74,9 +74,9 @@ Thresh.Export = (function () {
     lines.push(
       '',
       '── Methodology Notes ──────────────────────────────',
-      'Data was collected using Reddit\'s OAuth2 API via a client-side',
-      'web application. Requests were subject to Reddit\'s standard',
-      'rate limits (60 requests/minute for OAuth clients).',
+      'Data was collected from Reddit\'s public JSON feeds via a client-side',
+      'web application. Requests were routed through a CORS proxy and',
+      'rate-limited to ~10 requests/minute to respect Reddit\'s servers.',
       '',
       'Reddit\'s API returns at most 100 items per request and limits',
       'listing depth to approximately 1000 items. Data represents a',
