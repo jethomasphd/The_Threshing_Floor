@@ -31,3 +31,18 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: pip install -r requirements.txt && pip install -e ".[dev]"
       - run: python -m pytest tests/ -v --tb=short
+
+  pages:
+    name: Validate Static Site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check docs structure
+        run: |
+          test -f docs/index.html
+          test -f docs/css/thresh.css
+          test -f docs/js/app.js
+          test -f docs/js/reddit.js
+          test -f docs/js/storage.js
+          test -f docs/js/export.js
+          echo "All static site files present."

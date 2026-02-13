@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Threshing Floor</title>
+  <meta name="description" content="Collect, explore, and export Reddit data with provenance.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+
+  <!-- JSZip for exports -->
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js" defer></script>
+
+  <!-- App -->
+  <link rel="stylesheet" href="css/thresh.css">
+  <script src="js/reddit.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/export.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+  <!-- Grain overlay -->
+  <div class="grain-overlay" aria-hidden="true"></div>
+
+  <!-- Navigation Sidebar -->
+  <nav id="sidebar" class="sidebar" role="navigation" aria-label="Main navigation">
+    <div class="sidebar-header">
+      <a href="#/" class="sidebar-brand">
+        <svg class="sigil" viewBox="0 0 48 48" width="36" height="36" aria-hidden="true">
+          <circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <line x1="14" y1="38" x2="24" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="34" y1="38" x2="24" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="10" y1="28" x2="38" y2="28" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          <line x1="12" y1="33" x2="36" y2="33" stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+        <span class="brand-text">The Threshing Floor</span>
+      </a>
+    </div>
+
+    <ul class="nav-list">
+      <li><a href="#/" class="nav-link" data-page="floor">
+        <i data-lucide="layout-dashboard" class="nav-icon"></i>
+        <span>The Floor</span>
+      </a></li>
+      <li><a href="#/explore" class="nav-link" data-page="explore">
+        <i data-lucide="compass" class="nav-icon"></i>
+        <span>Explore</span>
+      </a></li>
+      <li><a href="#/thresh" class="nav-link" data-page="thresh">
+        <i data-lucide="wheat" class="nav-icon"></i>
+        <span>Thresh</span>
+      </a></li>
+      <li><a href="#/harvest" class="nav-link" data-page="harvest">
+        <i data-lucide="package" class="nav-icon"></i>
+        <span>Harvest</span>
+      </a></li>
+      <li><a href="#/winnow" class="nav-link" data-page="winnow">
+        <i data-lucide="wind" class="nav-icon"></i>
+        <span>Winnow</span>
+      </a></li>
+      <li><a href="#/glean" class="nav-link" data-page="glean">
+        <i data-lucide="file-down" class="nav-icon"></i>
+        <span>Glean</span>
+      </a></li>
+      <li><a href="#/about" class="nav-link" data-page="about">
+        <i data-lucide="info" class="nav-icon"></i>
+        <span>About</span>
+      </a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="rate-limit-sentinel" id="rate-limit-sentinel" title="API requests remaining">
+        <div class="sentinel-bar"><div class="sentinel-fill" id="sentinel-fill"></div></div>
+        <span class="sentinel-label" id="sentinel-label">—</span>
+      </div>
+      <div class="version-tag">v0.1.0</div>
+    </div>
+  </nav>
+
+  <!-- Mobile header -->
+  <header class="mobile-header" id="mobile-header">
+    <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Toggle navigation">
+      <i data-lucide="menu"></i>
+    </button>
+    <span class="brand-text-mobile">Thresh</span>
+  </header>
+
+  <!-- Main Content -->
+  <main id="main-content" class="main-content" role="main">
+    <div id="page-content">
+      <!-- Dynamic page content rendered here by app.js -->
+    </div>
+  </main>
+
+  <!-- Toast container -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+</body>
+</html>
