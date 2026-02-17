@@ -9,9 +9,10 @@ const ThreshApp = {
   activeCollection: null, // Currently viewed collection
   harvestSort: { field: 'score', dir: 'desc' },
   harvestFilter: '',
-  wordFreqChart: null,
 
   // --- Initialization ---
+
+  _countdownInterval: null,
 
   init() {
     // Load saved collections from localStorage
@@ -36,6 +37,9 @@ const ThreshApp = {
 
     // Update collection selectors
     this._updateSelectors();
+
+    // Wire up rate limit sentinel
+    this._initRateSentinel();
 
     // Restore intro-seen state
     if (localStorage.getItem('thresh_intro_seen')) {
@@ -127,6 +131,13 @@ const ThreshApp = {
       return false;
     }
 
+    // Check rate limit before starting
+    if (RateLimiter.isBlocked()) {
+      const secs = RateLimiter.blockSecondsLeft();
+      this.toast(`Rate limited — please wait ${secs} seconds before collecting.`, 'warning');
+      return false;
+    }
+
     // Show progress
     const progressEl = document.getElementById('thresh-progress');
     const submitBtn = document.getElementById('thresh-submit');
@@ -176,9 +187,15 @@ const ThreshApp = {
       }, 1500);
 
     } catch (err) {
-      this.toast(`Collection failed: ${err.message}`, 'error');
+      if (err.message.includes('Rate limited')) {
+        this.toast(err.message, 'warning');
+        // Keep button disabled — sentinel countdown will re-enable it
+        submitBtn.disabled = true;
+      } else {
+        this.toast(`Collection failed: ${err.message}`, 'error');
+        submitBtn.disabled = false;
+      }
       progressEl.style.display = 'none';
-      submitBtn.disabled = false;
     }
 
     return false;
@@ -406,7 +423,18 @@ const ThreshApp = {
 
     if (this.activeCollection) {
       select.value = this.activeCollection.id;
-      this._renderWordFreqChart();
+      this._renderWordFreqTable();
+    }
+  },
+
+  loadWinnowCollection(id) {
+    if (!id) {
+      this.activeCollection = null;
+      return;
+    }
+    this.activeCollection = this.collections.find(c => c.id === id);
+    if (this.activeCollection) {
+      this._renderWordFreqTable();
     }
   },
 
@@ -442,11 +470,14 @@ const ThreshApp = {
     }
   },
 
-  _renderWordFreqChart() {
+  _wordFreqData: [],
+
+  _renderWordFreqTable() {
     if (!this.activeCollection) return;
 
-    const canvas = document.getElementById('word-freq-chart');
-    if (!canvas) return;
+    const wrap = document.getElementById('word-freq-table-wrap');
+    const copyBtn = document.getElementById('word-freq-copy');
+    if (!wrap) return;
 
     // Simple word frequency (client-side, no API needed)
     const stopwords = new Set([
@@ -480,6 +511,7 @@ const ThreshApp = {
       .split(/\s+/)
       .filter(w => w.length > 2 && !stopwords.has(w));
 
+    const totalWords = words.length;
     const freq = {};
     words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
 
@@ -487,42 +519,125 @@ const ThreshApp = {
       .sort((a, b) => b[1] - a[1])
       .slice(0, 20);
 
-    // Destroy previous chart
-    if (this.wordFreqChart) {
-      this.wordFreqChart.destroy();
+    this._wordFreqData = sorted;
+
+    if (sorted.length === 0) {
+      wrap.innerHTML = '<p class="text-ash text-sm" style="text-align:center;padding:2rem 0;">No words found after filtering stopwords.</p>';
+      if (copyBtn) copyBtn.style.display = 'none';
+      return;
     }
 
-    this.wordFreqChart = new Chart(canvas, {
-      type: 'bar',
-      data: {
-        labels: sorted.map(s => s[0]),
-        datasets: [{
-          label: 'Frequency',
-          data: sorted.map(s => s[1]),
-          backgroundColor: 'rgba(201, 162, 39, 0.6)',
-          borderColor: 'rgba(201, 162, 39, 1)',
-          borderWidth: 1,
-        }],
-      },
-      options: {
-        indexAxis: 'y',
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-        },
-        scales: {
-          x: {
-            ticks: { color: '#A8A49C' },
-            grid: { color: 'rgba(61, 61, 74, 0.5)' },
-          },
-          y: {
-            ticks: { color: '#E8E4DC', font: { family: "'IBM Plex Mono', monospace", size: 11 } },
-            grid: { display: false },
-          },
-        },
-      },
+    const maxCount = sorted[0][1];
+
+    wrap.innerHTML = `
+      <table class="data-table" style="width:100%;">
+        <thead>
+          <tr>
+            <th style="width:2.5rem;text-align:right;">#</th>
+            <th>Word</th>
+            <th style="text-align:right;width:5rem;">Count</th>
+            <th style="text-align:right;width:4.5rem;">% of total</th>
+            <th style="width:40%;">Frequency</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${sorted.map(([word, count], i) => {
+            const pct = ((count / totalWords) * 100).toFixed(1);
+            const barWidth = Math.round((count / maxCount) * 100);
+            return `<tr>
+              <td style="text-align:right;" class="text-ash">${i + 1}</td>
+              <td class="font-mono text-bone">${this._escapeHtml(word)}</td>
+              <td style="text-align:right;" class="font-mono text-ember">${count.toLocaleString()}</td>
+              <td style="text-align:right;" class="font-mono text-ash">${pct}%</td>
+              <td>
+                <div style="background:var(--smoke);border-radius:2px;height:8px;overflow:hidden;">
+                  <div style="width:${barWidth}%;height:100%;background:var(--ember);border-radius:2px;opacity:0.7;"></div>
+                </div>
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <p class="text-ash text-xs" style="margin-top:0.5rem;">${totalWords.toLocaleString()} total words analyzed from ${this.activeCollection.posts.length} posts.</p>
+    `;
+
+    if (copyBtn) copyBtn.style.display = 'flex';
+
+    // Re-init icons
+    setTimeout(() => {
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }, 50);
+  },
+
+  copyWordFreq() {
+    if (!this._wordFreqData.length) return;
+
+    const lines = ['Rank\tWord\tCount'];
+    this._wordFreqData.forEach(([word, count], i) => {
+      lines.push(`${i + 1}\t${word}\t${count}`);
     });
+
+    navigator.clipboard.writeText(lines.join('\n')).then(() => {
+      this.toast('Word frequency table copied to clipboard.', 'success');
+    }).catch(() => {
+      this.toast('Could not copy — try selecting the table manually.', 'warning');
+    });
+  },
+
+  copyAnalysis() {
+    const responseEl = document.getElementById('winnow-response');
+    if (!responseEl || !responseEl.textContent.trim()) {
+      this.toast('No analysis to copy yet.', 'warning');
+      return;
+    }
+
+    navigator.clipboard.writeText(responseEl.textContent).then(() => {
+      this.toast('Analysis copied to clipboard.', 'success');
+    }).catch(() => {
+      this.toast('Could not copy — try selecting the text manually.', 'warning');
+    });
+  },
+
+  downloadAnalysis(format) {
+    const responseEl = document.getElementById('winnow-response');
+    if (!responseEl || !responseEl.textContent.trim()) {
+      this.toast('No analysis to download yet.', 'warning');
+      return;
+    }
+
+    const text = responseEl.textContent;
+    const collection = this.activeCollection;
+    const sub = collection ? collection.config.subreddit : 'unknown';
+    const date = new Date().toISOString().slice(0, 10);
+
+    // Build a header with provenance context
+    const header = [
+      `Analysis generated by The Threshing Floor`,
+      `Date: ${new Date().toISOString()}`,
+      `Subreddit(s): r/${sub}`,
+      collection ? `Posts analyzed: ${collection.posts.length}` : '',
+      collection ? `Collection method: ${collection.config.sort}, time filter: ${collection.config.timeFilter}` : '',
+      collection && collection.config.keyword ? `Keyword filter: "${collection.config.keyword}"` : '',
+      `---`,
+      '',
+    ].filter(Boolean).join('\n');
+
+    const fullText = header + text;
+    const ext = format === 'md' ? 'md' : 'txt';
+    const mimeType = format === 'md' ? 'text/markdown' : 'text/plain';
+    const filename = `thresh-analysis-${sub.replace(/,/g, '-')}-${date}.${ext}`;
+
+    const blob = new Blob([fullText], { type: `${mimeType};charset=utf-8` });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.toast(`Analysis saved as ${filename}`, 'success');
   },
 
   // --- Claude Key Modal ---
@@ -543,6 +658,63 @@ const ThreshApp = {
     ClaudeClient.saveKey(key);
     this.hideClaudeKeyModal();
     this.toast(key ? 'API key saved.' : 'API key removed.', 'success');
+  },
+
+  // --- Rate Limit Sentinel ---
+
+  _initRateSentinel() {
+    // Update UI with current state
+    this._updateRateSentinel(RateLimiter.getStatus());
+
+    // Listen for changes
+    RateLimiter.onChange((status) => this._updateRateSentinel(status));
+  },
+
+  _updateRateSentinel(status) {
+    const fill = document.getElementById('rate-gauge-fill');
+    const remaining = document.getElementById('rate-remaining');
+    const blockedMsg = document.getElementById('rate-blocked-msg');
+    const countdown = document.getElementById('rate-countdown');
+
+    if (!fill || !remaining) return;
+
+    // Update gauge width and color
+    fill.style.width = `${status.percent}%`;
+    fill.classList.remove('low', 'critical');
+    if (status.percent <= 10) {
+      fill.classList.add('critical');
+    } else if (status.percent <= 30) {
+      fill.classList.add('low');
+    }
+
+    remaining.textContent = status.remaining;
+
+    // Handle blocked state with countdown
+    if (status.blocked && blockedMsg && countdown) {
+      blockedMsg.style.display = 'block';
+      countdown.textContent = `Cooldown: ${status.blockSecondsLeft}s`;
+
+      // Start countdown timer if not already running
+      if (!this._countdownInterval) {
+        this._countdownInterval = setInterval(() => {
+          const s = RateLimiter.getStatus();
+          if (!s.blocked) {
+            blockedMsg.style.display = 'none';
+            clearInterval(this._countdownInterval);
+            this._countdownInterval = null;
+            this._updateRateSentinel(s);
+
+            // Re-enable the thresh button
+            const submitBtn = document.getElementById('thresh-submit');
+            if (submitBtn) submitBtn.disabled = false;
+          } else {
+            countdown.textContent = `Cooldown: ${s.blockSecondsLeft}s`;
+          }
+        }, 1000);
+      }
+    } else if (blockedMsg) {
+      blockedMsg.style.display = 'none';
+    }
   },
 
   // --- Toast Notifications ---
