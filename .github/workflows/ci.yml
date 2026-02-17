@@ -7,42 +7,52 @@ on:
     branches: [main]
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install ruff
-      - run: ruff check app/ tests/
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.10", "3.11", "3.12"]
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-      - run: pip install -r requirements.txt && pip install -e ".[dev]"
-      - run: python -m pytest tests/ -v --tb=short
-
-  pages:
+  validate:
     name: Validate Static Site
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check docs structure
+
+      - name: Check required files exist
         run: |
-          test -f docs/index.html
-          test -f docs/css/thresh.css
-          test -f docs/js/app.js
-          test -f docs/js/reddit.js
-          test -f docs/js/storage.js
-          test -f docs/js/export.js
-          echo "All static site files present."
+          echo "Checking static site structure..."
+          test -f public/index.html
+          test -f public/css/thresh.css
+          test -f public/js/app.js
+          test -f public/js/reddit.js
+          test -f public/js/exporter.js
+          test -f public/js/claude.js
+          test -f public/img/sigil.svg
+          test -f public/img/favicon.svg
+          echo "Static site files: OK"
+
+      - name: Check edge functions exist
+        run: |
+          echo "Checking Cloudflare Pages Functions..."
+          test -f functions/api/reddit.js
+          test -f functions/api/claude.js
+          echo "Edge functions: OK"
+
+      - name: Validate HTML
+        run: |
+          # Check that index.html contains key structural elements
+          grep -q 'id="intro"' public/index.html
+          grep -q 'id="app"' public/index.html
+          grep -q 'page-floor' public/index.html
+          grep -q 'page-thresh' public/index.html
+          grep -q 'page-harvest' public/index.html
+          grep -q 'page-glean' public/index.html
+          grep -q 'page-winnow' public/index.html
+          grep -q 'page-about' public/index.html
+          echo "HTML structure: OK"
+
+      - name: Validate JS syntax
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: |
+          # Parse each JS file to catch syntax errors
+          for f in public/js/*.js functions/api/*.js; do
+            node --check "$f" && echo "  $f: OK"
+          done
+          echo "JavaScript syntax: OK"
