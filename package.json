@@ -1,0 +1,13 @@
+{
+  "name": "the-threshing-floor",
+  "version": "1.0.0",
+  "description": "A browser-based tool for collecting and exporting Reddit data. No code, no API keys, no setup. Deploys to Cloudflare Pages.",
+  "private": true,
+  "scripts": {
+    "dev": "npx wrangler pages dev public --compatibility-date=2024-01-01",
+    "deploy": "npx wrangler pages deploy public --project-name=threshing-floor"
+  },
+  "keywords": ["reddit", "data-collection", "public-health", "journalism", "cloudflare-pages"],
+  "author": "Jacob E. Thomas",
+  "license": "MIT"
+}

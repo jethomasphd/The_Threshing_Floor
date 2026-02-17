@@ -1,4 +1,4 @@
-# Python
+# Python (legacy backend)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -11,6 +11,10 @@ build/
 .venv/
 venv/
 env/
+
+# Node
+node_modules/
+.wrangler/
 
 # IDE
 .vscode/
