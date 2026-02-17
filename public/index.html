@@ -177,6 +177,10 @@
                 </div>
                 <div style="display:flex;align-items:start;gap:0.75rem;">
                   <span class="badge badge-ember" style="min-width:20px;justify-content:center;">3</span>
+                  <span class="text-bone-muted text-sm"><strong class="text-bone">Winnow</strong> &mdash; Analyze with word frequency charts and optional AI</span>
+                </div>
+                <div style="display:flex;align-items:start;gap:0.75rem;">
+                  <span class="badge badge-ember" style="min-width:20px;justify-content:center;">4</span>
                   <span class="text-bone-muted text-sm"><strong class="text-bone">Glean</strong> &mdash; Export as CSV or JSON with full provenance</span>
                 </div>
               </div>
@@ -189,6 +193,70 @@
             </div>
             <div class="card-body" id="floor-recent">
               <p class="text-ash text-sm">No collections yet. Start by threshing a subreddit.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Use Cases -->
+        <h2 style="font-family:var(--font-display);color:var(--ember);font-size:1.5rem;margin:2.5rem 0 1rem;">Who Uses This &mdash; And How</h2>
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Public Health Researcher</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"What are people in r/mentalhealth talking about this month?"</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">r/mentalhealth &bull; Top &bull; Past month &bull; 100 posts</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Sort by <code class="font-mono text-ember">score</code> to find what resonates most</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Identify themes</em> to map dominant concerns</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">Export CSV with anonymized usernames for IRB-ready analysis</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Journalist</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"What questions are people asking in r/personalfinance about student loans?"</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">r/personalfinance &bull; Top &bull; Past week &bull; keyword: "student loans"</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Sort by <code class="font-mono text-ember">num_comments</code> for the biggest conversations</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Extract questions</em> to find what people need answered</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">Provenance.txt gives your editor a transparent methodology section</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Graduate Student</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"I need to compare discourse in r/science vs. r/conspiracy for my thesis."</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">science, conspiracy &bull; Top &bull; Past year &bull; keyword: "vaccine"</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Compare <code class="font-mono text-ember">upvote_ratio</code> to see consensus vs. division</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Sentiment analysis</em> on each, then a <em>Custom prompt</em> comparing tone</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">Two exports, each with its own provenance &mdash; cite both in your methods section</span></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Community Organizer</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"What are residents saying in our city's subreddit about the new transit plan?"</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">r/yourcity &bull; New &bull; Past month &bull; keyword: "transit"</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Enable comments to hear the full conversation, not just headlines</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Summarize discussion</em> to distill what people actually want</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">JSON export feeds directly into your own tools or dashboards</span></span>
+              </div>
             </div>
           </div>
         </div>
@@ -220,6 +288,7 @@
                   <option value="rising">Rising</option>
                   <option value="controversial">Controversial</option>
                 </select>
+                <p class="form-help"><strong>Top</strong> = highest-scored posts (best for research). <strong>Hot</strong> = trending now. <strong>New</strong> = most recent. <strong>Rising</strong> = gaining momentum. <strong>Controversial</strong> = most divided (low upvote_ratio).</p>
               </div>
               <div class="form-group">
                 <label class="label" for="time-filter">Time Filter</label>
@@ -230,6 +299,7 @@
                   <option value="year">Past year</option>
                   <option value="all">All time</option>
                 </select>
+                <p class="form-help">Controls which posts are eligible. <strong>Past week</strong> is a good default. Use <strong>Past year</strong> or <strong>All time</strong> for broader studies.</p>
               </div>
             </div>
 
@@ -242,10 +312,12 @@
                   <option value="50">50</option>
                   <option value="100">100</option>
                 </select>
+                <p class="form-help">Posts per subreddit. Start with 25 to preview, then collect 100 for full analysis.</p>
               </div>
               <div class="form-group">
                 <label class="label" for="keyword">Keyword Filter</label>
                 <input type="text" id="keyword" class="input" placeholder="Optional — filter post titles">
+                <p class="form-help">Searches post titles. Leave empty to collect everything matching your sort/time settings.</p>
               </div>
             </div>
 
@@ -254,6 +326,7 @@
                 <input type="checkbox" id="include-comments">
                 Include top-level comments (slower)
               </label>
+              <p class="form-help">Collects the top comments on each post (depth 2, up to 50 per post). Essential for discourse analysis; skip for headline-level surveys.</p>
             </div>
 
             <hr class="divider">
@@ -311,6 +384,25 @@
         <div id="harvest-results" style="display:none;">
           <!-- Stats bar -->
           <div class="stats-grid" style="margin-bottom:1.5rem;" id="harvest-stats"></div>
+
+          <!-- Data Field Reference (collapsible) -->
+          <details class="card" style="margin-bottom:1.5rem;cursor:pointer;">
+            <summary style="padding:0.75rem 1rem;font-family:var(--font-body);font-weight:500;color:var(--bone);font-size:0.875rem;list-style:none;display:flex;align-items:center;gap:0.5rem;">
+              <i data-lucide="help-circle" style="width:14px;height:14px;color:var(--ember);flex-shrink:0;"></i>
+              Understanding Your Data &mdash; What Each Field Means
+            </summary>
+            <div style="padding:0 1rem 1rem;display:grid;gap:0.5rem;">
+              <div class="text-sm"><code class="font-mono text-ember">score</code> <span class="text-bone-muted">&mdash; Net votes (upvotes minus downvotes). High score = community resonance. A post with 500 score was upvoted roughly 500 more times than it was downvoted.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">upvote_ratio</code> <span class="text-bone-muted">&mdash; Fraction of votes that were upvotes (0.0 to 1.0). A ratio of 0.95 means near-unanimous approval. Below 0.60 means the post is divisive &mdash; this is what "Controversial" sort finds.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">num_comments</code> <span class="text-bone-muted">&mdash; Total comments on the post. High comments + low score often means debate. High comments + high score means broad engagement.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">created_utc</code> <span class="text-bone-muted">&mdash; When the post was made (UTC timestamp). Exported as both Unix timestamp and ISO date for your analysis tools.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">is_self</code> <span class="text-bone-muted">&mdash; True if the post is text (a "self-post"). False if it's a link to an external site. Self-posts contain the author's own writing in the <code>selftext</code> field.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">selftext</code> <span class="text-bone-muted">&mdash; The body text of a self-post. This is the primary content for text analysis, sentiment, and theme extraction.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">link_flair_text</code> <span class="text-bone-muted">&mdash; Category label set by subreddit moderators (e.g., "Discussion", "News", "Vent"). Useful for filtering by post type in your analysis.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">author</code> <span class="text-bone-muted">&mdash; Reddit username. Anonymized by default in exports to protect privacy. Shown here for browsing context.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">domain</code> <span class="text-bone-muted">&mdash; Source domain for link posts (e.g., "nytimes.com") or "self.subreddit" for text posts. Useful for tracking which sources a community shares.</span></div>
+            </div>
+          </details>
 
           <!-- Search/Filter -->
           <div style="margin-bottom:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
@@ -377,6 +469,7 @@
                   <option value="csv">CSV (Excel-compatible)</option>
                   <option value="json">JSON</option>
                 </select>
+                <p class="form-help"><strong>CSV</strong> opens in Excel, Google Sheets, SPSS, and R. <strong>JSON</strong> is better for Python, JavaScript, or feeding into other tools.</p>
               </div>
               <div class="form-group">
                 <label class="label">&nbsp;</label>
@@ -384,6 +477,7 @@
                   <input type="checkbox" id="anonymize-authors" checked>
                   Anonymize usernames
                 </label>
+                <p class="form-help">Replaces usernames with <code class="font-mono">user_a1b2c3</code> hashes. Recommended for any published or shared work. Your choice is documented in provenance.txt.</p>
               </div>
             </div>
 
@@ -399,6 +493,19 @@
               </button>
             </div>
           </div>
+
+          <!-- What's in the ZIP -->
+          <details class="card" style="margin-bottom:1.5rem;cursor:pointer;">
+            <summary style="padding:0.75rem 1rem;font-family:var(--font-body);font-weight:500;color:var(--bone);font-size:0.875rem;list-style:none;display:flex;align-items:center;gap:0.5rem;">
+              <i data-lucide="file-archive" style="width:14px;height:14px;color:var(--ember);flex-shrink:0;"></i>
+              What's in the Export ZIP?
+            </summary>
+            <div style="padding:0 1rem 1rem;display:grid;gap:0.5rem;">
+              <div class="text-sm"><code class="font-mono text-ember">posts.csv</code> <span class="text-bone-muted">(or .json) &mdash; One row per post. Fields: id, subreddit, title, author, selftext, score, upvote_ratio, num_comments, created_utc, created_date, url, permalink, is_self, flair, domain.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">comments.csv</code> <span class="text-bone-muted">(if collected) &mdash; One row per comment. Fields: id, post_id, author, body, score, created_utc, created_date, depth, parent_id.</span></div>
+              <div class="text-sm"><code class="font-mono text-ember">provenance.txt</code> <span class="text-bone-muted">&mdash; Complete methodology record: tool version, subreddit(s), sort method, time filter, keyword, limits, post/comment counts, timestamp, anonymization setting, data source, known limitations, and ethical use guidance. Cite this directly in your methods section.</span></div>
+            </div>
+          </details>
 
           <!-- Preview area -->
           <div id="glean-preview-container" style="display:none;">
@@ -424,6 +531,39 @@
         </div>
 
         <div id="winnow-panel" style="display:none;max-width:800px;">
+
+          <!-- What You Get Without an API Key -->
+          <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--success);">
+            <div class="card-header">
+              <h3 class="card-title">Built-in Analysis (No API Key Needed)</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">These tools run entirely in your browser at no cost:</p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Word Frequency Chart</strong> <span class="text-bone-muted">&mdash; See the top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Tells you what the community is literally talking about.</span></span>
+                <span class="text-sm"><strong class="text-bone">Sortable Data Table</strong> <span class="text-bone-muted">&mdash; On the Harvest page, sort by any column. Sort by <code class="font-mono text-ember">score</code> for resonance, <code class="font-mono text-ember">num_comments</code> for engagement, or <code class="font-mono text-ember">date</code> for recency.</span></span>
+                <span class="text-sm"><strong class="text-bone">Summary Statistics</strong> <span class="text-bone-muted">&mdash; Post count, average score, average comments, and date range are calculated automatically for every collection.</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- What Claude Adds -->
+          <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ember);">
+            <div class="card-header">
+              <h3 class="card-title">Claude AI Analysis (Requires API Key)</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">Claude reads your collected posts and produces structured research analysis. It goes beyond counting words &mdash; it understands meaning, groups ideas, and identifies patterns a human analyst would find.</p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Identify Themes</strong> <span class="text-bone-muted">&mdash; Groups posts into thematic clusters and names each theme. Perfect for a first pass on unfamiliar data. <em>Example output: "Theme 1: Access to Care (23 posts) &mdash; Users describe long wait times, insurance denials&hellip;"</em></span></span>
+                <span class="text-sm"><strong class="text-bone">Sentiment Analysis</strong> <span class="text-bone-muted">&mdash; Classifies overall tone (positive, negative, neutral, mixed) and identifies emotional patterns. Useful for tracking how a community feels about a topic over time.</span></span>
+                <span class="text-sm"><strong class="text-bone">Summarize Discussion</strong> <span class="text-bone-muted">&mdash; Produces a structured summary: main points, areas of agreement, areas of disagreement, and standout observations. Good for briefings and literature reviews.</span></span>
+                <span class="text-sm"><strong class="text-bone">Extract Questions</strong> <span class="text-bone-muted">&mdash; Pulls out the questions people are asking, categorized by topic. Reveals information gaps and unmet needs &mdash; invaluable for journalists and service providers.</span></span>
+                <span class="text-sm"><strong class="text-bone">Custom Prompt</strong> <span class="text-bone-muted">&mdash; Ask Claude anything about your data. Your prompt is combined with a summary of up to 50 posts.</span></span>
+              </div>
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom:1.5rem;">
             <div class="form-row">
               <div class="form-group">
@@ -447,6 +587,13 @@
             <div class="form-group" id="winnow-custom-group" style="display:none;">
               <label class="label" for="winnow-custom">Custom Prompt</label>
               <textarea id="winnow-custom" class="input" rows="3" placeholder="What would you like Claude to analyze?"></textarea>
+              <p class="form-help" style="margin-top:0.5rem;">Example prompts you can try:</p>
+              <div style="display:flex;flex-direction:column;gap:0.25rem;margin-top:0.25rem;">
+                <span class="text-xs text-bone-muted font-mono">"What misconceptions appear most frequently in these posts?"</span>
+                <span class="text-xs text-bone-muted font-mono">"Identify posts that describe personal experiences vs. those sharing news articles."</span>
+                <span class="text-xs text-bone-muted font-mono">"What specific policy changes are people advocating for?"</span>
+                <span class="text-xs text-bone-muted font-mono">"Compare the tone of high-score vs. low-score posts."</span>
+              </div>
             </div>
 
             <div style="display:flex;gap:0.75rem;align-items:center;">
@@ -468,6 +615,7 @@
               <h3 class="card-title">Word Frequency</h3>
               <span class="text-xs text-ash">No API key needed</span>
             </div>
+            <p class="text-bone-muted text-xs" style="padding:0 1rem 0.5rem;">Top 20 words from all post titles and bodies, with common stopwords removed. Gives you the literal vocabulary of the conversation.</p>
             <canvas id="word-freq-chart" height="200"></canvas>
           </div>
 

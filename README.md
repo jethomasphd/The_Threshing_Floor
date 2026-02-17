@@ -10,9 +10,49 @@ It exists because public discourse is worth studying, and the people who want to
 
 ## Use It Now
 
-**[threshingfloor.pages.dev](https://threshingfloor.pages.dev)** — open the live site and start collecting. Nothing to install.
+**[the-threshing-floor.pages.dev](https://the-threshing-floor.pages.dev)** — open the live site and start collecting. Nothing to install.
 
 Or deploy your own instance (see below).
+
+---
+
+## Use Cases
+
+### Public Health Researcher
+
+> *"What are people in r/mentalhealth talking about this month?"*
+
+1. **Thresh** — `r/mentalhealth` · Sort by **Top** · **Past month** · 100 posts
+2. **Harvest** — Sort by `score` to find what resonates most with the community
+3. **Winnow** — Run **Identify themes** to map dominant concerns, then **Sentiment analysis** to gauge emotional tone
+4. **Glean** — Export CSV with anonymized usernames for IRB-ready analysis. Cite `provenance.txt` in your methods section
+
+### Journalist
+
+> *"What questions are people asking in r/personalfinance about student loans?"*
+
+1. **Thresh** — `r/personalfinance` · Sort by **Top** · **Past week** · keyword: `student loans`
+2. **Harvest** — Sort by `num_comments` for the biggest conversations. Click into high-comment posts to read the full thread
+3. **Winnow** — Run **Extract questions** to find what people need answered. Use a **Custom prompt**: *"What specific policy changes are people advocating for?"*
+4. **Glean** — Provenance.txt gives your editor a transparent methodology section
+
+### Graduate Student
+
+> *"I need to compare discourse in r/science vs. r/conspiracy for my thesis."*
+
+1. **Thresh** — Enter `science, conspiracy` (comma-separated) · Sort by **Top** · **Past year** · keyword: `vaccine`
+2. **Harvest** — Compare `upvote_ratio` across subreddits to see consensus vs. division. A ratio of 0.95 means near-unanimous approval; below 0.60 means deeply divisive
+3. **Winnow** — Run **Sentiment analysis** on each collection, then a **Custom prompt**: *"Compare the tone and evidence standards between these two communities"*
+4. **Glean** — Two exports, each with its own provenance — cite both in your methods section
+
+### Community Organizer
+
+> *"What are residents saying in our city's subreddit about the new transit plan?"*
+
+1. **Thresh** — `r/yourcity` · Sort by **New** · **Past month** · keyword: `transit` · **Include comments**
+2. **Harvest** — Enable comments to hear the full conversation, not just headlines. Search for specific routes or proposals
+3. **Winnow** — Run **Summarize discussion** to distill what people actually want. Run **Extract questions** to identify unaddressed concerns
+4. **Glean** — JSON export feeds directly into your own tools or dashboards
 
 ---
 
@@ -85,6 +125,104 @@ Open **http://localhost:8788** in your browser. The local dev server includes fu
 
 ---
 
+## Data Field Reference
+
+Every post and comment you collect has structured fields. Understanding them is essential for meaningful analysis.
+
+### Post Fields
+
+| Field | Type | What It Means |
+|-------|------|---------------|
+| `id` | string | Unique Reddit post identifier |
+| `subreddit` | string | Community name (you can collect from multiple at once) |
+| `title` | string | Post headline — always present, primary text for keyword analysis |
+| `author` | string | Reddit username (anonymized to `user_a1b2c3` in exports by default) |
+| `selftext` | string | Body text of self-posts. **Empty for link posts.** This is where the real discourse lives |
+| `score` | number | Net votes (upvotes minus downvotes). A post with `score: 500` was upvoted ~500 more times than downvoted. **High score = community resonance** |
+| `upvote_ratio` | number | Fraction of votes that were upvotes (0.0–1.0). `0.95` = near-unanimous approval. `0.55` = deeply divisive. **This is what "Controversial" sort finds** |
+| `num_comments` | number | Total comment count. **High comments + low score = debate. High comments + high score = broad engagement** |
+| `created_utc` | number | Unix timestamp of creation. Exported as both Unix and ISO date |
+| `created_date` | string | Human-readable ISO date (computed at export) |
+| `url` | string | Direct URL — either an external link or the Reddit post itself |
+| `permalink` | string | Full Reddit URL for the post |
+| `is_self` | boolean | `true` if text post, `false` if link post. Self-posts have content in `selftext` |
+| `link_flair_text` | string | Category label set by moderators (e.g., "Discussion", "News", "Vent"). Useful for filtering by post type |
+| `domain` | string | Source domain for link posts (`nytimes.com`, `youtube.com`) or `self.subreddit` for text posts |
+| `over_18` | boolean | NSFW flag |
+
+### Comment Fields
+
+| Field | Type | What It Means |
+|-------|------|---------------|
+| `id` | string | Unique comment identifier |
+| `post_id` | string | Links this comment back to its parent post |
+| `author` | string | Commenter username (anonymized in exports by default) |
+| `body` | string | Comment text — where you find personal experiences, opinions, and replies |
+| `score` | number | Comment votes. High-score comments are what the community endorsed |
+| `created_utc` | number | When the comment was posted |
+| `depth` | number | Nesting level. `0` = top-level reply to the post. `1` = reply to a top-level comment. Collected to depth 2 |
+| `parent_id` | string | ID of the parent comment (for threading) |
+
+### Reading the Data Like a Researcher
+
+- **Sort by `score` descending** to find what the community most agrees with
+- **Sort by `num_comments` descending** to find the most active discussions
+- **Filter for `upvote_ratio` < 0.60** to identify divisive content
+- **Compare `score` to `num_comments`**: a post with 50 score but 200 comments is contentious; a post with 500 score and 20 comments is broadly approved but didn't spark conversation
+- **Use `link_flair_text`** to categorize posts before analysis (many subreddits require flair)
+- **Check `is_self`**: self-posts contain original writing; link posts are shared content. Filter accordingly for your research question
+- **Use `domain`** to track which external sources a community shares and trusts
+
+---
+
+## Analysis Methods
+
+### Built-in (No API Key Required)
+
+These run entirely in your browser at zero cost:
+
+| Method | Where | What It Does |
+|--------|-------|--------------|
+| **Word Frequency** | Winnow | Top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Tells you the literal vocabulary of the conversation |
+| **Sortable Table** | Harvest | Click any column header to sort ascending/descending. Sort by `score`, `num_comments`, `date`, `author`, or `title` |
+| **Summary Statistics** | Harvest | Post count, average score, average comments, and date range — calculated automatically for every collection |
+| **Search Filter** | Harvest | Live text search across titles, authors, and post bodies |
+
+### Claude AI Analysis (Optional — Bring Your Own Key)
+
+Claude reads your collected posts (up to 50 are sampled to stay within token limits) and produces structured research analysis. It goes beyond counting words — it understands meaning, groups ideas, and identifies patterns.
+
+| Analysis Type | Best For | What Claude Returns |
+|---------------|----------|---------------------|
+| **Identify Themes** | First pass on unfamiliar data | Thematic clusters with names, post counts, and examples. *"Theme 1: Access to Care (23 posts) — Users describe long wait times, insurance denials…"* |
+| **Sentiment Analysis** | Tracking community mood | Overall tone classification, emotional patterns, sentiment shifts, and specific examples |
+| **Summarize Discussion** | Briefings and literature reviews | Main points, areas of agreement/disagreement, and standout observations |
+| **Extract Questions** | Journalists and service providers | Questions people are asking, categorized by topic. Reveals information gaps and unmet needs |
+| **Custom Prompt** | Anything | Your own analysis prompt combined with the data. Examples below |
+
+#### Example Custom Prompts
+
+```
+"What misconceptions appear most frequently in these posts?"
+"Identify posts that describe personal experiences vs. those sharing news articles."
+"What specific policy changes are people advocating for?"
+"Compare the tone of high-score vs. low-score posts."
+"What resources or solutions are people recommending to each other?"
+"Are there any posts that might indicate crisis or urgent need?"
+```
+
+### How Claude Integration Works
+
+1. Get a key at [console.anthropic.com](https://console.anthropic.com)
+2. Enter it in the Winnow settings modal — it's stored in your browser's `localStorage` only
+3. Your key is sent directly to Anthropic's API through a Cloudflare edge function — **it is never logged or stored on any server**
+4. Claude (Sonnet) analyzes a summary of up to 50 posts from your collection
+5. Results appear in the "Claude's Analysis" panel — marked as AI-generated
+
+Without an API key, the word frequency chart and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
+
+---
+
 ## The Provenance Seal
 
 Every export is a ZIP containing:
@@ -104,18 +242,6 @@ Every export is a ZIP containing:
 Usernames are anonymized by default. If your work requires real usernames, Thresh lets you opt in — and documents that choice in provenance so your transparency is on the record.
 
 ---
-
-## AI Analysis (Optional)
-
-The **Winnow** page offers AI-powered analysis using Claude by Anthropic. This feature is entirely optional and requires your own API key.
-
-- Get a key at [console.anthropic.com](https://console.anthropic.com)
-- Enter it in the Winnow settings modal — it's stored in your browser's `localStorage` only
-- Your key is sent directly to Anthropic's API through an edge function — it is never logged or stored on any server
-
-Available analyses: theme identification, sentiment analysis, discussion summaries, question extraction, and custom prompts.
-
-Without an API key, Winnow still provides a **word frequency chart** (Chart.js, runs entirely client-side).
 
 ---
 
