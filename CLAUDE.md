@@ -4,11 +4,11 @@
 
 Thresh is a counter-technology. It belongs to the same lineage as The Watchtower and the COMPANION Protocol — tools built by Jacob E. Thomas that honor attention rather than exploit it.
 
-Thresh is a local-first web application for collecting, exploring, and exporting Reddit data. It wraps PRAW (Python Reddit API Wrapper) behind an intuitive browser interface so that anyone — researcher, journalist, civic technologist, curious citizen — can go from "I want to understand what people are saying in r/mentalhealth" to "here's my cleaned, documented dataset" without writing code.
+Thresh is a local-first web application for collecting, exploring, and exporting Reddit data. It runs entirely in the browser — no server, no database, no API keys required. Anyone — researcher, journalist, civic technologist, curious citizen — can go from "I want to understand what people are saying in r/mentalhealth" to "here's my cleaned, documented dataset" without writing code.
 
 The name comes from the biblical threshing floor — the place where grain is separated from chaff through deliberate labor. Social media is a flood of noise that buries signal. Thresh is the instrument of separation — the high ground where you bring the harvest and beat it until the grain falls free.
 
-The user may be a scientist, a student, a journalist, or anyone who believes public discourse is worth measuring. They may know some Python but should never need to touch it. Every interaction should feel guided, warm, and defensible. The aesthetic is atmospheric but the interface is clear.
+The user may be a scientist, a student, a journalist, or anyone who believes public discourse is worth measuring. They should never need to write code or touch a terminal. Every interaction should feel guided, warm, and defensible. The aesthetic is atmospheric but the interface is clear.
 
 ## The Metaphor System
 
@@ -21,45 +21,44 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 | **Thresh** | Beating the grain — collection and separation | Data collection configuration and execution |
 | **Harvest** | Gathering what was threshed | Results viewing, filtering, basic statistics |
 | **Winnow** | The wind that carries away chaff | Analysis — word frequency, temporal patterns, keywords |
-| **Glean** | Gathering cleaned grain into bundles | Export with provenance documentation |
+| **Glean** | Gathering cleaned grain into bundles | Export with provenance documentation + AI research report generation |
 | **Provenance** | The seal on every bundle | Methodology sidecar (replaces generic "metadata") |
 
 ## Architecture (Do Not Deviate)
 
-- **Backend**: FastAPI + Jinja2 templates + SQLAlchemy/SQLite
-- **Frontend**: Server-rendered HTML with HTMX. NO React, NO Vue, NO build step, NO node_modules.
-- **Styling**: Tailwind CSS via CDN + custom CSS in `app/static/css/thresh.css`
-- **Charts**: Chart.js for widgets, Plotly.js for interactive exploration
+- **Platform**: Cloudflare Pages static site. NO backend server, NO database, NO build step.
+- **Frontend**: Single-page app in `public/index.html`. Vanilla JavaScript. NO React, NO Vue, NO bundler, NO node_modules.
+- **Styling**: Tailwind CSS via CDN + custom CSS in `public/css/thresh.css`
 - **Icons**: Lucide via CDN
-- **Interactivity**: HTMX handles all dynamic updates. Vanilla JS only for charts and minor UI.
-- **Database**: SQLite via SQLAlchemy. No Postgres, no Docker-required databases.
-- **Runs with**: `pip install -r requirements.txt && python -m app.main`
+- **Interactivity**: Vanilla JS for all UI (hash-based routing in `app.js`). NO frameworks.
+- **Data source**: Reddit's public JSON endpoints via Cloudflare Pages Function proxy (`functions/api/reddit.js`)
+- **AI integration**: Optional Claude API via Cloudflare Pages Function proxy (`functions/api/claude.js`). Bring your own key.
+- **Storage**: Browser `localStorage` only. No server database.
+- **Runs with**: `npx wrangler pages dev public` (local) or deploy to Cloudflare Pages (production)
 
 ## Code Conventions
 
-### Python
-- Python 3.10+, type hints on all function signatures
-- Pydantic v2 for all request/response schemas
-- SQLAlchemy 2.0 style (mapped_column)
-- f-strings, pathlib.Path, Google-style docstrings
-- `logging` module, not print statements
-- Ruff for linting
-
-### HTML/Templates
-- Jinja2 with inheritance from `base.html`
-- HTMX attributes for all dynamic behavior (`hx-get`, `hx-post`, `hx-target`, `hx-swap`)
-- Partials in `app/templates/partials/` as HTMX swap targets
+### HTML
+- Single-page app in `public/index.html`
 - Semantic HTML5, accessible (labels, alt text, keyboard navigation)
+- Sections shown/hidden via hash-based routing in `app.js`
 
 ### CSS
-- Tailwind utilities for layout/spacing
-- Custom properties in `thresh.css` for the design system
-- No inline styles except dynamic Jinja2 values
+- Tailwind utilities via CDN for layout/spacing
+- Custom properties in `public/css/thresh.css` for the design system
+- Inline styles only for dynamic JS-computed values
 
 ### JavaScript
-- Vanilla JS only. ES6+. No jQuery.
-- Chart.js and Plotly.js initialized via data attributes
-- All JS in `app/static/js/`, loaded with defer
+- Vanilla JS only. ES6+. No jQuery. No frameworks.
+- All JS in `public/js/`, loaded with defer
+- `app.js` — Router, state management, UI orchestration
+- `reddit.js` — Reddit JSON fetching via CORS proxy, rate limiting
+- `exporter.js` — CSV/JSON export + provenance ZIP generation
+- `claude.js` — Optional Claude API integration (analysis + research reports)
+
+### Cloudflare Pages Functions
+- `functions/api/reddit.js` — Stateless CORS proxy for Reddit public JSON
+- `functions/api/claude.js` — Stateless proxy for Anthropic API calls
 
 ## Design Language
 
@@ -116,11 +115,11 @@ This is a Jacob E. Thomas artifact. Dark ground, ember gold, intentional typogra
 
 ### Rate Limiting
 Reddit allows 100 requests/minute. Thresh MUST:
-- Track via PRAW's built-in limiter plus internal counter
-- Cache subreddit metadata in SQLite (TTL: 15 min)
+- Track via Reddit's response headers (`x-ratelimit-remaining`, `x-ratelimit-reset`)
+- Cache rate limit state in `localStorage` (key: `thresh_rate_limit`)
 - Show remaining quota in a sidebar sentinel widget (ember gauge that dims as quota depletes)
+- Disable collection buttons when cooldown is active
 - Never allow unbounded API calls
-- Use `replace_more(limit=N)` with sensible defaults, never `limit=None`
 
 ### Provenance (Non-Negotiable)
 Every export MUST include `provenance.txt` documenting:
@@ -149,32 +148,37 @@ This is the seal on every bundle. Academic reproducibility depends on it.
 
 ## File-Level Guidance
 
-### app/services/reddit_client.py
-Core PRAW interface. Wrap all calls in try/except. Methods return Pydantic models, never raw PRAW objects:
-- `search_subreddits(query, limit) -> list[SubredditInfo]`
-- `get_subreddit_meta(name) -> SubredditDetail`
-- `get_posts(subreddit, sort, time_filter, limit, query) -> list[PostData]`
-- `get_comments(post_id, depth, limit) -> list[CommentData]`
-- `get_rate_limit_status() -> RateLimitInfo`
+### public/index.html
+Single-page application shell. Includes: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM Plex Mono), Tailwind CDN, Lucide CDN, JSZip CDN. Navigation sidebar with six pages (Floor, Thresh, Harvest, Winnow, Glean, About). Toast container. Grain texture overlay. Cinematic intro sequence. Footer with version.
 
-### app/services/collector.py
-Orchestrates multi-step collection: pagination beyond 1000-item limit (created_utc windowing), progress tracking (CollectionJob in SQLite), comment tree expansion, deduplication.
+### public/js/app.js
+Core application: hash-based router, state management (`collections[]`, `activeCollection`), UI orchestration for all pages. Persistence via `localStorage`. Includes the AI Research Report generation logic (`generateResearchReport`, `downloadReport`, `copyReport`).
 
-### app/services/exporter.py
-Transforms data into formats: CSV (UTF-8 BOM for Excel), JSON (pretty), JSONL (streaming). All wrapped in ZIP with provenance.txt.
+### public/js/reddit.js
+Reddit data fetching via the Cloudflare CORS proxy. Handles rate limiting (tracks `x-ratelimit-*` headers), exponential backoff on 429 responses, and comment tree expansion.
 
-### app/templates/base.html
-Layout shell. Must include: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM Plex Mono), Tailwind CDN, HTMX CDN, Chart.js CDN, Lucide CDN. Navigation sidebar with all seven pages (Floor, Explore, Thresh, Harvest, Winnow, Glean, About). Toast container. Grain texture overlay. Footer with version.
+### public/js/exporter.js
+Client-side export engine. Generates CSV (UTF-8 BOM for Excel) or JSON, bundles with `provenance.txt` in a ZIP via JSZip. Handles username anonymization.
+
+### public/js/claude.js
+Optional Claude API integration. Two modes:
+- `analyze()` — Winnow page analysis (themes, sentiment, summary, questions, custom prompt)
+- `generateReport()` — Glean page research report generator (full Intro/Methods/Results/Discussion document)
+
+### functions/api/reddit.js
+Cloudflare Pages Function. Stateless CORS proxy that forwards requests to Reddit's public JSON endpoints. No logging, no data storage.
+
+### functions/api/claude.js
+Cloudflare Pages Function. Stateless proxy for Anthropic API calls. Receives the user's API key per-request. No logging, no key storage.
 
 ## Testing
-- pytest + httpx.AsyncClient for routes
-- Mock PRAW with fixture JSON in `tests/fixtures/`
-- Test services independently from API
-- Validate export compliance (CSV parseable, JSON valid, provenance.txt present)
-- Every service function: one happy-path + one error-path test minimum
+- Manual testing via `npx wrangler pages dev public` (local Cloudflare Pages emulation)
+- Verify export compliance (CSV parseable, JSON valid, provenance.txt present in ZIP)
+- Test rate limit gauge behavior under throttled conditions
+- Test AI features require a valid Anthropic API key
 
 ## What Success Looks Like
 
-Someone clones the repo (or opens a Codespace), runs pip install, walks through the credential setup, and within ten minutes is exploring subreddits and collecting their first dataset. When they export, anyone reviewing the work sees exactly how the data was collected. Provenance.txt gives them the language they need for a methods section, a transparency report, or a replication attempt.
+Someone opens the live site (or clones the repo and runs `npx wrangler pages dev public`), and within five minutes is exploring subreddits and collecting their first dataset. When they export, anyone reviewing the work sees exactly how the data was collected. Provenance.txt gives them the language they need for a methods section, a transparency report, or a replication attempt. The AI Research Report takes it further — generating a full Introduction/Methods/Results/Discussion document from a single collection and a good research question.
 
 The tool respects their time, respects Reddit's API, and produces defensible output. The aesthetic tells them that someone cared about building this — that it wasn't thrown together, that attention was paid. That's the point of the whole mythology: attention, paid deliberately.
