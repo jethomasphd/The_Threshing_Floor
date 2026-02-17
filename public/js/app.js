@@ -633,6 +633,148 @@ const ThreshApp = {
     this.toast(`Analysis saved as ${filename}`, 'success');
   },
 
+  // --- Research Report Generation ---
+
+  async generateResearchReport() {
+    const id = document.getElementById('glean-collection').value;
+    const collection = this.collections.find(c => c.id === id);
+    if (!collection) {
+      this.toast('Select a collection first.', 'warning');
+      return;
+    }
+
+    if (!ClaudeClient.hasKey()) {
+      this.showClaudeKeyModal();
+      return;
+    }
+
+    const question = document.getElementById('report-question').value.trim();
+    if (!question) {
+      this.toast('Please enter a research question so Claude can frame the report.', 'warning');
+      return;
+    }
+
+    const audience = document.getElementById('report-audience').value;
+    const context = document.getElementById('report-context').value.trim();
+    const statusEl = document.getElementById('report-status');
+    const btn = document.getElementById('report-generate-btn');
+
+    statusEl.textContent = 'Generating report... this may take 30-60 seconds.';
+    btn.disabled = true;
+
+    try {
+      // Compute word frequency for the report
+      const wordFreq = this._computeWordFreq(collection.posts);
+
+      // Compute summary stats
+      const posts = collection.posts;
+      const avgScore = posts.length ? Math.round(posts.reduce((s, p) => s + p.score, 0) / posts.length) : 0;
+      const avgComments = posts.length ? Math.round(posts.reduce((s, p) => s + p.num_comments, 0) / posts.length) : 0;
+      const dateRange = posts.length ? this._dateRange(posts) : 'N/A';
+
+      const stats = {
+        postCount: posts.length,
+        avgScore,
+        avgComments,
+        dateRange,
+      };
+
+      const result = await ClaudeClient.generateReport({
+        posts: collection.posts,
+        config: collection.config,
+        timestamp: collection.timestamp,
+        wordFreq,
+        stats,
+        question,
+        audience,
+        context,
+      });
+
+      // Store the report text for download
+      this._lastReport = result;
+      this._lastReportMeta = { collection, question, audience };
+
+      document.getElementById('report-response').textContent = result;
+      document.getElementById('report-result').style.display = 'block';
+      document.getElementById('report-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      statusEl.textContent = '';
+      btn.disabled = false;
+      this.toast('Research report generated!', 'success');
+    } catch (err) {
+      statusEl.textContent = '';
+      btn.disabled = false;
+      this.toast(`Report generation failed: ${err.message}`, 'error');
+    }
+  },
+
+  _computeWordFreq(posts) {
+    const stopwords = new Set([
+      'the','be','to','of','and','a','in','that','have','i','it','for','not','on','with',
+      'he','as','you','do','at','this','but','his','by','from','they','we','her','she','or',
+      'an','will','my','one','all','would','there','their','what','so','up','out','if','about',
+      'who','get','which','go','me','when','make','can','like','time','no','just','him','know',
+      'take','people','into','year','your','good','some','could','them','see','other','than',
+      'then','now','look','only','come','its','over','think','also','back','after','use','two',
+      'how','our','work','first','well','way','even','new','want','because','any','these',
+      'give','day','most','us','been','has','had','was','were','are','is','am','im','dont',
+      'really','much','very','more','still','should','did','got','going','being','been','may',
+      'own','through','too','does','need','say','each','tell','why','ask','men','ran','try',
+      'every','where','between','never','another','while','last','might','found','before',
+      'same','made','long','right','said','many','thing','things','something','anything','man',
+      'woman','life','world','let','keep','being','down','over','such','against','here','both',
+      'those','put','went','came','off','around','since','still','set','few','without',
+      'already','sure','nothing','point','someone','everyone','everything','lot','feel',
+      'felt','actually','doing','done','went','thought','getting','making','big','put','old',
+      'great','around','little','part','every','again','change','went','says','http','https',
+      'www','com','reddit','removed','deleted',
+    ]);
+    const allText = posts.map(p => `${p.title} ${p.selftext || ''}`).join(' ').toLowerCase();
+    const words = allText.replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !stopwords.has(w));
+    const freq = {};
+    words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+    return Object.entries(freq).sort((a, b) => b[1] - a[1]).slice(0, 20);
+  },
+
+  _lastReport: '',
+  _lastReportMeta: null,
+
+  downloadReport() {
+    if (!this._lastReport) {
+      this.toast('No report to download yet.', 'warning');
+      return;
+    }
+
+    const meta = this._lastReportMeta;
+    const sub = meta && meta.collection ? meta.collection.config.subreddit : 'unknown';
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `thresh-report-${sub.replace(/,/g, '-')}-${date}.md`;
+
+    const blob = new Blob([this._lastReport], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.toast(`Report saved as ${filename}`, 'success');
+  },
+
+  copyReport() {
+    if (!this._lastReport) {
+      this.toast('No report to copy yet.', 'warning');
+      return;
+    }
+
+    navigator.clipboard.writeText(this._lastReport).then(() => {
+      this.toast('Report copied to clipboard.', 'success');
+    }).catch(() => {
+      this.toast('Could not copy. Try selecting the text manually.', 'warning');
+    });
+  },
+
   // --- Claude Key Modal ---
 
   showClaudeKeyModal() {
