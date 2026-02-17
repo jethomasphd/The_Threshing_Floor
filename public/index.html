@@ -534,13 +534,13 @@
       <section id="page-winnow" class="page-section">
         <div class="page-header">
           <h1 class="page-title">Winnow</h1>
-          <p class="page-subtitle">AI-powered analysis of your collected data. Requires an Anthropic API key.</p>
+          <p class="page-subtitle">Separate signal from noise. Start with the built-in word frequency table (free, instant), then optionally use Claude AI for deeper analysis.</p>
         </div>
 
         <div id="winnow-empty" class="empty-state">
           <img src="/img/sigil.svg" class="empty-state-sigil" alt="">
-          <h3 class="empty-state-heading">No Data to Analyze</h3>
-          <p class="empty-state-text">Collect some data first, then use Claude to find patterns and insights.</p>
+          <h3 class="empty-state-heading">No Data to Analyze Yet</h3>
+          <p class="empty-state-text">Head over to <strong>Thresh</strong> to collect posts from a subreddit. Once you have a collection, come back here to explore word patterns and run AI analysis.</p>
           <button class="btn btn-primary" onclick="ThreshApp.navigate('thresh')">Go to Thresh</button>
         </div>
 
@@ -554,7 +554,7 @@
             <div class="card-body">
               <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">These tools run entirely in your browser at no cost:</p>
               <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                <span class="text-sm"><strong class="text-bone">Word Frequency Chart</strong> <span class="text-bone-muted">&mdash; See the top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Tells you what the community is literally talking about.</span></span>
+                <span class="text-sm"><strong class="text-bone">Word Frequency Table</strong> <span class="text-bone-muted">&mdash; See the top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Copyable with one click. Tells you what the community is literally talking about.</span></span>
                 <span class="text-sm"><strong class="text-bone">Sortable Data Table</strong> <span class="text-bone-muted">&mdash; On the Harvest page, sort by any column. Sort by <code class="font-mono text-ember">score</code> for resonance, <code class="font-mono text-ember">num_comments</code> for engagement, or <code class="font-mono text-ember">date</code> for recency.</span></span>
                 <span class="text-sm"><strong class="text-bone">Summary Statistics</strong> <span class="text-bone-muted">&mdash; Post count, average score, average comments, and date range are calculated automatically for every collection.</span></span>
               </div>
@@ -578,16 +578,30 @@
             </div>
           </div>
 
+          <!-- Step-by-step instructions -->
+          <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ember-dim);">
+            <div class="card-body">
+              <p class="text-bone text-sm" style="margin-bottom:0.5rem;font-weight:600;">How to use this page:</p>
+              <ol style="margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:0.25rem;">
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Pick a collection</strong> from the dropdown below. The word frequency table will update immediately.</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Review the word table</strong> &mdash; it shows you the 20 most common words in your data. Click "Copy" to grab it.</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Optionally, run Claude AI analysis</strong> &mdash; choose an analysis type and click "Analyze with Claude." You'll need an Anthropic API key (click "API Key" to add one).</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Copy or download</strong> the results. Use "Copy to Clipboard" for quick pasting, or "Save as .txt/.md" to keep a file for your records.</li>
+              </ol>
+            </div>
+          </div>
+
           <div class="card" style="margin-bottom:1.5rem;">
             <div class="form-row">
               <div class="form-group">
-                <label class="label" for="winnow-collection">Collection</label>
-                <select id="winnow-collection" class="select">
+                <label class="label" for="winnow-collection">Step 1: Choose a Collection</label>
+                <select id="winnow-collection" class="select" onchange="ThreshApp.loadWinnowCollection(this.value)">
                   <option value="">Select a collection&hellip;</option>
                 </select>
+                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Selecting a collection updates the word frequency table below.</p>
               </div>
               <div class="form-group">
-                <label class="label" for="winnow-prompt">Analysis Type</label>
+                <label class="label" for="winnow-prompt">Step 2: Choose Analysis Type</label>
                 <select id="winnow-prompt" class="select">
                   <option value="themes">Identify key themes &amp; topics</option>
                   <option value="sentiment">Sentiment analysis</option>
@@ -595,6 +609,7 @@
                   <option value="questions">Extract questions people are asking</option>
                   <option value="custom">Custom prompt</option>
                 </select>
+                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Requires an Anthropic API key. The word table works without one.</p>
               </div>
             </div>
 
@@ -610,10 +625,10 @@
               </div>
             </div>
 
-            <div style="display:flex;gap:0.75rem;align-items:center;">
+            <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="ThreshApp.runAnalysis()">
                 <i data-lucide="sparkles" style="width:16px;height:16px"></i>
-                Analyze with Claude
+                Step 3: Analyze with Claude
               </button>
               <button class="btn btn-ghost btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
                 <i data-lucide="key" style="width:14px;height:14px"></i>
@@ -623,21 +638,46 @@
             </div>
           </div>
 
-          <!-- Word Frequency Chart (client-side, no API needed) -->
+          <!-- Word Frequency Table (client-side, no API needed) -->
           <div class="card" style="margin-bottom:1.5rem;">
-            <div class="card-header">
-              <h3 class="card-title">Word Frequency</h3>
-              <span class="text-xs text-ash">No API key needed</span>
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <h3 class="card-title">Word Frequency</h3>
+                <span class="text-xs text-ash">No API key needed</span>
+              </div>
+              <button id="word-freq-copy" class="btn btn-ghost btn-sm" onclick="ThreshApp.copyWordFreq()" title="Copy table to clipboard" style="display:none;">
+                <i data-lucide="clipboard-copy" style="width:14px;height:14px"></i>
+                Copy
+              </button>
             </div>
-            <p class="text-bone-muted text-xs" style="padding:0 1rem 0.5rem;">Top 20 words from all post titles and bodies, with common stopwords removed. Gives you the literal vocabulary of the conversation.</p>
-            <canvas id="word-freq-chart" height="200"></canvas>
+            <p class="text-bone-muted text-xs" style="padding:0 1rem 0.5rem;">Top 20 words from all post titles and bodies, with common stopwords removed. This is the literal vocabulary of the conversation &mdash; the words people actually use when talking about this topic.</p>
+            <div id="word-freq-table-wrap" style="padding:0 1rem 1rem;">
+              <p class="text-ash text-sm" style="text-align:center;padding:2rem 0;">Select a collection above to see word frequencies.</p>
+            </div>
           </div>
 
           <!-- Claude Analysis Result -->
           <div id="winnow-result" class="claude-panel" style="display:none;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
               <h3 style="margin:0;font-family:var(--font-display);color:var(--ember);">Claude's Analysis</h3>
-              <span class="badge badge-ember">AI-Generated</span>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <span class="badge badge-ember">AI-Generated</span>
+              </div>
+            </div>
+            <p class="text-bone-muted text-xs" style="margin-bottom:1rem;">This analysis was generated by Claude based on the posts in your collection. You can copy the full text or download it as a file to include in your research.</p>
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+              <button class="btn btn-ghost btn-sm" onclick="ThreshApp.copyAnalysis()" title="Copy analysis text to clipboard">
+                <i data-lucide="clipboard-copy" style="width:14px;height:14px"></i>
+                Copy to Clipboard
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="ThreshApp.downloadAnalysis('txt')" title="Download as plain text file">
+                <i data-lucide="file-text" style="width:14px;height:14px"></i>
+                Save as .txt
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="ThreshApp.downloadAnalysis('md')" title="Download as Markdown file">
+                <i data-lucide="file-down" style="width:14px;height:14px"></i>
+                Save as .md
+              </button>
             </div>
             <div id="winnow-response" class="claude-response"></div>
           </div>
