@@ -285,7 +285,7 @@ The_Threshing_Floor/
 If you use Thresh in published work:
 
 ```
-Thomas, J. E. (2025). The Threshing Floor: A browser-based tool for Reddit
+Thomas, J. E. (2026). The Threshing Floor: A browser-based tool for Reddit
 data collection and export (Version 1.0.0) [Computer software].
 https://github.com/jethomasphd/The_Threshing_Floor
 ```
