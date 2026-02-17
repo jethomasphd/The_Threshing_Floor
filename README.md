@@ -2,100 +2,86 @@
 
 > *The waters rose and the feed became a flood — not of rain, but of noise. Every voice at once, none distinguishable. The signal drowned. Someone had to build the high ground.*
 
-**Thresh** is a tool for measuring what society is saying. It collects, explores, and exports Reddit data through a browser interface — no code, no installation, no command line. You point it at a community, tell it what to gather, and it hands you a clean dataset with a complete record of how it was collected.
+**Thresh** is a free, open-source tool for collecting and exporting Reddit data. It runs entirely in your browser — no server, no database, no API keys, no code. Point it at a subreddit, tell it what to gather, and it hands you a clean dataset with a complete record of how it was collected.
 
 It exists because public discourse is worth studying, and the people who want to study it shouldn't need a computer science degree to do it. Scientists, journalists, civic technologists, teachers, curious citizens — if you've ever wanted to know *what people are actually saying* in a corner of the internet, and you've wanted to do it carefully and transparently, this is for you.
 
 ---
 
-## Open It
+## Use It Now
 
-Click one button. Thresh launches in your browser. Nothing to install.
+**[threshingfloor.pages.dev](https://threshingfloor.pages.dev)** — open the live site and start collecting. Nothing to install.
 
-### GitHub Codespaces (recommended)
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&repo=jethomasphd/The_Threshing_Floor)
-
-That's it. The environment builds itself, the app starts automatically, and a browser tab opens with Thresh running. Free GitHub accounts include 60 hours/month of Codespaces.
-
-### Gitpod
-
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/jethomasphd/The_Threshing_Floor)
-
-Same idea — one click, browser-based, auto-starts. Gitpod's free tier includes 50 hours/month.
-
-### On your own machine (advanced)
-
-<details>
-<summary>For users comfortable with Python and the command line</summary>
-
-Requires Python 3.10+.
-
-```bash
-git clone https://github.com/jethomasphd/The_Threshing_Floor.git
-cd The_Threshing_Floor
-pip install -r requirements.txt
-python -m app.main
-```
-
-Open **http://127.0.0.1:8000** in your browser.
-
-</details>
+Or deploy your own instance (see below).
 
 ---
 
-## No Setup Needed
+## How It Works
 
-Open Thresh and start exploring. There are no API keys to configure, no credentials to obtain, no approval queues to wait in. Thresh reads Reddit's public pages directly — the same data you see in your browser — and structures it into clean datasets.
+Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.com). There is no backend server. Your data never leaves your browser.
 
-You're on the Floor.
+1. **Reddit's public JSON** — Every Reddit page serves JSON alongside HTML. Thresh reads this through a lightweight edge proxy (a Cloudflare Pages Function) that handles browser security restrictions. No Reddit API key is needed.
+2. **Client-side processing** — All data collection, filtering, analysis, and export happens in your browser using JavaScript. Nothing is stored on any server.
+3. **Local persistence** — Collections are saved in your browser's `localStorage` so they survive page refreshes. Clear your browser data to clear Thresh data.
 
-### Optional: Reddit API Credentials (Power Users)
-
-<details>
-<summary>For higher rate limits and authenticated access</summary>
-
-If you're collecting at scale and want higher rate limits, you can optionally connect Thresh to Reddit's API:
-
-1. Go to [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) and click **"create another app..."**
-2. Set the type to **"script"** and the redirect URI to `http://localhost:8000`
-3. Copy the **Client ID** and **Secret** into Thresh's About page under "Optional: Reddit API Credentials"
-4. Click **Test Connection**, then **Save**
-
-Without credentials, Thresh uses polite rate-limited requests to Reddit's public endpoints. With credentials, you get Reddit's official 100 requests/minute allowance via their API.
-
-</details>
-
----
-
-## What the Flood Looks Like — and What Thresh Does About It
-
-Reddit generates millions of posts and comments every day. Inside that torrent lives real signal: how people talk about mental health, how communities form around crisis, what language shifts when policy changes, where misinformation takes root, how grief and hope move through populations in real time.
-
-But the flood buries it. You can scroll forever and learn nothing systematic. You can't measure a river by standing in it.
-
-Thresh pulls you up onto the threshing floor — the ancient high ground where grain was separated from chaff through deliberate labor. It gives you a five-stage workflow, each stage named for a step in that old process:
+### The Workflow
 
 | Stage | The Work | What You Do |
 |-------|----------|-------------|
-| **The Floor** | The workspace | Dashboard — your recent collections, saved queries, quick actions |
-| **Explore** | Scouting the field | Search subreddits by topic, preview posts, check community metadata |
-| **Thresh** | Beating the grain | Configure and run data collection — sort, time range, keywords, depth |
-| **Harvest** | Gathering what fell | Browse your data in sortable tables, filter, inspect individual posts |
-| **Winnow** | Wind carries away chaff | Analyze — word frequency, temporal patterns, keyword exploration |
-| **Glean** | Bundling clean grain | Export as CSV, JSON, or JSONL — sealed with a provenance document |
-
-You don't need to remember these names. Every page has a plain subtitle telling you exactly what it does. The metaphor is there for those who find meaning in it; the interface works regardless.
+| **The Floor** | The workspace | Dashboard — your recent collections, quick actions |
+| **Thresh** | Beating the grain | Enter a subreddit, configure sort/time/limit, collect |
+| **Harvest** | Gathering what fell | Browse data in sortable tables, filter, inspect posts |
+| **Glean** | Bundling clean grain | Export as CSV or JSON — sealed with a provenance document |
+| **Winnow** | Wind carries away chaff | AI-powered analysis with Claude (optional, bring your own key) |
 
 ### A typical session
 
-1. **Explore** a question — *"What are people saying about housing costs in r/Denver?"*
-2. **Thresh** the data — pull 500 posts from the past year, sorted by relevance, with top-level comments
-3. **Harvest** the results — scan the table, check the stats, see what came back
-4. **Winnow** the patterns — which words keep appearing? When did posting spike?
-5. **Glean** your dataset — download a ZIP with your data and a `provenance.txt` file
+1. **Thresh** — *"Collect the top 100 posts from r/publichealth this month"*
+2. **Harvest** — scan the table, search for keywords, check the stats
+3. **Glean** — download a ZIP with your data and a `provenance.txt` file
 
-That provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone reviewing your work can see exactly how the grain was separated from the chaff.
+That provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone reviewing your work sees exactly how the grain was separated from the chaff.
+
+---
+
+## Deploy Your Own
+
+Thresh is designed to be forked and deployed with zero configuration.
+
+### Cloudflare Pages (recommended)
+
+1. **Fork this repository** on GitHub
+2. Go to the **[Cloudflare Dashboard](https://dash.cloudflare.com)** and select your account
+3. Navigate to **Workers & Pages** > **Create** > **Pages** > **Connect to Git**
+4. Select your forked repository
+5. Configure the build:
+   - **Build command:** *(leave empty)*
+   - **Build output directory:** `public`
+6. Click **Save and Deploy**
+
+That's it. Cloudflare will build and deploy automatically on every push. Your instance will be live at `<project-name>.pages.dev`.
+
+The free tier includes:
+- 500 deploys per month
+- Unlimited bandwidth
+- Unlimited requests
+- Edge functions (the Reddit proxy) included
+
+### Local Development
+
+If you want to run Thresh locally for development:
+
+```bash
+# Install Wrangler (Cloudflare's CLI)
+npm install -g wrangler
+
+# Clone and run
+git clone https://github.com/jethomasphd/The_Threshing_Floor.git
+cd The_Threshing_Floor
+npx wrangler pages dev public
+```
+
+Open **http://localhost:8788** in your browser. The local dev server includes full Pages Function support (the Reddit proxy works locally).
 
 ---
 
@@ -103,31 +89,68 @@ That provenance file is the receipt. It records everything: what you asked for, 
 
 Every export is a ZIP containing:
 
-- **Your data** — CSV (opens cleanly in Excel), JSON, or JSONL
+- **Your data** — CSV (opens cleanly in Excel) or JSON
 - **provenance.txt** — a complete methodological record:
   - Tool name and version
-  - Data source (public web data or authenticated API)
+  - Data source (Reddit public JSON endpoints)
   - Subreddit(s) queried
   - All query parameters (sort, time filter, keywords, limits)
   - Collection timestamp (UTC)
   - Records collected vs. requested
-  - Post-collection filters applied
-  - Anonymization status and method
+  - Anonymization status
+  - Ethical use reminders
   - Citation suggestion
 
-Usernames are anonymized by default (`author_0001`, `author_0002`, ...). If your work requires real usernames, Thresh lets you opt in — and documents that choice in provenance so your transparency is on the record.
+Usernames are anonymized by default. If your work requires real usernames, Thresh lets you opt in — and documents that choice in provenance so your transparency is on the record.
+
+---
+
+## AI Analysis (Optional)
+
+The **Winnow** page offers AI-powered analysis using Claude by Anthropic. This feature is entirely optional and requires your own API key.
+
+- Get a key at [console.anthropic.com](https://console.anthropic.com)
+- Enter it in the Winnow settings modal — it's stored in your browser's `localStorage` only
+- Your key is sent directly to Anthropic's API through an edge function — it is never logged or stored on any server
+
+Available analyses: theme identification, sentiment analysis, discussion summaries, question extraction, and custom prompts.
+
+Without an API key, Winnow still provides a **word frequency chart** (Chart.js, runs entirely client-side).
 
 ---
 
 ## Ethics and Privacy
 
-Thresh is built for people who take measurement seriously, which means taking ethics seriously.
-
-- **Your data stays with you.** Everything runs locally (or in your private Codespace). Nothing is sent to external servers. If you choose to configure API credentials, they are stored in a local file and never leave your environment.
+- **Your data stays with you.** Everything runs in your browser. The edge proxy forwards Reddit requests and nothing else. No analytics, no tracking, no telemetry.
 - **Anonymization by default.** Reddit usernames can be traced to real people. Thresh replaces them in exports unless you explicitly choose otherwise.
-- **Rate-limit respect.** Thresh paces its requests to be a polite visitor. With optional API credentials, you get Reddit's official 100 requests/minute allowance; without them, Thresh self-limits to well under that threshold and backs off on any throttling signal.
+- **Rate-limit respect.** The edge proxy adds small delays between requests. Reddit's public JSON endpoints are accessed the same way any browser would.
 - **Institutional review.** If your organization requires ethics board approval for social media research, the provenance document provides the methodological transparency reviewers need.
 - **Reddit Terms of Service.** Thresh accesses only public data — the same content visible to any browser. It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
+
+---
+
+## Architecture
+
+```
+The_Threshing_Floor/
+├── public/                     # Static site (Cloudflare Pages build output)
+│   ├── index.html              # Single-page app with cinematic intro
+│   ├── css/thresh.css          # Design system
+│   ├── js/
+│   │   ├── app.js              # Router, state, UI orchestration
+│   │   ├── reddit.js           # Reddit JSON fetching via proxy
+│   │   ├── exporter.js         # CSV/JSON + provenance ZIP generation
+│   │   └── claude.js           # Optional Claude API integration
+│   └── img/                    # Sigil and favicon SVGs
+├── functions/                  # Cloudflare Pages Functions (edge)
+│   └── api/
+│       ├── reddit.js           # CORS proxy for Reddit public JSON
+│       └── claude.js           # Proxy for Anthropic API
+├── package.json                # Dev scripts (wrangler)
+└── wrangler.toml               # Cloudflare local dev config
+```
+
+**No build step.** No bundler, no framework, no transpiler. The `public/` directory is served as-is. JavaScript is vanilla ES6+. CSS is handwritten. Fonts and libraries load from CDNs.
 
 ---
 
@@ -136,77 +159,12 @@ Thresh is built for people who take measurement seriously, which means taking et
 If you use Thresh in published work:
 
 ```
-Thomas, J. E. (2025). Thresh: The Threshing Floor (Version 0.1.0) [Computer software].
+Thomas, J. E. (2025). The Threshing Floor: A browser-based tool for Reddit
+data collection and export (Version 1.0.0) [Computer software].
+https://github.com/jethomasphd/The_Threshing_Floor
 ```
 
-The provenance document in each export contains the exact version used and can be cited directly in a methods section.
-
----
-
-## The Mythology
-
-You don't need to know any of this to use Thresh. But if you're curious why the interface looks the way it does, why the names sound the way they sound:
-
-The Threshing Floor is part of a lineage of **counter-technologies** — tools built to honor attention rather than exploit it. Its siblings include *The Watchtower* (an instrument for observing digital patterns with intention) and the *COMPANION Protocol* (a framework for ethical human-AI collaboration). Together they form the **Corpus of Self**: artifacts designed for people who refuse to be farmed by the Feed.
-
-The aesthetic — dark ground, ember gold, ritualistic composure — is not decoration. It is a statement that someone cared about building this. That attention was paid. Deliberately. In a world that profits from distraction, the act of careful measurement is itself a kind of resistance.
-
-The name comes from the biblical threshing floor, the high ground where grain was beaten free from chaff. Every harvest required it. No separation happened without labor. The Feed is the flood that buries the harvest under noise. Thresh is the floor that holds.
-
----
-
-## For Developers
-
-<details>
-<summary>Architecture, testing, and contribution details</summary>
-
-### Architecture
-
-- **Backend**: FastAPI + Jinja2 + SQLAlchemy/SQLite
-- **Data access**: Public JSON endpoints by default (`RedditScraper`), optional PRAW upgrade (`RedditClient`)
-- **Frontend**: Server-rendered HTML with HTMX — no build step, no node_modules
-- **Styling**: Tailwind CSS (CDN) + custom design system in `thresh.css`
-- **Charts**: Chart.js for dashboards, Plotly.js for interactive exploration
-- **Database**: SQLite — nothing to install, nothing to configure
-
-### Project structure
-
-```
-The_Threshing_Floor/
-  app/
-    __init__.py          # App factory
-    main.py              # Entry point (uvicorn)
-    config.py            # Settings from .env
-    models/              # SQLAlchemy ORM + Pydantic schemas
-    services/            # Web scraper, Reddit client, collector, exporter, analyzer
-    routes/              # Page routes (Jinja2) + API routes (HTMX)
-    templates/           # Server-rendered HTML with HTMX
-    static/              # CSS design system, JS, images
-  tests/                 # pytest suite (scraper + PRAW mocks)
-  exports/               # Generated data exports
-  .devcontainer/         # GitHub Codespaces (auto-starts app)
-  .gitpod.yml            # Gitpod (auto-starts app)
-  .github/workflows/     # CI: lint + test on every push/PR
-```
-
-### Running tests
-
-```bash
-pip install -e ".[dev]"
-python -m pytest tests/ -v
-```
-
-### Linting
-
-```bash
-ruff check app/ tests/
-```
-
-### CI
-
-Every push and pull request runs lint + tests across Python 3.10-3.12 via GitHub Actions.
-
-</details>
+The provenance document in each export contains the exact parameters used and can be cited directly in a methods section.
 
 ---
 

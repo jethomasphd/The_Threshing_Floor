@@ -1,11 +1,11 @@
 {
   "name": "The Threshing Floor",
-  "image": "mcr.microsoft.com/devcontainers/python:3.12",
-  "postCreateCommand": "pip install -r requirements.txt && pip install -e '.[dev]'",
-  "postStartCommand": "nohup python -m app.main > /tmp/thresh.log 2>&1 &",
-  "forwardPorts": [8000],
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+  "postCreateCommand": "npm install -g wrangler",
+  "postStartCommand": "npx wrangler pages dev public --port 8788 &",
+  "forwardPorts": [8788],
   "portsAttributes": {
-    "8000": {
+    "8788": {
       "label": "Thresh",
       "onAutoForward": "openBrowserAtEnd"
     }
@@ -13,18 +13,13 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
-        "python.testing.pytestEnabled": true,
-        "python.testing.pytestArgs": ["tests/"],
         "editor.formatOnSave": true,
-        "[python]": {
-          "editor.defaultFormatter": "charliermarsh.ruff"
+        "files.associations": {
+          "*.js": "javascript"
         }
       },
       "extensions": [
-        "ms-python.python",
-        "charliermarsh.ruff",
-        "ms-python.debugpy"
+        "dbaeumer.vscode-eslint"
       ]
     }
   }
