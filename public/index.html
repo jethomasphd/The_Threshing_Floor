@@ -86,20 +86,20 @@
           </button>
         </li>
         <li>
+          <button class="sidebar-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
+            <svg class="sidebar-icon"><use href="#icon-sparkles"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">Winnow</span>
+              <span class="sidebar-label-sub">Analyze</span>
+            </span>
+          </button>
+        </li>
+        <li>
           <button class="sidebar-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
             <svg class="sidebar-icon"><use href="#icon-download"/></svg>
             <span class="sidebar-label">
               <span class="sidebar-label-primary">Glean</span>
               <span class="sidebar-label-sub">Export data</span>
-            </span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
-            <svg class="sidebar-icon"><use href="#icon-sparkles"/></svg>
-            <span class="sidebar-label">
-              <span class="sidebar-label-primary">Winnow</span>
-              <span class="sidebar-label-sub">AI analysis</span>
             </span>
           </button>
         </li>
@@ -114,13 +114,13 @@
         </li>
       </ul>
       <!-- Rate Limit Sentinel -->
-      <div id="rate-sentinel" class="rate-sentinel">
-        <div class="rate-sentinel-label">API Quota</div>
+      <div id="rate-sentinel" class="rate-sentinel" title="Reddit allows 100 requests per minute. This gauge shows how many requests remain in the current window. When it runs out, Thresh pauses automatically until the limit resets.">
+        <div class="rate-sentinel-label">Rate Limit</div>
         <div class="rate-sentinel-gauge">
           <div id="rate-gauge-fill" class="rate-gauge-fill" style="width:100%"></div>
         </div>
         <div class="rate-sentinel-info">
-          <span id="rate-remaining">100</span>/<span>100</span>
+          <span id="rate-remaining">100</span>/<span>100</span> <span class="text-ash" style="font-size:0.5625rem;">req/min</span>
         </div>
         <div id="rate-blocked-msg" class="rate-blocked-msg" style="display:none">
           <span id="rate-countdown"></span>
@@ -143,11 +143,11 @@
       <button class="mobile-nav-link" data-page="harvest" onclick="ThreshApp.navigate('harvest')">
         <i data-lucide="table"></i> Harvest
       </button>
-      <button class="mobile-nav-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
-        <i data-lucide="download"></i> Glean
-      </button>
       <button class="mobile-nav-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
         <i data-lucide="sparkles"></i> Winnow
+      </button>
+      <button class="mobile-nav-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
+        <i data-lucide="download"></i> Glean
       </button>
     </nav>
 
@@ -159,6 +159,14 @@
         <div class="page-header">
           <h1 class="page-title">The Floor</h1>
           <p class="page-subtitle">Your workspace. Begin here.</p>
+        </div>
+
+        <!-- What is Thresh? -->
+        <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ember);">
+          <div class="card-body" style="padding:1rem 1.25rem;">
+            <h3 style="font-family:var(--font-display);color:var(--ember);font-size:1.25rem;font-weight:600;margin:0 0 0.5rem 0;">What is Thresh?</h3>
+            <p class="text-bone-muted text-sm" style="margin:0;line-height:1.7;">Thresh is a free, browser-based tool for collecting Reddit data. Point it at any subreddit, configure what you want to gather, and it hands you a clean dataset with a complete record of how it was collected. No accounts, no API keys, no code. Everything runs in your browser and stays on your machine. Built for researchers, journalists, and anyone who believes public discourse is worth studying carefully.</p>
+          </div>
         </div>
 
         <div class="card-grid">
@@ -703,6 +711,48 @@
             <h3>How It Works</h3>
             <p>Reddit's public pages serve JSON data alongside HTML. The Threshing Floor fetches this public data through a lightweight proxy (to handle browser security restrictions), then lets you browse, filter, and export it.</p>
             <p>No Reddit API key is required. No authentication of any kind. The data collected is limited to what any person could see by visiting Reddit in a web browser.</p>
+            <p>The workflow follows four steps:</p>
+            <ol>
+              <li><strong>Thresh</strong> &mdash; Enter a subreddit and collection parameters</li>
+              <li><strong>Harvest</strong> &mdash; Browse and search your collected data</li>
+              <li><strong>Winnow</strong> &mdash; Analyze with word frequency and optional AI</li>
+              <li><strong>Glean</strong> &mdash; Export as CSV or JSON with full provenance</li>
+            </ol>
+          </div>
+
+          <div class="about-section">
+            <h3>Your Data &amp; Storage</h3>
+            <p><strong>Everything is stored in your browser only.</strong> There is no server database, no account system, and no cloud sync. Specifically:</p>
+            <ul>
+              <li><strong>Collections</strong> (posts, comments, configuration) are saved in your browser's <code>localStorage</code>.</li>
+              <li><strong>Anthropic API key</strong> (if you use Claude AI analysis) is stored in <code>localStorage</code>. It is never sent to any server except Anthropic's API directly.</li>
+              <li><strong>Rate limit state</strong> and <strong>subreddit cache</strong> are also stored locally in your browser.</li>
+            </ul>
+            <p>This means your data does not sync across browsers or devices. If you switch browsers, your collections will not follow.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>Clearing Your History</h3>
+            <p>To erase all Thresh data from your browser:</p>
+            <ol>
+              <li>Open your browser's <strong>Settings</strong> (or press <code>Ctrl+Shift+Delete</code> / <code>Cmd+Shift+Delete</code>)</li>
+              <li>Navigate to <strong>Privacy &amp; Security</strong> &rarr; <strong>Clear browsing data</strong></li>
+              <li>Select <strong>"Cookies and site data"</strong> (this includes localStorage)</li>
+              <li>To clear only Thresh: go to your browser's <strong>Developer Tools</strong> (<code>F12</code>), open the <strong>Application</strong> tab, expand <strong>Local Storage</strong>, find the Thresh site, and delete individual keys or click <strong>Clear All</strong></li>
+            </ol>
+            <p>This will remove all saved collections, your API key (if stored), rate limit state, and cached subreddit data. It cannot be undone.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>The Rate Limit Gauge</h3>
+            <p>The <strong>Rate Limit</strong> gauge at the bottom of the sidebar tracks how many requests remain in your current Reddit rate limit window. Reddit allows <strong>100 requests per minute</strong> to its public JSON endpoints.</p>
+            <ul>
+              <li><strong>Gold bar</strong> &mdash; plenty of requests remaining. Normal operation.</li>
+              <li><strong>Yellow bar (below 30%)</strong> &mdash; requests are running low. Consider pausing collection.</li>
+              <li><strong>Red pulsing bar (below 10%)</strong> &mdash; critical. Thresh will pause automatically if the limit is reached.</li>
+              <li><strong>Cooldown timer</strong> &mdash; if you hit the limit, a countdown appears showing when requests resume. The collect button is disabled until the cooldown expires.</li>
+            </ul>
+            <p>The rate limit resets automatically each minute. Under normal use (25&ndash;100 posts per collection), you will rarely see it drop below gold.</p>
           </div>
 
           <div class="about-section">
