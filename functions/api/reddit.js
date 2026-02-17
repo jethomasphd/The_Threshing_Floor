@@ -101,17 +101,42 @@ export async function onRequestGet(context) {
       else if (status === 429) message = 'Rate limited by Reddit. Please wait a moment and try again.';
       else if (status >= 500) message = 'Reddit is experiencing issues. Try again shortly.';
 
+      const errorHeaders = corsHeaders();
+
+      // Forward rate limit info on 429 so client can show countdown
+      if (status === 429) {
+        const retryAfter = response.headers.get('retry-after');
+        const rlReset = response.headers.get('x-ratelimit-reset');
+        if (retryAfter) errorHeaders['Retry-After'] = retryAfter;
+        if (rlReset) errorHeaders['X-RateLimit-Reset'] = rlReset;
+        errorHeaders['X-RateLimit-Remaining'] = '0';
+        errorHeaders['Access-Control-Expose-Headers'] = 'Retry-After, X-RateLimit-Remaining, X-RateLimit-Reset';
+      }
+
       return new Response(
         JSON.stringify({ error: message, status }),
-        { status, headers: corsHeaders() }
+        { status, headers: errorHeaders }
       );
     }
 
     const data = await response.json();
 
+    // Forward Reddit's rate limit headers so the client can track quota
+    const responseHeaders = corsHeaders();
+    const rlRemaining = response.headers.get('x-ratelimit-remaining');
+    const rlReset = response.headers.get('x-ratelimit-reset');
+    const rlUsed = response.headers.get('x-ratelimit-used');
+
+    if (rlRemaining !== null) responseHeaders['X-RateLimit-Remaining'] = rlRemaining;
+    if (rlReset !== null) responseHeaders['X-RateLimit-Reset'] = rlReset;
+    if (rlUsed !== null) responseHeaders['X-RateLimit-Used'] = rlUsed;
+
+    // Expose these headers to client-side JS
+    responseHeaders['Access-Control-Expose-Headers'] = 'X-RateLimit-Remaining, X-RateLimit-Reset, X-RateLimit-Used';
+
     return new Response(JSON.stringify(data), {
       status: 200,
-      headers: corsHeaders(),
+      headers: responseHeaders,
     });
   } catch (err) {
     return new Response(

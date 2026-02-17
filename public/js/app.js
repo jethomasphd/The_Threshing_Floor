@@ -13,6 +13,8 @@ const ThreshApp = {
 
   // --- Initialization ---
 
+  _countdownInterval: null,
+
   init() {
     // Load saved collections from localStorage
     this._loadCollections();
@@ -36,6 +38,9 @@ const ThreshApp = {
 
     // Update collection selectors
     this._updateSelectors();
+
+    // Wire up rate limit sentinel
+    this._initRateSentinel();
 
     // Restore intro-seen state
     if (localStorage.getItem('thresh_intro_seen')) {
@@ -127,6 +132,13 @@ const ThreshApp = {
       return false;
     }
 
+    // Check rate limit before starting
+    if (RateLimiter.isBlocked()) {
+      const secs = RateLimiter.blockSecondsLeft();
+      this.toast(`Rate limited — please wait ${secs} seconds before collecting.`, 'warning');
+      return false;
+    }
+
     // Show progress
     const progressEl = document.getElementById('thresh-progress');
     const submitBtn = document.getElementById('thresh-submit');
@@ -176,9 +188,15 @@ const ThreshApp = {
       }, 1500);
 
     } catch (err) {
-      this.toast(`Collection failed: ${err.message}`, 'error');
+      if (err.message.includes('Rate limited')) {
+        this.toast(err.message, 'warning');
+        // Keep button disabled — sentinel countdown will re-enable it
+        submitBtn.disabled = true;
+      } else {
+        this.toast(`Collection failed: ${err.message}`, 'error');
+        submitBtn.disabled = false;
+      }
       progressEl.style.display = 'none';
-      submitBtn.disabled = false;
     }
 
     return false;
@@ -543,6 +561,63 @@ const ThreshApp = {
     ClaudeClient.saveKey(key);
     this.hideClaudeKeyModal();
     this.toast(key ? 'API key saved.' : 'API key removed.', 'success');
+  },
+
+  // --- Rate Limit Sentinel ---
+
+  _initRateSentinel() {
+    // Update UI with current state
+    this._updateRateSentinel(RateLimiter.getStatus());
+
+    // Listen for changes
+    RateLimiter.onChange((status) => this._updateRateSentinel(status));
+  },
+
+  _updateRateSentinel(status) {
+    const fill = document.getElementById('rate-gauge-fill');
+    const remaining = document.getElementById('rate-remaining');
+    const blockedMsg = document.getElementById('rate-blocked-msg');
+    const countdown = document.getElementById('rate-countdown');
+
+    if (!fill || !remaining) return;
+
+    // Update gauge width and color
+    fill.style.width = `${status.percent}%`;
+    fill.classList.remove('low', 'critical');
+    if (status.percent <= 10) {
+      fill.classList.add('critical');
+    } else if (status.percent <= 30) {
+      fill.classList.add('low');
+    }
+
+    remaining.textContent = status.remaining;
+
+    // Handle blocked state with countdown
+    if (status.blocked && blockedMsg && countdown) {
+      blockedMsg.style.display = 'block';
+      countdown.textContent = `Cooldown: ${status.blockSecondsLeft}s`;
+
+      // Start countdown timer if not already running
+      if (!this._countdownInterval) {
+        this._countdownInterval = setInterval(() => {
+          const s = RateLimiter.getStatus();
+          if (!s.blocked) {
+            blockedMsg.style.display = 'none';
+            clearInterval(this._countdownInterval);
+            this._countdownInterval = null;
+            this._updateRateSentinel(s);
+
+            // Re-enable the thresh button
+            const submitBtn = document.getElementById('thresh-submit');
+            if (submitBtn) submitBtn.disabled = false;
+          } else {
+            countdown.textContent = `Cooldown: ${s.blockSecondsLeft}s`;
+          }
+        }, 1000);
+      }
+    } else if (blockedMsg) {
+      blockedMsg.style.display = 'none';
+    }
   },
 
   // --- Toast Notifications ---

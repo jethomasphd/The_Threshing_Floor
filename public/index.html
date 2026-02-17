@@ -113,6 +113,20 @@
           </button>
         </li>
       </ul>
+      <!-- Rate Limit Sentinel -->
+      <div id="rate-sentinel" class="rate-sentinel">
+        <div class="rate-sentinel-label">API Quota</div>
+        <div class="rate-sentinel-gauge">
+          <div id="rate-gauge-fill" class="rate-gauge-fill" style="width:100%"></div>
+        </div>
+        <div class="rate-sentinel-info">
+          <span id="rate-remaining">100</span>/<span>100</span>
+        </div>
+        <div id="rate-blocked-msg" class="rate-blocked-msg" style="display:none">
+          <span id="rate-countdown"></span>
+        </div>
+      </div>
+
       <div class="sidebar-footer">
         <span class="text-xs text-ash font-mono">Thresh v1.0</span>
       </div>
