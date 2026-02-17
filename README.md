@@ -25,7 +25,7 @@ Or deploy your own instance (see below).
 1. **Thresh** — `r/mentalhealth` · Sort by **Top** · **Past month** · 100 posts
 2. **Harvest** — Sort by `score` to find what resonates most with the community
 3. **Winnow** — Run **Identify themes** to map dominant concerns, then **Sentiment analysis** to gauge emotional tone
-4. **Glean** — Export CSV with anonymized usernames for IRB-ready analysis. Cite `provenance.txt` in your methods section
+4. **Glean** — Export CSV with anonymized usernames for IRB-ready analysis. Or generate an **AI Research Report** and download a full Introduction/Methods/Results/Discussion document. Cite `provenance.txt` in your methods section
 
 ### Journalist
 
@@ -72,14 +72,14 @@ Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.
 | **Thresh** | Beating the grain | Enter a subreddit, configure sort/time/limit, collect |
 | **Harvest** | Gathering what fell | Browse data in sortable tables, filter, inspect posts |
 | **Winnow** | Wind carries away chaff | Analyze with word frequency and optional AI (bring your own key) |
-| **Glean** | Bundling clean grain | Export as CSV or JSON — sealed with a provenance document |
+| **Glean** | Bundling clean grain | Export as CSV or JSON with provenance, or generate an AI research report |
 
 ### A typical session
 
 1. **Thresh** — *"Collect the top 100 posts from r/publichealth this month"*
 2. **Harvest** — scan the table, search for keywords, check the stats
 3. **Winnow** — run word frequency analysis; optionally run Claude AI for themes or sentiment
-4. **Glean** — download a ZIP with your data and a `provenance.txt` file
+4. **Glean** — download a ZIP with your data and a `provenance.txt` file, or generate an **AI Research Report**
 
 That provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone reviewing your work sees exactly how the grain was separated from the chaff.
 
@@ -220,7 +220,32 @@ Claude reads your collected posts (up to 50 are sampled to stay within token lim
 4. Claude (Sonnet) analyzes a summary of up to 50 posts from your collection
 5. Results appear in the "Claude's Analysis" panel — marked as AI-generated
 
-Without an API key, the word frequency chart and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
+Without an API key, the word frequency table and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
+
+### AI Research Report (Glean Page)
+
+The Glean page includes an **AI Research Report** generator that produces a complete, downloadable research document. It aggregates everything from your session — collection metadata, summary statistics, word frequencies, and post content — into a structured report.
+
+**How it works:**
+
+1. Select a collection on the Glean page
+2. Answer two questions: your **research question** and your **audience** (academic, journalism, advocacy, or general)
+3. Optionally add **context** about why you collected this data
+4. Click **Generate Report** — Claude writes a full Introduction / Methods / Results / Discussion / Provenance document
+5. **Download** the report as a Markdown file or copy it to your clipboard
+
+The audience selection changes the tone and framing:
+
+| Audience | Style |
+|----------|-------|
+| **Academic** | Formal, hedged language, rigorous limitations, future research suggestions |
+| **Journalism** | Accessible prose, leads with findings, notes what needs further reporting |
+| **Advocacy** | Policy-brief style, emphasizes practical implications and affected communities |
+| **General** | Curious and exploratory, explains methodology in plain terms |
+
+The report is a starting point, not a finished product. It gives you structure and language to build from. For a grad student, it's a draft methods section and results overview. For a journalist, it's a story pitch backed by data. For a community organizer, it's a briefing document with citations.
+
+What was once a dissertation-level undertaking now takes ten minutes and a good question.
 
 ---
 
@@ -241,8 +266,6 @@ Every export is a ZIP containing:
   - Citation suggestion
 
 Usernames are anonymized by default. If your work requires real usernames, Thresh lets you opt in — and documents that choice in provenance so your transparency is on the record.
-
----
 
 ---
 
