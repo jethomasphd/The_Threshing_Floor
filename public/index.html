@@ -71,8 +71,8 @@
           <button class="sidebar-link" data-page="thresh" onclick="ThreshApp.navigate('thresh')">
             <svg class="sidebar-icon"><use href="#icon-wheat"/></svg>
             <span class="sidebar-label">
-              <span class="sidebar-label-primary">Thresh</span>
-              <span class="sidebar-label-sub">Collect data</span>
+              <span class="sidebar-label-primary"><span class="sidebar-step">1</span> Thresh</span>
+              <span class="sidebar-label-sub">Collect</span>
             </span>
           </button>
         </li>
@@ -80,8 +80,8 @@
           <button class="sidebar-link" data-page="harvest" onclick="ThreshApp.navigate('harvest')">
             <svg class="sidebar-icon"><use href="#icon-table"/></svg>
             <span class="sidebar-label">
-              <span class="sidebar-label-primary">Harvest</span>
-              <span class="sidebar-label-sub">View results</span>
+              <span class="sidebar-label-primary"><span class="sidebar-step">2</span> Harvest</span>
+              <span class="sidebar-label-sub">Browse</span>
             </span>
           </button>
         </li>
@@ -89,7 +89,7 @@
           <button class="sidebar-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
             <svg class="sidebar-icon"><use href="#icon-sparkles"/></svg>
             <span class="sidebar-label">
-              <span class="sidebar-label-primary">Winnow</span>
+              <span class="sidebar-label-primary"><span class="sidebar-step">3</span> Winnow</span>
               <span class="sidebar-label-sub">Analyze</span>
             </span>
           </button>
@@ -98,8 +98,8 @@
           <button class="sidebar-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
             <svg class="sidebar-icon"><use href="#icon-download"/></svg>
             <span class="sidebar-label">
-              <span class="sidebar-label-primary">Glean</span>
-              <span class="sidebar-label-sub">Export data</span>
+              <span class="sidebar-label-primary"><span class="sidebar-step">4</span> Glean</span>
+              <span class="sidebar-label-sub">Export</span>
             </span>
           </button>
         </li>
@@ -159,13 +159,16 @@
         <div class="page-header">
           <h1 class="page-title">The Floor</h1>
           <p class="page-subtitle">Your workspace. Begin here.</p>
+          <p class="page-epigraph">&ldquo;And the floors shall be full of wheat, and the vats shall overflow with wine and oil.&rdquo;<span class="epigraph-source">&mdash; Joel 2:24</span></p>
         </div>
 
         <!-- What is Thresh? -->
         <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ember);">
           <div class="card-body" style="padding:1rem 1.25rem;">
             <h3 style="font-family:var(--font-display);color:var(--ember);font-size:1.25rem;font-weight:600;margin:0 0 0.5rem 0;">What is Thresh?</h3>
-            <p class="text-bone-muted text-sm" style="margin:0;line-height:1.7;">Thresh is a free, browser-based tool for collecting Reddit data. Point it at any subreddit, configure what you want to gather, and it hands you a clean dataset with a complete record of how it was collected. No accounts, no API keys, no code. Everything runs in your browser and stays on your machine. Built for researchers, journalists, and anyone who believes public discourse is worth studying carefully.</p>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.75rem 0;line-height:1.7;">Thresh is a free, browser-based tool for collecting Reddit data. Point it at any subreddit, configure what you want to gather, and it hands you a clean dataset with a complete record of how it was collected. No accounts, no API keys, no code. Everything runs in your browser and stays on your machine.</p>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.75rem 0;line-height:1.7;">The threshing floor is one of the oldest technologies in human civilization &mdash; a flat, hard surface on high ground where harvested grain was beaten and tossed into the wind so the heavy seed could fall free of the chaff. Every ancient culture had one. In scripture, the threshing floor is where covenants are made and futures are decided: Boaz met Ruth on the threshing floor; David built his altar on one; prophets used it as a metaphor for divine judgment. It was never passive. It was the place of deliberate labor &mdash; the place where you did the work of separation.</p>
+            <p class="text-bone-muted text-sm" style="margin:0;line-height:1.7;">Today the flood is not water but information. The feed moves too fast for the eye to follow. This tool is the high ground &mdash; built for researchers, journalists, and anyone willing to do the slow, careful work of separating signal from noise.</p>
           </div>
         </div>
 
@@ -288,8 +291,9 @@
       <!-- ===== THRESH (Collection) ===== -->
       <section id="page-thresh" class="page-section">
         <div class="page-header">
-          <h1 class="page-title">Thresh</h1>
+          <h1 class="page-title">Step 1 &mdash; Thresh</h1>
           <p class="page-subtitle">Configure and collect Reddit data. No API key needed.</p>
+          <p class="page-epigraph">&ldquo;Arise, and thresh, O daughter of Zion: for I will make thine horn iron, and I will make thy hoofs brass: and thou shalt beat in pieces many people.&rdquo;<span class="epigraph-source">&mdash; Micah 4:13</span></p>
         </div>
 
         <div class="card" style="max-width:700px;">
@@ -382,8 +386,9 @@
       <!-- ===== HARVEST (Results) ===== -->
       <section id="page-harvest" class="page-section">
         <div class="page-header">
-          <h1 class="page-title">Harvest</h1>
+          <h1 class="page-title">Step 2 &mdash; Harvest</h1>
           <p class="page-subtitle">Browse and explore your collected data.</p>
+          <p class="page-epigraph">&ldquo;Let both grow together until the harvest: and in the time of harvest I will say to the reapers, Gather ye together first the tares, and bind them in bundles to burn them: but gather the wheat into my barn.&rdquo;<span class="epigraph-source">&mdash; Matthew 13:30</span></p>
         </div>
 
         <!-- Collection Selector -->
@@ -464,8 +469,9 @@
       <!-- ===== GLEAN (Export) ===== -->
       <section id="page-glean" class="page-section">
         <div class="page-header">
-          <h1 class="page-title">Glean</h1>
+          <h1 class="page-title">Step 4 &mdash; Glean</h1>
           <p class="page-subtitle">Export your data with full provenance documentation.</p>
+          <p class="page-epigraph">&ldquo;And Ruth the Moabitess said unto Naomi, Let me now go to the field, and glean ears of corn after him in whose sight I shall find grace.&rdquo;<span class="epigraph-source">&mdash; Ruth 2:2</span></p>
         </div>
 
         <div id="glean-empty" class="empty-state">
@@ -541,8 +547,9 @@
       <!-- ===== WINNOW (AI Analysis) ===== -->
       <section id="page-winnow" class="page-section">
         <div class="page-header">
-          <h1 class="page-title">Winnow</h1>
+          <h1 class="page-title">Step 3 &mdash; Winnow</h1>
           <p class="page-subtitle">Separate signal from noise. Start with the built-in word frequency table (free, instant), then optionally use Claude AI for deeper analysis.</p>
+          <p class="page-epigraph">&ldquo;His winnowing fork is in his hand, and he will clear his threshing floor, gathering his wheat into the barn and burning up the chaff with unquenchable fire.&rdquo;<span class="epigraph-source">&mdash; Matthew 3:12</span></p>
         </div>
 
         <div id="winnow-empty" class="empty-state">
@@ -602,14 +609,14 @@
           <div class="card" style="margin-bottom:1.5rem;">
             <div class="form-row">
               <div class="form-group">
-                <label class="label" for="winnow-collection">Step 1: Choose a Collection</label>
+                <label class="label" for="winnow-collection">Collection</label>
                 <select id="winnow-collection" class="select" onchange="ThreshApp.loadWinnowCollection(this.value)">
                   <option value="">Select a collection&hellip;</option>
                 </select>
                 <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Selecting a collection updates the word frequency table below.</p>
               </div>
               <div class="form-group">
-                <label class="label" for="winnow-prompt">Step 2: Choose Analysis Type</label>
+                <label class="label" for="winnow-prompt">Analysis Type</label>
                 <select id="winnow-prompt" class="select">
                   <option value="themes">Identify key themes &amp; topics</option>
                   <option value="sentiment">Sentiment analysis</option>
@@ -636,7 +643,7 @@
             <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
               <button class="btn btn-primary" onclick="ThreshApp.runAnalysis()">
                 <i data-lucide="sparkles" style="width:16px;height:16px"></i>
-                Step 3: Analyze with Claude
+                Analyze with Claude
               </button>
               <button class="btn btn-ghost btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
                 <i data-lucide="key" style="width:14px;height:14px"></i>
@@ -698,9 +705,29 @@
         <div class="page-header">
           <h1 class="page-title">About</h1>
           <p class="page-subtitle">Ethics, methodology, and how this tool works.</p>
+          <p class="page-epigraph">&ldquo;For the earth which drinketh in the rain that cometh oft upon it, and bringeth forth herbs meet for them by whom it is dressed, receiveth blessing from God.&rdquo;<span class="epigraph-source">&mdash; Hebrews 6:7</span></p>
         </div>
 
         <div style="max-width:700px;">
+
+          <!-- A Letter from the Builder -->
+          <div class="about-section" style="padding:1.5rem;background:var(--surface);border:1px solid rgba(201,162,39,0.15);border-radius:var(--radius-md);margin-bottom:2.5rem;">
+            <h3 style="font-family:var(--font-display);font-size:1.375rem;color:var(--ember);margin-bottom:1rem;">A Letter from the Builder</h3>
+            <div style="font-family:var(--font-body);font-size:0.9375rem;color:var(--bone-muted);line-height:1.8;">
+              <p>I built this because I know what it feels like to drown in the data before you ever learn to read it.</p>
+              <p>I spent years writing a dissertation that did exactly this kind of work &mdash; collecting and analyzing social media discourse during the COVID-19 pandemic, trying to understand what people were saying to each other on Twitter when the world was falling apart. What I found was illuminating. The patterns were there: the fear, the misinformation, the solidarity, the grief, the stubborn and sometimes beautiful ways people tried to make sense of the unthinkable. But the process of getting to those patterns was extraordinarily difficult &mdash; even for me, someone with the training and the tools and the institutional support. It required programming. It required API credentials. It required understanding rate limits and data schemas and pagination logic and a dozen other things that had nothing to do with the actual research question.</p>
+              <p>And I thought: if this is hard for me, then it is impossible for most people. Which means most people &mdash; the teachers, the journalists, the community organizers, the students who feel something important is happening in a corner of the internet but don't know how to prove it &mdash; are locked out.</p>
+              <p>So I built The Threshing Floor.</p>
+              <p>It can do much of what my dissertation did, albeit at a smaller scale because of Reddit's rate limits. But that is alright. Small is good, if pointed in the right place, focused with the right lens. A hundred posts from the right subreddit in the right week can tell you more about how a community thinks than a thousand posts scraped without intention.</p>
+              <p>The world right now is inundated with quantitative social science &mdash; the flourishing of AI has made it easy to count things, to run regressions, to produce charts at speed. I am grateful for that. But this project aims specifically at breathing life back into a research method I hold dear: qualitative inquiry. The close reading. The careful listening. Not because I am an expert in it &mdash; exactly the opposite, really. I made the decision early in my training to focus on quantitative methods, and I have watched qualitative work from afar ever since, with the admiration of someone who knows they chose the other path. There is something mysterious in it. Something irreducible. The act of sitting with people's words and asking <em>what do they mean</em> rather than <em>how many are there</em>.</p>
+              <p>At the deepest core, my hope is that Thresh marries the two methods again. That it gives you the structure to collect carefully, the numbers to orient yourself, and then the space to read &mdash; really read &mdash; what people are saying. That it empowers anyone interested in understanding public discourse to gather data more easily, more ethically, and more transparently than the barriers of the old tools ever allowed.</p>
+              <p>The waters rise. The feed is a flood. But the threshing floor is high ground, and the work of separation is ancient, and the grain is worth the labor.</p>
+              <p style="margin-bottom:0.25rem;">With hope,</p>
+              <p style="color:var(--ember);font-family:var(--font-display);font-size:1.0625rem;font-weight:600;margin-bottom:0.125rem;">Jacob E. Thomas, MA, PhD</p>
+              <p style="font-size:0.8125rem;color:var(--ash);margin:0;">February 2026</p>
+            </div>
+          </div>
+
           <div class="about-section">
             <h3>What Is This?</h3>
             <p>The Threshing Floor is a free, open-source tool for collecting and exporting Reddit data. It is designed for public health researchers, journalists, civic technologists, and anyone who believes public discourse is worth measuring.</p>
