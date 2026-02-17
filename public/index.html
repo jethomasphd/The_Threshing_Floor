@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Threshing Floor</title>
+  <meta name="description" content="Separate signal from noise. Collect, explore, and export Reddit data for public health research and journalism. No code required.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/img/favicon.svg">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
+
+  <!-- JSZip for exports -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- Chart.js for analysis -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="/css/thresh.css">
+</head>
+<body>
+
+  <!-- ===== CINEMATIC INTRO ===== -->
+  <div id="intro">
+    <div id="intro-content">
+      <div class="intro-line" data-delay="500">The world is drowning.</div>
+      <div class="intro-line intro-dim" data-delay="2500">Every day, millions of voices speak into the void&thinsp;&mdash;</div>
+      <div class="intro-line intro-dim" data-delay="4200">their fears, their hopes, their questions.</div>
+      <div class="intro-line" data-delay="6500">Most of it is lost.</div>
+      <div class="intro-line intro-dim" data-delay="8000">Buried under algorithms. Drowned in the flood.</div>
+      <div class="intro-line intro-emphasis" data-delay="10500">But some of it is signal.</div>
+      <img src="/img/sigil.svg" class="intro-sigil" data-delay="12500" alt="The Threshing Floor sigil">
+      <div class="intro-title" data-delay="14000">The Threshing Floor</div>
+      <div class="intro-subtitle" data-delay="15000">Where grain is separated from chaff.</div>
+      <button class="intro-enter" data-delay="16000" onclick="window.ThreshApp.enterApp()">Enter the Floor</button>
+    </div>
+    <button class="intro-skip" onclick="window.ThreshApp.enterApp()">Skip &rarr;</button>
+  </div>
+
+
+  <!-- ===== MAIN APPLICATION ===== -->
+  <div id="app" style="display:none">
+
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" aria-label="Main navigation">
+      <div class="sidebar-header">
+        <button class="sidebar-brand" onclick="ThreshApp.navigate('floor')" aria-label="Go to dashboard">
+          <img src="/img/sigil.svg" class="sidebar-sigil" alt="">
+          <span class="sidebar-title">The Threshing Floor</span>
+        </button>
+      </div>
+      <ul class="sidebar-nav">
+        <li>
+          <button class="sidebar-link active" data-page="floor" onclick="ThreshApp.navigate('floor')">
+            <svg class="sidebar-icon"><use href="#icon-home"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">The Floor</span>
+              <span class="sidebar-label-sub">Dashboard</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" data-page="thresh" onclick="ThreshApp.navigate('thresh')">
+            <svg class="sidebar-icon"><use href="#icon-wheat"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">Thresh</span>
+              <span class="sidebar-label-sub">Collect data</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" data-page="harvest" onclick="ThreshApp.navigate('harvest')">
+            <svg class="sidebar-icon"><use href="#icon-table"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">Harvest</span>
+              <span class="sidebar-label-sub">View results</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
+            <svg class="sidebar-icon"><use href="#icon-download"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">Glean</span>
+              <span class="sidebar-label-sub">Export data</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
+            <svg class="sidebar-icon"><use href="#icon-sparkles"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">Winnow</span>
+              <span class="sidebar-label-sub">AI analysis</span>
+            </span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" data-page="about" onclick="ThreshApp.navigate('about')">
+            <svg class="sidebar-icon"><use href="#icon-info"/></svg>
+            <span class="sidebar-label">
+              <span class="sidebar-label-primary">About</span>
+              <span class="sidebar-label-sub">Ethics &amp; info</span>
+            </span>
+          </button>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <span class="text-xs text-ash font-mono">Thresh v1.0</span>
+      </div>
+    </nav>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-nav" aria-label="Mobile navigation">
+      <button class="mobile-nav-link active" data-page="floor" onclick="ThreshApp.navigate('floor')">
+        <i data-lucide="home"></i> Floor
+      </button>
+      <button class="mobile-nav-link" data-page="thresh" onclick="ThreshApp.navigate('thresh')">
+        <i data-lucide="wheat"></i> Thresh
+      </button>
+      <button class="mobile-nav-link" data-page="harvest" onclick="ThreshApp.navigate('harvest')">
+        <i data-lucide="table"></i> Harvest
+      </button>
+      <button class="mobile-nav-link" data-page="glean" onclick="ThreshApp.navigate('glean')">
+        <i data-lucide="download"></i> Glean
+      </button>
+      <button class="mobile-nav-link" data-page="winnow" onclick="ThreshApp.navigate('winnow')">
+        <i data-lucide="sparkles"></i> Winnow
+      </button>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+      <!-- ===== THE FLOOR (Dashboard) ===== -->
+      <section id="page-floor" class="page-section active">
+        <div class="page-header">
+          <h1 class="page-title">The Floor</h1>
+          <p class="page-subtitle">Your workspace. Begin here.</p>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Quick Start</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted" style="margin-bottom: 1rem;">Enter a subreddit name and start collecting data in seconds. No API keys, no code, no setup.</p>
+              <button class="btn btn-primary btn-lg" onclick="ThreshApp.navigate('thresh')">
+                <i data-lucide="wheat" style="width:18px;height:18px"></i>
+                Begin Threshing
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">How It Works</h3>
+            </div>
+            <div class="card-body">
+              <div style="display:flex;flex-direction:column;gap:0.75rem;">
+                <div style="display:flex;align-items:start;gap:0.75rem;">
+                  <span class="badge badge-ember" style="min-width:20px;justify-content:center;">1</span>
+                  <span class="text-bone-muted text-sm"><strong class="text-bone">Thresh</strong> &mdash; Enter a subreddit and collection parameters</span>
+                </div>
+                <div style="display:flex;align-items:start;gap:0.75rem;">
+                  <span class="badge badge-ember" style="min-width:20px;justify-content:center;">2</span>
+                  <span class="text-bone-muted text-sm"><strong class="text-bone">Harvest</strong> &mdash; Browse and search your collected data</span>
+                </div>
+                <div style="display:flex;align-items:start;gap:0.75rem;">
+                  <span class="badge badge-ember" style="min-width:20px;justify-content:center;">3</span>
+                  <span class="text-bone-muted text-sm"><strong class="text-bone">Glean</strong> &mdash; Export as CSV or JSON with full provenance</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Recent Collections</h3>
+            </div>
+            <div class="card-body" id="floor-recent">
+              <p class="text-ash text-sm">No collections yet. Start by threshing a subreddit.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===== THRESH (Collection) ===== -->
+      <section id="page-thresh" class="page-section">
+        <div class="page-header">
+          <h1 class="page-title">Thresh</h1>
+          <p class="page-subtitle">Configure and collect Reddit data. No API key needed.</p>
+        </div>
+
+        <div class="card" style="max-width:700px;">
+          <form id="thresh-form" onsubmit="return ThreshApp.startCollection(event)">
+            <div class="form-group">
+              <label class="label" for="subreddit">Subreddit</label>
+              <input type="text" id="subreddit" class="input" placeholder="e.g. mentalhealth, publichealth, science" required>
+              <p class="form-help">Enter the subreddit name without the r/ prefix. You can enter multiple separated by commas.</p>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="label" for="sort">Sort By</label>
+                <select id="sort" class="select">
+                  <option value="hot">Hot</option>
+                  <option value="new">New</option>
+                  <option value="top" selected>Top</option>
+                  <option value="rising">Rising</option>
+                  <option value="controversial">Controversial</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label" for="time-filter">Time Filter</label>
+                <select id="time-filter" class="select">
+                  <option value="day">Past 24 hours</option>
+                  <option value="week" selected>Past week</option>
+                  <option value="month">Past month</option>
+                  <option value="year">Past year</option>
+                  <option value="all">All time</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="label" for="limit">Max Posts</label>
+                <select id="limit" class="select">
+                  <option value="10">10</option>
+                  <option value="25" selected>25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label" for="keyword">Keyword Filter</label>
+                <input type="text" id="keyword" class="input" placeholder="Optional — filter post titles">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="checkbox">
+                <input type="checkbox" id="include-comments">
+                Include top-level comments (slower)
+              </label>
+            </div>
+
+            <hr class="divider">
+
+            <div style="display:flex;gap:0.75rem;align-items:center;">
+              <button type="submit" class="btn btn-primary btn-lg" id="thresh-submit">
+                <i data-lucide="wheat" style="width:18px;height:18px"></i>
+                Thresh
+              </button>
+              <span id="thresh-status" class="text-sm text-ash"></span>
+            </div>
+          </form>
+        </div>
+
+        <!-- Collection Progress -->
+        <div id="thresh-progress" style="display:none;margin-top:1.5rem;max-width:700px;">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Collecting&hellip;</h3>
+              <span id="progress-count" class="badge badge-ember">0 posts</span>
+            </div>
+            <div class="progress" style="margin-bottom:0.75rem;">
+              <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+            </div>
+            <p id="progress-message" class="text-sm text-bone-muted">Starting collection&hellip;</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===== HARVEST (Results) ===== -->
+      <section id="page-harvest" class="page-section">
+        <div class="page-header">
+          <h1 class="page-title">Harvest</h1>
+          <p class="page-subtitle">Browse and explore your collected data.</p>
+        </div>
+
+        <!-- Collection Selector -->
+        <div class="form-group" style="max-width:400px;margin-bottom:1.5rem;">
+          <label class="label" for="harvest-collection">Collection</label>
+          <select id="harvest-collection" class="select" onchange="ThreshApp.loadCollection(this.value)">
+            <option value="">Select a collection&hellip;</option>
+          </select>
+        </div>
+
+        <!-- Empty state -->
+        <div id="harvest-empty" class="empty-state">
+          <img src="/img/sigil.svg" class="empty-state-sigil" alt="">
+          <h3 class="empty-state-heading">No Data Yet</h3>
+          <p class="empty-state-text">Collect some Reddit data first, then come back here to explore it.</p>
+          <button class="btn btn-primary" onclick="ThreshApp.navigate('thresh')">Go to Thresh</button>
+        </div>
+
+        <!-- Results (hidden until data loaded) -->
+        <div id="harvest-results" style="display:none;">
+          <!-- Stats bar -->
+          <div class="stats-grid" style="margin-bottom:1.5rem;" id="harvest-stats"></div>
+
+          <!-- Search/Filter -->
+          <div style="margin-bottom:1rem;display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="harvest-search" class="input" placeholder="Search posts&hellip;" style="max-width:300px;" oninput="ThreshApp.filterHarvest()">
+            <span id="harvest-count" class="text-sm text-ash"></span>
+          </div>
+
+          <!-- Data Table -->
+          <div class="table-wrapper">
+            <table class="data-table" id="harvest-table">
+              <thead>
+                <tr>
+                  <th onclick="ThreshApp.sortHarvest('title')">Title</th>
+                  <th onclick="ThreshApp.sortHarvest('author')">Author</th>
+                  <th onclick="ThreshApp.sortHarvest('score')" style="text-align:right;">Score</th>
+                  <th onclick="ThreshApp.sortHarvest('num_comments')" style="text-align:right;">Comments</th>
+                  <th onclick="ThreshApp.sortHarvest('created_utc')">Date</th>
+                </tr>
+              </thead>
+              <tbody id="harvest-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Post detail panel -->
+          <div id="post-detail" class="card" style="display:none;margin-top:1rem;">
+            <div class="card-header">
+              <h3 class="card-title" id="detail-title"></h3>
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('post-detail').style.display='none'">&times; Close</button>
+            </div>
+            <div id="detail-body" style="margin-bottom:1rem;"></div>
+            <div id="detail-comments"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===== GLEAN (Export) ===== -->
+      <section id="page-glean" class="page-section">
+        <div class="page-header">
+          <h1 class="page-title">Glean</h1>
+          <p class="page-subtitle">Export your data with full provenance documentation.</p>
+        </div>
+
+        <div id="glean-empty" class="empty-state">
+          <img src="/img/sigil.svg" class="empty-state-sigil" alt="">
+          <h3 class="empty-state-heading">Nothing to Export</h3>
+          <p class="empty-state-text">Collect some data first, then return here to export it.</p>
+          <button class="btn btn-primary" onclick="ThreshApp.navigate('thresh')">Go to Thresh</button>
+        </div>
+
+        <div id="glean-panel" style="display:none;max-width:700px;">
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="form-group">
+              <label class="label" for="glean-collection">Collection</label>
+              <select id="glean-collection" class="select" onchange="ThreshApp.updateGleanPreview()">
+                <option value="">Select a collection&hellip;</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="label" for="export-format">Format</label>
+                <select id="export-format" class="select">
+                  <option value="csv">CSV (Excel-compatible)</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label">&nbsp;</label>
+                <label class="checkbox">
+                  <input type="checkbox" id="anonymize-authors" checked>
+                  Anonymize usernames
+                </label>
+              </div>
+            </div>
+
+            <hr class="divider">
+
+            <div style="display:flex;gap:0.75rem;">
+              <button class="btn btn-primary" onclick="ThreshApp.exportData()">
+                <i data-lucide="download" style="width:16px;height:16px"></i>
+                Download Export
+              </button>
+              <button class="btn btn-secondary" onclick="ThreshApp.previewExport()">
+                Preview
+              </button>
+            </div>
+          </div>
+
+          <!-- Preview area -->
+          <div id="glean-preview-container" style="display:none;">
+            <h4 style="margin-bottom:0.5rem;">Export Preview</h4>
+            <div id="glean-preview" class="export-preview"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===== WINNOW (AI Analysis) ===== -->
+      <section id="page-winnow" class="page-section">
+        <div class="page-header">
+          <h1 class="page-title">Winnow</h1>
+          <p class="page-subtitle">AI-powered analysis of your collected data. Requires an Anthropic API key.</p>
+        </div>
+
+        <div id="winnow-empty" class="empty-state">
+          <img src="/img/sigil.svg" class="empty-state-sigil" alt="">
+          <h3 class="empty-state-heading">No Data to Analyze</h3>
+          <p class="empty-state-text">Collect some data first, then use Claude to find patterns and insights.</p>
+          <button class="btn btn-primary" onclick="ThreshApp.navigate('thresh')">Go to Thresh</button>
+        </div>
+
+        <div id="winnow-panel" style="display:none;max-width:800px;">
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="label" for="winnow-collection">Collection</label>
+                <select id="winnow-collection" class="select">
+                  <option value="">Select a collection&hellip;</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="label" for="winnow-prompt">Analysis Type</label>
+                <select id="winnow-prompt" class="select">
+                  <option value="themes">Identify key themes &amp; topics</option>
+                  <option value="sentiment">Sentiment analysis</option>
+                  <option value="summary">Summarize the discussion</option>
+                  <option value="questions">Extract questions people are asking</option>
+                  <option value="custom">Custom prompt</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group" id="winnow-custom-group" style="display:none;">
+              <label class="label" for="winnow-custom">Custom Prompt</label>
+              <textarea id="winnow-custom" class="input" rows="3" placeholder="What would you like Claude to analyze?"></textarea>
+            </div>
+
+            <div style="display:flex;gap:0.75rem;align-items:center;">
+              <button class="btn btn-primary" onclick="ThreshApp.runAnalysis()">
+                <i data-lucide="sparkles" style="width:16px;height:16px"></i>
+                Analyze with Claude
+              </button>
+              <button class="btn btn-ghost btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
+                <i data-lucide="key" style="width:14px;height:14px"></i>
+                API Key
+              </button>
+              <span id="winnow-status" class="text-sm text-ash"></span>
+            </div>
+          </div>
+
+          <!-- Word Frequency Chart (client-side, no API needed) -->
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+              <h3 class="card-title">Word Frequency</h3>
+              <span class="text-xs text-ash">No API key needed</span>
+            </div>
+            <canvas id="word-freq-chart" height="200"></canvas>
+          </div>
+
+          <!-- Claude Analysis Result -->
+          <div id="winnow-result" class="claude-panel" style="display:none;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+              <h3 style="margin:0;font-family:var(--font-display);color:var(--ember);">Claude's Analysis</h3>
+              <span class="badge badge-ember">AI-Generated</span>
+            </div>
+            <div id="winnow-response" class="claude-response"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ===== ABOUT ===== -->
+      <section id="page-about" class="page-section">
+        <div class="page-header">
+          <h1 class="page-title">About</h1>
+          <p class="page-subtitle">Ethics, methodology, and how this tool works.</p>
+        </div>
+
+        <div style="max-width:700px;">
+          <div class="about-section">
+            <h3>What Is This?</h3>
+            <p>The Threshing Floor is a free, open-source tool for collecting and exporting Reddit data. It is designed for public health researchers, journalists, civic technologists, and anyone who believes public discourse is worth measuring.</p>
+            <p>It runs entirely in your browser. There is no server, no database, no account to create. Your data stays on your machine.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>How It Works</h3>
+            <p>Reddit's public pages serve JSON data alongside HTML. The Threshing Floor fetches this public data through a lightweight proxy (to handle browser security restrictions), then lets you browse, filter, and export it.</p>
+            <p>No Reddit API key is required. No authentication of any kind. The data collected is limited to what any person could see by visiting Reddit in a web browser.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>Ethical Considerations</h3>
+            <ul>
+              <li><strong>Re-identification risk:</strong> Even with usernames removed, unique writing styles or specific details in posts may allow re-identification. Consider this when publishing findings.</li>
+              <li><strong>IRB guidance:</strong> If you are conducting academic research, consult your Institutional Review Board about whether your data collection constitutes human subjects research.</li>
+              <li><strong>Reddit's Terms:</strong> This tool accesses publicly available data. Please review Reddit's Terms of Service and API Terms regarding data collection and use.</li>
+              <li><strong>Consent:</strong> Reddit users post publicly, but they may not expect their posts to be aggregated and analyzed. Handle data with care and respect.</li>
+              <li><strong>Default anonymization:</strong> Exports anonymize usernames by default. You can disable this, but consider the implications before doing so.</li>
+            </ul>
+          </div>
+
+          <div class="about-section">
+            <h3>Provenance</h3>
+            <p>Every export includes a <code>provenance.txt</code> file documenting exactly how the data was collected: the subreddit, sort method, time filter, number of posts, date of collection, and any filters applied. This is the seal on every bundle &mdash; it gives you the language for a methods section, a transparency report, or a replication attempt.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>AI Analysis (Optional)</h3>
+            <p>The Winnow page offers optional AI-powered analysis using Claude (by Anthropic). To use this feature, you need your own Anthropic API key. Your key is stored only in your browser's local storage and is sent directly to Anthropic's API &mdash; it is never stored on any server.</p>
+            <button class="btn btn-secondary btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
+              <i data-lucide="key" style="width:14px;height:14px"></i>
+              Configure API Key
+            </button>
+          </div>
+
+          <div class="about-section">
+            <h3>Deploying Your Own</h3>
+            <p>The Threshing Floor deploys to Cloudflare Pages with zero configuration:</p>
+            <ol>
+              <li>Fork the repository on GitHub</li>
+              <li>Connect it to Cloudflare Pages</li>
+              <li>Set the build output directory to <code>public</code></li>
+              <li>Deploy</li>
+            </ol>
+            <p>That's it. No environment variables, no build step, no dependencies to install.</p>
+          </div>
+
+          <div class="about-section">
+            <h3>Citation</h3>
+            <p class="font-mono text-sm" style="background:var(--surface-raised);padding:1rem;border-radius:var(--radius-sm);">Thomas, J.E. (2025). The Threshing Floor: A browser-based tool for Reddit data collection and export. https://github.com/jethomasphd/The_Threshing_Floor</p>
+          </div>
+
+          <div class="about-section" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(201,162,39,0.12);">
+            <p class="text-ash text-sm" style="text-align:center;">A Jacob E. Thomas artifact. Built with deliberate attention.</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <!-- Claude API Key Modal -->
+  <div class="modal-overlay" id="claude-modal">
+    <div class="modal">
+      <h3 class="modal-title">Anthropic API Key</h3>
+      <p class="modal-text">Enter your Anthropic API key to enable AI-powered analysis. Your key is stored only in your browser and sent directly to Anthropic. It never touches any other server.</p>
+      <div class="form-group">
+        <label class="label" for="claude-api-key">API Key</label>
+        <input type="password" id="claude-api-key" class="input" placeholder="sk-ant-...">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="ThreshApp.hideClaudeKeyModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="ThreshApp.saveClaudeKey()">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline SVG Icons (referenced by sidebar) -->
+  <svg style="display:none">
+    <symbol id="icon-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="icon-wheat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 22 16 8"/><path d="M3.47 12.53 5 11l1.53 1.53a3.5 3.5 0 0 1 0 4.94L5 19l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M7.47 8.53 9 7l1.53 1.53a3.5 3.5 0 0 1 0 4.94L9 15l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M11.47 4.53 13 3l1.53 1.53a3.5 3.5 0 0 1 0 4.94L13 11l-1.53-1.53a3.5 3.5 0 0 1 0-4.94Z"/><path d="M20 2h2v2a4 4 0 0 1-4 4h-2V6a4 4 0 0 1 4-4Z"/><path d="M11.47 17.47 13 19l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L5 19l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="M15.47 13.47 17 15l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L9 15l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/><path d="M19.47 9.47 21 11l-1.53 1.53a3.5 3.5 0 0 1-4.94 0L13 11l1.53-1.53a3.5 3.5 0 0 1 4.94 0Z"/></symbol>
+    <symbol id="icon-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="3" x2="21" y1="9" y2="9"/><line x1="3" x2="21" y1="15" y2="15"/><line x1="9" x2="9" y1="3" y2="21"/></symbol>
+    <symbol id="icon-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></symbol>
+    <symbol id="icon-sparkles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/><path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/></symbol>
+    <symbol id="icon-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  </svg>
+
+  <!-- Application JavaScript -->
+  <script src="/js/reddit.js"></script>
+  <script src="/js/exporter.js"></script>
+  <script src="/js/claude.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
