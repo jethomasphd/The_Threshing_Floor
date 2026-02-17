@@ -71,14 +71,15 @@ Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.
 | **The Floor** | The workspace | Dashboard — your recent collections, quick actions |
 | **Thresh** | Beating the grain | Enter a subreddit, configure sort/time/limit, collect |
 | **Harvest** | Gathering what fell | Browse data in sortable tables, filter, inspect posts |
+| **Winnow** | Wind carries away chaff | Analyze with word frequency and optional AI (bring your own key) |
 | **Glean** | Bundling clean grain | Export as CSV or JSON — sealed with a provenance document |
-| **Winnow** | Wind carries away chaff | AI-powered analysis with Claude (optional, bring your own key) |
 
 ### A typical session
 
 1. **Thresh** — *"Collect the top 100 posts from r/publichealth this month"*
 2. **Harvest** — scan the table, search for keywords, check the stats
-3. **Glean** — download a ZIP with your data and a `provenance.txt` file
+3. **Winnow** — run word frequency analysis; optionally run Claude AI for themes or sentiment
+4. **Glean** — download a ZIP with your data and a `provenance.txt` file
 
 That provenance file is the receipt. It records everything: what you asked for, what you got, when, and how. Anyone reviewing your work sees exactly how the grain was separated from the chaff.
 
@@ -252,6 +253,60 @@ Usernames are anonymized by default. If your work requires real usernames, Thres
 - **Rate-limit respect.** The edge proxy adds small delays between requests. Reddit's public JSON endpoints are accessed the same way any browser would.
 - **Institutional review.** If your organization requires ethics board approval for social media research, the provenance document provides the methodological transparency reviewers need.
 - **Reddit Terms of Service.** Thresh accesses only public data — the same content visible to any browser. It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
+
+---
+
+## Your Data & Storage
+
+**Everything is stored in your browser.** There is no server database, no account system, and no cloud sync.
+
+| What | Where | localStorage Key |
+|------|-------|------------------|
+| Your collections (posts, comments, config) | Browser localStorage | `thresh_collections` |
+| Anthropic API key (if you use Claude analysis) | Browser localStorage | `thresh_claude_key` |
+| Rate limit state | Browser localStorage | `thresh_rate_limit` |
+| Subreddit metadata cache (15-min TTL) | Browser localStorage | `thresh_subreddit_cache` |
+
+The two Cloudflare edge functions (`/api/reddit` and `/api/claude`) are **stateless proxies** — they forward requests and return responses. They do not log, store, or inspect your data.
+
+This means:
+- Your data **does not sync** across browsers or devices
+- If you switch browsers, your collections will not follow
+- If you clear browser data, your collections are gone
+
+### Clearing Your History
+
+To erase all Thresh data:
+
+**Quick method (all site data):**
+1. Open your browser's **Settings** (or press `Ctrl+Shift+Delete` / `Cmd+Shift+Delete`)
+2. Navigate to **Privacy & Security** → **Clear browsing data**
+3. Select **"Cookies and site data"** (this includes localStorage)
+4. Clear for the Thresh site
+
+**Precise method (individual keys):**
+1. Open **Developer Tools** (`F12`)
+2. Go to the **Application** tab
+3. Expand **Local Storage** in the left sidebar
+4. Find the Thresh site entry
+5. Delete individual keys (e.g., just `thresh_collections` to clear collections but keep your API key) or click **Clear All**
+
+This removes all saved collections, your API key (if stored), rate limit state, and cached data. **It cannot be undone.**
+
+---
+
+## The Rate Limit Gauge
+
+The **Rate Limit** gauge at the bottom of the sidebar tracks your current Reddit rate limit status. Reddit allows **100 requests per minute** to its public JSON endpoints.
+
+| Gauge State | Meaning |
+|-------------|---------|
+| **Gold bar (full)** | Plenty of requests remaining. Normal operation. |
+| **Yellow bar (below 30%)** | Requests running low. Consider pausing between collections. |
+| **Red pulsing bar (below 10%)** | Critical. Thresh will pause automatically if the limit is reached. |
+| **Cooldown timer** | You've hit the limit. A countdown shows when requests resume. The collect button is disabled until the cooldown expires. |
+
+The rate limit resets automatically each minute. Under normal use (25–100 posts per collection), you will rarely see it drop below gold. The gauge reads from Reddit's actual rate limit response headers, so it reflects your real remaining quota — not an estimate.
 
 ---
 

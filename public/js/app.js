@@ -40,11 +40,6 @@ const ThreshApp = {
 
     // Wire up rate limit sentinel
     this._initRateSentinel();
-
-    // Restore intro-seen state
-    if (localStorage.getItem('thresh_intro_seen')) {
-      this.enterApp(true);
-    }
   },
 
   // --- Intro ---
@@ -71,8 +66,6 @@ const ThreshApp = {
         app.style.display = 'block';
       }, 1200);
     }
-
-    localStorage.setItem('thresh_intro_seen', '1');
 
     // Re-init icons after app becomes visible
     setTimeout(() => {
