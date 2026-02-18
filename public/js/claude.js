@@ -1,86 +1,30 @@
 /**
  * Claude API integration for AI-powered analysis.
- * Supports two modes:
- *   1. Managed proxy (thresh-proxy worker) — no user API key needed
- *   2. Bring-your-own-key (BYOK) — user provides their own Anthropic API key
  *
- * If MANAGED_PROXY_URL is set, the managed proxy is used by default.
- * Users can still override with their own key via the API Key modal.
+ * All AI requests are proxied through the managed thresh-proxy Cloudflare Worker
+ * at api.the-threshing-floor.com. The API key is stored server-side as an
+ * encrypted Cloudflare secret. Users never need their own key.
  */
 
 const ClaudeClient = {
-  // The Cloudflare Pages Function proxy (BYOK mode)
-  PROXY_URL: '/api/claude',
-
-  // The dedicated thresh-proxy worker URL (managed mode)
-  // Set this to your deployed thresh-proxy worker URL to enable managed mode.
-  // Example: 'https://thresh-proxy.your-account.workers.dev'
-  // Leave empty string to disable managed mode (BYOK only).
-  MANAGED_PROXY_URL: '',
+  // The managed thresh-proxy Cloudflare Worker
+  MANAGED_PROXY_URL: 'https://api.the-threshing-floor.com',
 
   /**
-   * Get the stored API key from localStorage.
-   */
-  getKey() {
-    return localStorage.getItem('thresh_claude_key') || '';
-  },
-
-  /**
-   * Save API key to localStorage.
-   */
-  saveKey(key) {
-    if (key) {
-      localStorage.setItem('thresh_claude_key', key.trim());
-    } else {
-      localStorage.removeItem('thresh_claude_key');
-    }
-  },
-
-  /**
-   * Check if an API key is configured.
-   */
-  hasKey() {
-    return !!this.getKey();
-  },
-
-  /**
-   * Check if the managed proxy is available.
-   */
-  hasManagedProxy() {
-    return !!this.MANAGED_PROXY_URL;
-  },
-
-  /**
-   * Check if AI features are available (either managed proxy or BYOK).
+   * AI features are always available via the managed proxy.
    */
   isAvailable() {
-    return this.hasManagedProxy() || this.hasKey();
+    return true;
   },
 
   /**
-   * Get the appropriate proxy URL and request body.
-   * Uses BYOK key if the user has one set; otherwise falls back to managed proxy.
+   * Build the request config for the managed proxy.
    */
   _getRequestConfig(messages, system) {
-    const userKey = this.getKey();
-
-    if (userKey) {
-      // BYOK mode — send key to the Pages Function proxy
-      return {
-        url: this.PROXY_URL,
-        body: { apiKey: userKey, messages, system },
-      };
-    }
-
-    if (this.MANAGED_PROXY_URL) {
-      // Managed proxy mode — no key needed in the request
-      return {
-        url: this.MANAGED_PROXY_URL,
-        body: { messages, system },
-      };
-    }
-
-    throw new Error('No API key configured and no managed proxy available. Please add your Anthropic API key.');
+    return {
+      url: this.MANAGED_PROXY_URL,
+      body: { messages, system },
+    };
   },
 
   /**
@@ -91,11 +35,6 @@ const ClaudeClient = {
    * @returns {Promise<string>} - Claude's analysis text
    */
   async analyze(posts, analysisType, customPrompt = '') {
-    if (!this.isAvailable()) {
-      throw new Error('No Anthropic API key configured. Please add your key in Settings.');
-    }
-
-    // Prepare the data summary for Claude
     const dataSummary = this._prepareDataSummary(posts);
     const prompt = this._buildPrompt(analysisType, customPrompt, dataSummary);
 
@@ -113,13 +52,9 @@ const ClaudeClient = {
     const data = await response.json();
 
     if (!response.ok) {
-      if (data.type === 'authentication_error') {
-        throw new Error('Invalid API key. Please check your Anthropic API key.');
-      }
       throw new Error(data.error || 'Claude API request failed');
     }
 
-    // Extract text from Claude's response
     if (data.content && data.content.length > 0) {
       return data.content
         .filter(block => block.type === 'text')
@@ -134,7 +69,6 @@ const ClaudeClient = {
    * Prepare a condensed data summary for Claude.
    */
   _prepareDataSummary(posts) {
-    // Limit to prevent exceeding token limits
     const sample = posts.slice(0, 50);
     const lines = sample.map((p, i) => {
       const date = new Date(p.created_utc * 1000).toISOString().slice(0, 10);
@@ -151,10 +85,6 @@ const ClaudeClient = {
    * @returns {Promise<string>} - The full report in Markdown
    */
   async generateReport(params) {
-    if (!this.isAvailable()) {
-      throw new Error('No Anthropic API key configured. Please add your key in Settings.');
-    }
-
     const { posts, config, timestamp, wordFreq, stats, question, audience, context } = params;
 
     const dataSummary = this._prepareDataSummary(posts);
@@ -234,9 +164,6 @@ IMPORTANT: The report should be substantive (1500-2500 words). Ground every clai
     const data = await response.json();
 
     if (!response.ok) {
-      if (data.type === 'authentication_error') {
-        throw new Error('Invalid API key. Please check your Anthropic API key.');
-      }
       throw new Error(data.error || 'Claude API request failed');
     }
 

@@ -30,8 +30,14 @@ jobs:
         run: |
           echo "Checking Cloudflare Pages Functions..."
           test -f functions/api/reddit.js
-          test -f functions/api/claude.js
           echo "Edge functions: OK"
+
+      - name: Check thresh-proxy worker exists
+        run: |
+          echo "Checking thresh-proxy worker..."
+          test -f thresh-proxy/src/index.js
+          test -f thresh-proxy/wrangler.toml
+          echo "thresh-proxy: OK"
 
       - name: Validate HTML
         run: |

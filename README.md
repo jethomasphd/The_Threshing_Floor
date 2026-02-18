@@ -189,9 +189,9 @@ These run entirely in your browser at zero cost:
 | **Summary Statistics** | Harvest | Post count, average score, average comments, and date range — calculated automatically for every collection |
 | **Search Filter** | Harvest | Live text search across titles, authors, and post bodies |
 
-### Claude AI Analysis (Optional — Bring Your Own Key)
+### Claude AI Analysis (Built In)
 
-Claude reads your collected posts (up to 50 are sampled to stay within token limits) and produces structured research analysis. It goes beyond counting words — it understands meaning, groups ideas, and identifies patterns.
+Claude Opus 4.6 reads your collected posts (up to 50 are sampled to stay within token limits) and produces structured research analysis. It goes beyond counting words — it understands meaning, groups ideas, and identifies patterns. AI analysis is built into the tool and free to use — no API key needed.
 
 | Analysis Type | Best For | What Claude Returns |
 |---------------|----------|---------------------|
@@ -214,15 +214,9 @@ Claude reads your collected posts (up to 50 are sampled to stay within token lim
 
 ### How Claude Integration Works
 
-Thresh supports two modes for AI features:
+AI analysis is powered by **Claude Opus 4.6** (`claude-opus-4-6`), Anthropic's most capable model. All requests are routed through a secure managed proxy at `api.the-threshing-floor.com`. The API key is stored server-side as an encrypted Cloudflare secret — users never need to provide or manage an API key.
 
-**Managed proxy (default on the live site):** AI analysis is available to everyone — no API key needed. A dedicated Cloudflare Worker (`thresh-proxy`) holds the API key server-side.
-
-**Bring-your-own-key (BYOK):** If you self-host or prefer your own key, enter it in the API Key modal. Your key is stored in `localStorage` only and sent directly to Anthropic via a Cloudflare edge function — it is never logged or stored on any server. A user-provided key takes priority over the managed proxy.
-
-Both modes use **Claude Opus 4.6** (`claude-opus-4-6`), Anthropic's most capable model. Claude analyzes a summary of up to 50 posts from your collection. Results appear in the "Claude's Analysis" panel — marked as AI-generated.
-
-Without either mode configured, the word frequency table and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
+Claude analyzes a summary of up to 50 posts from your collection. Results appear in the "Claude's Analysis" panel — marked as AI-generated. The word frequency table and all Harvest-page analytics also work independently as client-side tools.
 
 ### AI Research Report (Glean Page)
 
@@ -288,11 +282,10 @@ Usernames are anonymized by default. If your work requires real usernames, Thres
 | What | Where | localStorage Key |
 |------|-------|------------------|
 | Your collections (posts, comments, config) | Browser localStorage | `thresh_collections` |
-| Anthropic API key (if you use Claude analysis) | Browser localStorage | `thresh_claude_key` |
 | Rate limit state | Browser localStorage | `thresh_rate_limit` |
 | Subreddit metadata cache (15-min TTL) | Browser localStorage | `thresh_subreddit_cache` |
 
-The two Cloudflare edge functions (`/api/reddit` and `/api/claude`) are **stateless proxies** — they forward requests and return responses. They do not log, store, or inspect your data.
+The Reddit CORS proxy (`/api/reddit`) is a **stateless proxy** — it forwards requests and returns responses. It does not log, store, or inspect your data. AI analysis is routed through the managed proxy at `api.the-threshing-floor.com`, which holds the API key server-side and does not log request content.
 
 This means:
 - Your data **does not sync** across browsers or devices
@@ -314,9 +307,9 @@ To erase all Thresh data:
 2. Go to the **Application** tab
 3. Expand **Local Storage** in the left sidebar
 4. Find the Thresh site entry
-5. Delete individual keys (e.g., just `thresh_collections` to clear collections but keep your API key) or click **Clear All**
+5. Delete individual keys (e.g., just `thresh_collections` to clear collections) or click **Clear All**
 
-This removes all saved collections, your API key (if stored), rate limit state, and cached data. **It cannot be undone.**
+This removes all saved collections, rate limit state, and cached data. **It cannot be undone.**
 
 ---
 
@@ -346,17 +339,16 @@ The_Threshing_Floor/
 │   │   ├── app.js              # Router, state, UI orchestration, DOCX export
 │   │   ├── reddit.js           # Reddit JSON fetching via proxy
 │   │   ├── exporter.js         # CSV/JSON + provenance ZIP generation
-│   │   └── claude.js           # Claude API (managed proxy + BYOK support)
+│   │   └── claude.js           # Claude API via managed proxy
 │   └── img/                    # Sigil and favicon SVGs
 ├── functions/                  # Cloudflare Pages Functions (edge)
 │   └── api/
-│       ├── reddit.js           # CORS proxy for Reddit public JSON
-│       └── claude.js           # BYOK proxy for Anthropic API
-├── thresh-proxy/               # Dedicated Cloudflare Worker for managed AI
-│   ├── src/index.js            # Worker code (Claude Opus 4.6)
+│       └── reddit.js           # CORS proxy for Reddit public JSON
+├── thresh-proxy/               # Cloudflare Worker — AI proxy at api.the-threshing-floor.com
+│   ├── src/index.js            # Worker code (Claude Opus 4.6, 8192 max tokens)
 │   ├── wrangler.toml           # Worker config
 │   ├── package.json            # Worker scripts
-│   └── SETUP.md                # Step-by-step deployment guide
+│   └── SETUP.md                # Deployment guide
 ├── package.json                # Dev scripts (wrangler)
 └── wrangler.toml               # Cloudflare local dev config
 ```

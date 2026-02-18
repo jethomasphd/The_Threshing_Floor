@@ -597,10 +597,6 @@
                   <i data-lucide="file-text" style="width:16px;height:16px"></i>
                   Generate Report
                 </button>
-                <button class="btn btn-ghost btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
-                  <i data-lucide="key" style="width:14px;height:14px"></i>
-                  API Key
-                </button>
                 <span id="report-status" class="text-sm text-ash"></span>
               </div>
             </div>
@@ -637,7 +633,7 @@
       <section id="page-winnow" class="page-section">
         <div class="page-header">
           <h1 class="page-title">Step 3 &mdash; Winnow</h1>
-          <p class="page-subtitle">Separate signal from noise. Start with the built-in word frequency table (free, instant), then optionally use Claude AI for deeper analysis.</p>
+          <p class="page-subtitle">Separate signal from noise. Start with the built-in word frequency table, then use Claude AI for deeper analysis.</p>
           <p class="page-epigraph">&ldquo;The greatest enemy of knowledge is not ignorance, it is the illusion of knowledge.&rdquo;<span class="epigraph-source">&mdash; Daniel J. Boorstin, historian</span></p>
         </div>
 
@@ -650,10 +646,10 @@
 
         <div id="winnow-panel" style="display:none;max-width:800px;">
 
-          <!-- What You Get Without an API Key -->
+          <!-- Built-in Analysis -->
           <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--success);">
             <div class="card-header">
-              <h3 class="card-title">Built-in Analysis (No API Key Needed)</h3>
+              <h3 class="card-title">Built-in Analysis</h3>
             </div>
             <div class="card-body">
               <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">These tools run entirely in your browser at no cost:</p>
@@ -665,10 +661,11 @@
             </div>
           </div>
 
-          <!-- What Claude Adds -->
+          <!-- Claude AI Analysis -->
           <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--ember);">
             <div class="card-header">
-              <h3 class="card-title">Claude AI Analysis (Requires API Key)</h3>
+              <h3 class="card-title">Claude AI Analysis</h3>
+              <span class="badge badge-ember">Powered by Claude Opus</span>
             </div>
             <div class="card-body">
               <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">Claude reads your collected posts and produces structured research analysis. It goes beyond counting words &mdash; it understands meaning, groups ideas, and identifies patterns a human analyst would find.</p>
@@ -689,7 +686,7 @@
               <ol style="margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:0.25rem;">
                 <li class="text-bone-muted text-sm"><strong class="text-bone">Pick a collection</strong> from the dropdown below. The word frequency table will update immediately.</li>
                 <li class="text-bone-muted text-sm"><strong class="text-bone">Review the word table</strong> &mdash; it shows you the 20 most common words in your data. Click "Copy" to grab it.</li>
-                <li class="text-bone-muted text-sm"><strong class="text-bone">Optionally, run Claude AI analysis</strong> &mdash; choose an analysis type and click "Analyze with Claude." You'll need an Anthropic API key (click "API Key" to add one).</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Run Claude AI analysis</strong> &mdash; choose an analysis type and click "Analyze with Claude." AI analysis is built in and free to use.</li>
                 <li class="text-bone-muted text-sm"><strong class="text-bone">Copy or download</strong> the results. Use "Copy to Clipboard" for quick pasting, or "Save as .txt/.md" to keep a file for your records.</li>
               </ol>
             </div>
@@ -713,7 +710,7 @@
                   <option value="questions">Extract questions people are asking</option>
                   <option value="custom">Custom prompt</option>
                 </select>
-                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Requires an Anthropic API key. The word table works without one.</p>
+                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Powered by Claude Opus 4.6. Select a type and click Analyze.</p>
               </div>
             </div>
 
@@ -734,10 +731,6 @@
                 <i data-lucide="sparkles" style="width:16px;height:16px"></i>
                 Analyze with Claude
               </button>
-              <button class="btn btn-ghost btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
-                <i data-lucide="key" style="width:14px;height:14px"></i>
-                API Key
-              </button>
               <span id="winnow-status" class="text-sm text-ash"></span>
             </div>
           </div>
@@ -747,7 +740,7 @@
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
               <div>
                 <h3 class="card-title">Word Frequency</h3>
-                <span class="text-xs text-ash">No API key needed</span>
+                <span class="text-xs text-ash">Instant, runs in your browser</span>
               </div>
               <button id="word-freq-copy" class="btn btn-ghost btn-sm" onclick="ThreshApp.copyWordFreq()" title="Copy table to clipboard" style="display:none;">
                 <i data-lucide="clipboard-copy" style="width:14px;height:14px"></i>
@@ -834,7 +827,7 @@
             <ol>
               <li><strong>Thresh</strong> (Collect) &mdash; Enter a subreddit, choose your sort method and time filter, set a post limit, and optionally filter by keyword. Click Thresh. The tool gathers posts (and optionally comments) and stores them in your browser.</li>
               <li><strong>Harvest</strong> (Browse) &mdash; Explore your collected data in a sortable, searchable table. Click any post to read its full text and comments. Sort by score to see what resonates, by comments to see what sparks debate, or by date to follow the conversation over time.</li>
-              <li><strong>Winnow</strong> (Analyze) &mdash; Start with the built-in word frequency table (free, instant, no API key). Then optionally run AI-powered analysis with Claude to identify themes, extract sentiment, summarize discussions, or ask custom questions about your data.</li>
+              <li><strong>Winnow</strong> (Analyze) &mdash; Start with the built-in word frequency table, then use Claude AI to identify themes, extract sentiment, summarize discussions, or ask custom questions about your data. AI analysis is built in and free to use.</li>
               <li><strong>Glean</strong> (Export) &mdash; Download your data as CSV or JSON, bundled in a ZIP with a provenance.txt file that documents exactly how it was collected. Or generate an <strong>AI Research Report</strong>: answer two questions about your research, and Claude produces a complete Introduction / Methods / Results / Discussion document you can use as a starting point for your own work.</li>
             </ol>
           </div>
@@ -853,9 +846,9 @@
             <p><strong>Everything is stored in your browser only.</strong> There is no server database, no account system, and no cloud sync. Specifically:</p>
             <ul>
               <li><strong>Collections</strong> (posts, comments, configuration) are saved in your browser's <code>localStorage</code>.</li>
-              <li><strong>Anthropic API key</strong> (if you use Claude AI analysis) is stored in <code>localStorage</code>. It is never sent to any server except Anthropic's API directly.</li>
               <li><strong>Rate limit state</strong> and <strong>subreddit cache</strong> are also stored locally in your browser.</li>
             </ul>
+            <p>AI analysis is powered by Claude Opus 4.6 via a secure managed proxy. No API keys are required or stored on your device.</p>
             <p>This means your data does not sync across browsers or devices. If you switch browsers, your collections will not follow.</p>
           </div>
 
@@ -868,7 +861,7 @@
               <li>Select <strong>"Cookies and site data"</strong> (this includes localStorage)</li>
               <li>To clear only Thresh: go to your browser's <strong>Developer Tools</strong> (<code>F12</code>), open the <strong>Application</strong> tab, expand <strong>Local Storage</strong>, find the Thresh site, and delete individual keys or click <strong>Clear All</strong></li>
             </ol>
-            <p>This will remove all saved collections, your API key (if stored), rate limit state, and cached subreddit data. It cannot be undone.</p>
+            <p>This will remove all saved collections, rate limit state, and cached subreddit data. It cannot be undone.</p>
           </div>
 
           <div class="about-section">
@@ -901,25 +894,13 @@
 
           <div class="about-section">
             <h3>AI Analysis</h3>
-            <p>Thresh uses <strong>Claude Opus 4.6</strong> (by Anthropic), the most capable AI model available, for analysis and research report generation. AI features are available to all users on the live site through a managed proxy.</p>
-            <p>If you self-host or prefer to use your own key, you can enter an Anthropic API key below. Your key is stored only in your browser's local storage and is sent directly to Anthropic's API &mdash; it is never stored on any server. A user-provided key takes priority over the managed proxy.</p>
-            <button class="btn btn-secondary btn-sm" onclick="ThreshApp.showClaudeKeyModal()">
-              <i data-lucide="key" style="width:14px;height:14px"></i>
-              Configure API Key
-            </button>
+            <p>Thresh uses <strong>Claude Opus 4.6</strong> (by Anthropic), the most capable AI model available, for analysis and research report generation. AI features are built in and free to use &mdash; no API key needed.</p>
+            <p>AI requests are routed through a secure managed proxy at <code>api.the-threshing-floor.com</code>. The API key is stored server-side as an encrypted secret. Your data is sent to Anthropic for analysis and is not logged or stored by the proxy.</p>
           </div>
 
           <div class="about-section">
-            <h3>Deploying Your Own</h3>
-            <p>The Threshing Floor deploys to Cloudflare Pages with zero configuration:</p>
-            <ol>
-              <li>Fork the repository on GitHub</li>
-              <li>Connect it to Cloudflare Pages</li>
-              <li>Set the build output directory to <code>public</code></li>
-              <li>Deploy</li>
-            </ol>
-            <p>That's it. No environment variables, no build step, no dependencies to install.</p>
-            <p>To enable managed AI features (so your users don't need their own API key), deploy the <code>thresh-proxy</code> Cloudflare Worker. See <code>thresh-proxy/SETUP.md</code> in the repository for step-by-step instructions.</p>
+            <h3>Open Source</h3>
+            <p>The Threshing Floor is free and open source. The code is available on <a href="https://github.com/jethomasphd/The_Threshing_Floor" target="_blank" rel="noopener">GitHub</a>. Contributions, bug reports, and feature requests are welcome.</p>
           </div>
 
           <div class="about-section">
@@ -938,22 +919,6 @@
 
   <!-- Toast Container -->
   <div class="toast-container" id="toast-container"></div>
-
-  <!-- Claude API Key Modal -->
-  <div class="modal-overlay" id="claude-modal">
-    <div class="modal">
-      <h3 class="modal-title">Anthropic API Key</h3>
-      <p class="modal-text">Enter your Anthropic API key to enable AI-powered analysis. Your key is stored only in your browser and sent directly to Anthropic. It never touches any other server.</p>
-      <div class="form-group">
-        <label class="label" for="claude-api-key">API Key</label>
-        <input type="password" id="claude-api-key" class="input" placeholder="sk-ant-...">
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="ThreshApp.hideClaudeKeyModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="ThreshApp.saveClaudeKey()">Save Key</button>
-      </div>
-    </div>
-  </div>
 
   <!-- Inline SVG Icons (referenced by sidebar) -->
   <svg style="display:none">
