@@ -1,0 +1,20 @@
+# thresh-proxy — Cloudflare Worker
+# Serves the Anthropic API key for The Threshing Floor
+#
+# SETUP:
+#   1. Create this worker via the Cloudflare dashboard or `wrangler deploy`
+#   2. Add your Anthropic API key as a secret:
+#      wrangler secret put ANTHROPIC_API_KEY
+#   3. Optionally set ALLOWED_ORIGINS to restrict which domains can call this worker
+#
+# The worker proxies requests to the Anthropic Messages API using a
+# server-side API key so end users never need their own key.
+
+name = "thresh-proxy"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+# Uncomment and set if you want to restrict which origins can call this worker.
+# By default, the worker allows requests from any origin.
+# [vars]
+# ALLOWED_ORIGINS = "https://the-threshing-floor.pages.dev,http://localhost:8788"

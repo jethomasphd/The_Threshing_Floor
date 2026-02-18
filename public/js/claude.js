@@ -1,10 +1,22 @@
 /**
  * Claude API integration for AI-powered analysis.
- * Uses the Cloudflare Pages Function proxy to avoid CORS issues.
+ * Supports two modes:
+ *   1. Managed proxy (thresh-proxy worker) — no user API key needed
+ *   2. Bring-your-own-key (BYOK) — user provides their own Anthropic API key
+ *
+ * If MANAGED_PROXY_URL is set, the managed proxy is used by default.
+ * Users can still override with their own key via the API Key modal.
  */
 
 const ClaudeClient = {
+  // The Cloudflare Pages Function proxy (BYOK mode)
   PROXY_URL: '/api/claude',
+
+  // The dedicated thresh-proxy worker URL (managed mode)
+  // Set this to your deployed thresh-proxy worker URL to enable managed mode.
+  // Example: 'https://thresh-proxy.your-account.workers.dev'
+  // Leave empty string to disable managed mode (BYOK only).
+  MANAGED_PROXY_URL: '',
 
   /**
    * Get the stored API key from localStorage.
@@ -32,6 +44,46 @@ const ClaudeClient = {
   },
 
   /**
+   * Check if the managed proxy is available.
+   */
+  hasManagedProxy() {
+    return !!this.MANAGED_PROXY_URL;
+  },
+
+  /**
+   * Check if AI features are available (either managed proxy or BYOK).
+   */
+  isAvailable() {
+    return this.hasManagedProxy() || this.hasKey();
+  },
+
+  /**
+   * Get the appropriate proxy URL and request body.
+   * Uses BYOK key if the user has one set; otherwise falls back to managed proxy.
+   */
+  _getRequestConfig(messages, system) {
+    const userKey = this.getKey();
+
+    if (userKey) {
+      // BYOK mode — send key to the Pages Function proxy
+      return {
+        url: this.PROXY_URL,
+        body: { apiKey: userKey, messages, system },
+      };
+    }
+
+    if (this.MANAGED_PROXY_URL) {
+      // Managed proxy mode — no key needed in the request
+      return {
+        url: this.MANAGED_PROXY_URL,
+        body: { messages, system },
+      };
+    }
+
+    throw new Error('No API key configured and no managed proxy available. Please add your Anthropic API key.');
+  },
+
+  /**
    * Run analysis on collected posts.
    * @param {Array} posts - Array of post objects
    * @param {string} analysisType - 'themes'|'sentiment'|'summary'|'questions'|'custom'
@@ -39,8 +91,7 @@ const ClaudeClient = {
    * @returns {Promise<string>} - Claude's analysis text
    */
   async analyze(posts, analysisType, customPrompt = '') {
-    const apiKey = this.getKey();
-    if (!apiKey) {
+    if (!this.isAvailable()) {
       throw new Error('No Anthropic API key configured. Please add your key in Settings.');
     }
 
@@ -48,16 +99,15 @@ const ClaudeClient = {
     const dataSummary = this._prepareDataSummary(posts);
     const prompt = this._buildPrompt(analysisType, customPrompt, dataSummary);
 
-    const response = await fetch(this.PROXY_URL, {
+    const config = this._getRequestConfig(
+      [{ role: 'user', content: prompt }],
+      'You are a research analyst helping with social media data analysis for public health research and journalism. Provide clear, structured analysis. Use plain language. Be specific with examples from the data when possible.'
+    );
+
+    const response = await fetch(config.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiKey,
-        system: 'You are a research analyst helping with social media data analysis for public health research and journalism. Provide clear, structured analysis. Use plain language. Be specific with examples from the data when possible.',
-        messages: [
-          { role: 'user', content: prompt },
-        ],
-      }),
+      body: JSON.stringify(config.body),
     });
 
     const data = await response.json();
@@ -101,8 +151,7 @@ const ClaudeClient = {
    * @returns {Promise<string>} - The full report in Markdown
    */
   async generateReport(params) {
-    const apiKey = this.getKey();
-    if (!apiKey) {
+    if (!this.isAvailable()) {
       throw new Error('No Anthropic API key configured. Please add your key in Settings.');
     }
 
@@ -171,14 +220,15 @@ Include a brief provenance statement documenting the tool, method, and collectio
 
 IMPORTANT: The report should be substantive (1500-2500 words). Ground every claim in the actual data provided. Do not invent data points. If the data is insufficient to answer the research question fully, say so explicitly.`;
 
-    const response = await fetch(this.PROXY_URL, {
+    const config_ = this._getRequestConfig(
+      [{ role: 'user', content: userPrompt }],
+      systemPrompt
+    );
+
+    const response = await fetch(config_.url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        apiKey,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
-      }),
+      body: JSON.stringify(config_.body),
     });
 
     const data = await response.json();

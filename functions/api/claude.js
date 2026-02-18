@@ -47,8 +47,8 @@ export async function onRequestPost(context) {
 
   try {
     const anthropicBody = {
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 4096,
+      model: 'claude-opus-4-6',
+      max_tokens: 8192,
       messages,
     };
 

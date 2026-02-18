@@ -32,7 +32,8 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 - **Icons**: Lucide via CDN
 - **Interactivity**: Vanilla JS for all UI (hash-based routing in `app.js`). NO frameworks.
 - **Data source**: Reddit's public JSON endpoints via Cloudflare Pages Function proxy (`functions/api/reddit.js`)
-- **AI integration**: Optional Claude API via Cloudflare Pages Function proxy (`functions/api/claude.js`). Bring your own key.
+- **AI integration**: Claude Opus 4.6 via dedicated Cloudflare Worker (`thresh-proxy/`) for managed mode, or Cloudflare Pages Function proxy (`functions/api/claude.js`) for BYOK mode. User-provided keys take priority over managed proxy.
+- **DOCX export**: Research reports export as formatted Word documents via docx.js (CDN). Markdown and clipboard copy also available.
 - **Storage**: Browser `localStorage` only. No server database.
 - **Runs with**: `npx wrangler pages dev public` (local) or deploy to Cloudflare Pages (production)
 
@@ -149,10 +150,10 @@ This is the seal on every bundle. Academic reproducibility depends on it.
 ## File-Level Guidance
 
 ### public/index.html
-Single-page application shell. Includes: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM Plex Mono), Tailwind CDN, Lucide CDN, JSZip CDN. Navigation sidebar with six pages (Floor, Thresh, Harvest, Winnow, Glean, About). Toast container. Grain texture overlay. Cinematic intro sequence. Footer with version.
+Single-page application shell. Includes: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM Plex Mono), Lucide CDN, JSZip CDN, docx.js CDN, Chart.js CDN. Navigation sidebar with six pages (Floor, Thresh, Harvest, Winnow, Glean, About). Mobile bottom navigation with all six pages. Toast container. Grain texture overlay. Cinematic intro sequence. Footer with version.
 
 ### public/js/app.js
-Core application: hash-based router, state management (`collections[]`, `activeCollection`), UI orchestration for all pages. Persistence via `localStorage`. Includes the AI Research Report generation logic (`generateResearchReport`, `downloadReport`, `copyReport`).
+Core application: hash-based router, state management (`collections[]`, `activeCollection`), UI orchestration for all pages. Persistence via `localStorage`. Includes the AI Research Report generation logic (`generateResearchReport`, `downloadReportDocx`, `downloadReport`, `copyReport`). DOCX generation via docx.js with Markdown-to-DOCX conversion (`_parseMarkdownBlocks`, `_renderInlineRuns`).
 
 ### public/js/reddit.js
 Reddit data fetching via the Cloudflare CORS proxy. Handles rate limiting (tracks `x-ratelimit-*` headers), exponential backoff on 429 responses, and comment tree expansion.
@@ -161,7 +162,10 @@ Reddit data fetching via the Cloudflare CORS proxy. Handles rate limiting (track
 Client-side export engine. Generates CSV (UTF-8 BOM for Excel) or JSON, bundles with `provenance.txt` in a ZIP via JSZip. Handles username anonymization.
 
 ### public/js/claude.js
-Optional Claude API integration. Two modes:
+Claude API integration supporting two modes:
+- **Managed proxy mode** — `MANAGED_PROXY_URL` points to the `thresh-proxy` Cloudflare Worker; no user API key needed
+- **BYOK mode** — User provides their own Anthropic API key; sent to `/api/claude` Pages Function
+- User-provided keys take priority over managed proxy
 - `analyze()` — Winnow page analysis (themes, sentiment, summary, questions, custom prompt)
 - `generateReport()` — Glean page research report generator (full Intro/Methods/Results/Discussion document)
 
@@ -169,13 +173,18 @@ Optional Claude API integration. Two modes:
 Cloudflare Pages Function. Stateless CORS proxy that forwards requests to Reddit's public JSON endpoints. No logging, no data storage.
 
 ### functions/api/claude.js
-Cloudflare Pages Function. Stateless proxy for Anthropic API calls. Receives the user's API key per-request. No logging, no key storage.
+Cloudflare Pages Function. Stateless BYOK proxy for Anthropic API calls. Receives the user's API key per-request. Uses Claude Opus 4.6. No logging, no key storage.
+
+### thresh-proxy/
+Dedicated Cloudflare Worker for managed AI proxy mode. Stores the Anthropic API key as a Cloudflare secret. Uses Claude Opus 4.6 (`claude-opus-4-6`) with 8192 max tokens. See `thresh-proxy/SETUP.md` for deployment instructions.
 
 ## Testing
 - Manual testing via `npx wrangler pages dev public` (local Cloudflare Pages emulation)
 - Verify export compliance (CSV parseable, JSON valid, provenance.txt present in ZIP)
+- Verify DOCX export opens correctly in Word/Google Docs
 - Test rate limit gauge behavior under throttled conditions
-- Test AI features require a valid Anthropic API key
+- Test AI features with managed proxy or a valid Anthropic API key
+- Test mobile navigation (all 6 pages accessible via bottom nav)
 
 ## What Success Looks Like
 
