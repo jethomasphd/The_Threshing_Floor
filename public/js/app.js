@@ -439,11 +439,6 @@ const ThreshApp = {
       return;
     }
 
-    if (!ClaudeClient.isAvailable()) {
-      this.showClaudeKeyModal();
-      return;
-    }
-
     const analysisType = document.getElementById('winnow-prompt').value;
     const customPrompt = document.getElementById('winnow-custom').value;
     const statusEl = document.getElementById('winnow-status');
@@ -640,11 +635,6 @@ const ThreshApp = {
     const collection = this.collections.find(c => c.id === id);
     if (!collection) {
       this.toast('Select a collection first.', 'warning');
-      return;
-    }
-
-    if (!ClaudeClient.isAvailable()) {
-      this.showClaudeKeyModal();
       return;
     }
 
@@ -1172,26 +1162,6 @@ const ThreshApp = {
     }).catch(() => {
       this.toast('Could not copy. Try selecting the text manually.', 'warning');
     });
-  },
-
-  // --- Claude Key Modal ---
-
-  showClaudeKeyModal() {
-    const modal = document.getElementById('claude-modal');
-    const input = document.getElementById('claude-api-key');
-    input.value = ClaudeClient.getKey();
-    modal.classList.add('visible');
-  },
-
-  hideClaudeKeyModal() {
-    document.getElementById('claude-modal').classList.remove('visible');
-  },
-
-  saveClaudeKey() {
-    const key = document.getElementById('claude-api-key').value.trim();
-    ClaudeClient.saveKey(key);
-    this.hideClaudeKeyModal();
-    this.toast(key ? 'API key saved.' : 'API key removed.', 'success');
   },
 
   // --- Rate Limit Sentinel ---
