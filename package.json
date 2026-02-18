@@ -1,6 +1,6 @@
 {
   "name": "the-threshing-floor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A browser-based tool for collecting and exporting Reddit data. No code, no API keys, no setup. Deploys to Cloudflare Pages.",
   "private": true,
   "scripts": {

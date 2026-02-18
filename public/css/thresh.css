@@ -1210,12 +1210,20 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
     justify-content: space-around;
     align-items: stretch;
   }
+  .mobile-nav-link {
+    font-size: 0.5625rem;
+    padding: 0.25rem 0.25rem;
+    min-width: 0;
+    flex: 1;
+  }
+  .mobile-nav-link svg { width: 18px; height: 18px; }
   .main-content {
     margin-left: 0;
     padding: 1.25rem 1rem;
     padding-bottom: 5rem;
   }
   .page-title { font-size: 1.75rem; }
+  .page-epigraph { font-size: 0.8125rem; }
   .card-grid { grid-template-columns: 1fr; }
   .harvest-layout { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr 1fr; }
@@ -1224,6 +1232,21 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
     right: 0.5rem; left: 0.5rem;
     max-width: none;
   }
+  /* Mobile modal adjustments */
+  .modal-overlay { padding: 1rem; }
+  .modal { padding: 1.25rem; }
+  .modal-title { font-size: 1.25rem; }
+  .modal-actions { flex-direction: column; }
+  .modal-actions .btn { width: 100%; }
+  /* About page letter readability on mobile */
+  #page-about .about-section { margin-bottom: 1.5rem; }
+  #page-about .about-section h3 { font-size: 1.125rem; }
+  /* Ensure form rows stack on mobile */
+  .form-row { grid-template-columns: 1fr; }
+  /* Claude panel scroll on mobile */
+  .claude-response { max-height: 60vh; overflow-y: auto; }
+  /* Data table horizontal scroll hint */
+  .table-wrapper { -webkit-overflow-scrolling: touch; }
 }
 
 @media (max-width: 480px) {
@@ -1232,6 +1255,17 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
   .btn-lg { width: 100%; }
   .stats-grid { grid-template-columns: 1fr; }
   .form-row { grid-template-columns: 1fr; }
+  /* Tighter mobile nav for small phones */
+  .mobile-nav-link {
+    font-size: 0.5rem;
+    padding: 0.25rem 0.125rem;
+  }
+  .mobile-nav-link svg { width: 16px; height: 16px; }
+  /* Card and About page padding */
+  .card { padding: 0.75rem; }
+  .card-header { flex-wrap: wrap; gap: 0.5rem; }
+  /* Report buttons wrap gracefully */
+  #report-result .btn { font-size: 0.75rem; }
 }
 
 /* --- Print --- */

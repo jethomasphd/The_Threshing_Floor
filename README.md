@@ -214,13 +214,15 @@ Claude reads your collected posts (up to 50 are sampled to stay within token lim
 
 ### How Claude Integration Works
 
-1. Get a key at [console.anthropic.com](https://console.anthropic.com)
-2. Enter it in the Winnow settings modal — it's stored in your browser's `localStorage` only
-3. Your key is sent directly to Anthropic's API through a Cloudflare edge function — **it is never logged or stored on any server**
-4. Claude (Sonnet) analyzes a summary of up to 50 posts from your collection
-5. Results appear in the "Claude's Analysis" panel — marked as AI-generated
+Thresh supports two modes for AI features:
 
-Without an API key, the word frequency table and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
+**Managed proxy (default on the live site):** AI analysis is available to everyone — no API key needed. A dedicated Cloudflare Worker (`thresh-proxy`) holds the API key server-side.
+
+**Bring-your-own-key (BYOK):** If you self-host or prefer your own key, enter it in the API Key modal. Your key is stored in `localStorage` only and sent directly to Anthropic via a Cloudflare edge function — it is never logged or stored on any server. A user-provided key takes priority over the managed proxy.
+
+Both modes use **Claude Opus 4.6** (`claude-opus-4-6`), Anthropic's most capable model. Claude analyzes a summary of up to 50 posts from your collection. Results appear in the "Claude's Analysis" panel — marked as AI-generated.
+
+Without either mode configured, the word frequency table and all Harvest-page analytics work normally. Claude is a supplement, not a requirement.
 
 ### AI Research Report (Glean Page)
 
@@ -232,7 +234,7 @@ The Glean page includes an **AI Research Report** generator that produces a comp
 2. Answer two questions: your **research question** and your **audience** (academic, journalism, advocacy, or general)
 3. Optionally add **context** about why you collected this data
 4. Click **Generate Report** — Claude writes a full Introduction / Methods / Results / Discussion / Provenance document
-5. **Download** the report as a Markdown file or copy it to your clipboard
+5. **Download** the report as a beautifully formatted Word document (.docx) ready for editing, or as Markdown. Copy to clipboard also available
 
 The audience selection changes the tone and framing:
 
@@ -341,20 +343,34 @@ The_Threshing_Floor/
 │   ├── index.html              # Single-page app with cinematic intro
 │   ├── css/thresh.css          # Design system
 │   ├── js/
-│   │   ├── app.js              # Router, state, UI orchestration
+│   │   ├── app.js              # Router, state, UI orchestration, DOCX export
 │   │   ├── reddit.js           # Reddit JSON fetching via proxy
 │   │   ├── exporter.js         # CSV/JSON + provenance ZIP generation
-│   │   └── claude.js           # Optional Claude API integration
+│   │   └── claude.js           # Claude API (managed proxy + BYOK support)
 │   └── img/                    # Sigil and favicon SVGs
 ├── functions/                  # Cloudflare Pages Functions (edge)
 │   └── api/
 │       ├── reddit.js           # CORS proxy for Reddit public JSON
-│       └── claude.js           # Proxy for Anthropic API
+│       └── claude.js           # BYOK proxy for Anthropic API
+├── thresh-proxy/               # Dedicated Cloudflare Worker for managed AI
+│   ├── src/index.js            # Worker code (Claude Opus 4.6)
+│   ├── wrangler.toml           # Worker config
+│   ├── package.json            # Worker scripts
+│   └── SETUP.md                # Step-by-step deployment guide
 ├── package.json                # Dev scripts (wrangler)
 └── wrangler.toml               # Cloudflare local dev config
 ```
 
 **No build step.** No bundler, no framework, no transpiler. The `public/` directory is served as-is. JavaScript is vanilla ES6+. CSS is handwritten. Fonts and libraries load from CDNs.
+
+### CDN Dependencies
+
+| Library | Version | Purpose |
+|---------|---------|---------|
+| **docx.js** | 9.1.1 | DOCX research report generation |
+| **JSZip** | 3.10.1 | ZIP file creation for data exports |
+| **Chart.js** | 4.4.0 | Charting (analysis visualizations) |
+| **Lucide** | 0.263.1 | SVG icon system |
 
 ---
 
