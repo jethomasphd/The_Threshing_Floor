@@ -876,6 +876,18 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
   color: var(--bone-muted);
 }
 
+/* AI Progress Spinner */
+.ai-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--smoke);
+  border-top-color: var(--ember);
+  border-radius: 50%;
+  animation: ai-spin 0.8s linear infinite;
+}
+@keyframes ai-spin { to { transform: rotate(360deg); } }
+
 
 /* ==========================================================
    PROGRESS BAR

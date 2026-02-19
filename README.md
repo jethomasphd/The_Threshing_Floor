@@ -227,19 +227,19 @@ The Glean page includes an **AI Research Report** generator that produces a comp
 1. Select a collection on the Glean page
 2. Answer two questions: your **research question** and your **audience** (academic, journalism, advocacy, or general)
 3. Optionally add **context** about why you collected this data
-4. Click **Generate Report** — Claude writes a full Introduction / Methods / Results / Discussion / Provenance document
-5. **Download** the report as a beautifully formatted Word document (.docx) ready for editing, or as Markdown. Copy to clipboard also available
+4. Click **Generate Report** — Claude produces a document tailored to your chosen audience
+5. **Download** the report as a formatted Word document (.docx) ready for editing, or as Markdown. Copy to clipboard also available
 
-The audience selection changes the tone and framing:
+Each audience gets a completely different document structure:
 
-| Audience | Style |
-|----------|-------|
-| **Academic** | Formal, hedged language, rigorous limitations, future research suggestions |
-| **Journalism** | Accessible prose, leads with findings, notes what needs further reporting |
-| **Advocacy** | Policy-brief style, emphasizes practical implications and affected communities |
-| **General** | Curious and exploratory, explains methodology in plain terms |
+| Audience | Document Type | Structure |
+|----------|---------------|-----------|
+| **Academic** | IMRaD research paper | Introduction, Methods, Results, Discussion, Provenance. Formal, hedged language, rigorous limitations |
+| **Journalist** | Data-driven column | Lede, What the Data Shows, What People Are Saying, What This Means. Narrative prose, direct quotes |
+| **Community Organizer** | Town hall brief | The Situation, Key Findings (talking points), Community Voices, By the Numbers, Recommended Actions |
+| **General** | Op-ed / explainer | Hook, What I Found, The Bigger Picture, The Caveats, Where This Goes. Curious, accessible tone |
 
-The report is a starting point, not a finished product. It gives you structure and language to build from. For a grad student, it's a draft methods section and results overview. For a journalist, it's a story pitch backed by data. For a community organizer, it's a briefing document with citations.
+The report is a starting point, not a finished product. It gives you structure and language to build from.
 
 What was once a dissertation-level undertaking now takes ten minutes and a good question.
 

@@ -417,6 +417,7 @@ const ThreshApp = {
     if (this.activeCollection) {
       select.value = this.activeCollection.id;
       this._renderWordFreqTable();
+      this._renderTemporalChart();
     }
   },
 
@@ -428,7 +429,51 @@ const ThreshApp = {
     this.activeCollection = this.collections.find(c => c.id === id);
     if (this.activeCollection) {
       this._renderWordFreqTable();
+      this._renderTemporalChart();
     }
+  },
+
+  // --- AI Loading Indicator ---
+
+  _aiProgressInterval: null,
+
+  _startAiProgress(statusEl, estimatedSeconds = 20) {
+    let elapsed = 0;
+    const steps = [
+      { at: 0, msg: 'Sending data to Claude...' },
+      { at: 3, msg: 'Claude is reading your posts...' },
+      { at: 8, msg: 'Analyzing patterns and themes...' },
+      { at: 15, msg: 'Structuring the response...' },
+      { at: 25, msg: 'Almost there — finalizing...' },
+      { at: 45, msg: 'Still working — large datasets take longer...' },
+      { at: 75, msg: 'This is taking a while — hang tight...' },
+    ];
+    let stepIdx = 0;
+
+    statusEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:0.5rem;">
+      <span class="ai-spinner"></span>
+      <span id="ai-progress-text">${steps[0].msg}</span>
+      <span id="ai-progress-time" class="text-ash" style="font-size:0.75rem;"></span>
+    </span>`;
+
+    this._aiProgressInterval = setInterval(() => {
+      elapsed++;
+      const textEl = document.getElementById('ai-progress-text');
+      const timeEl = document.getElementById('ai-progress-time');
+      if (textEl && stepIdx < steps.length - 1 && elapsed >= steps[stepIdx + 1].at) {
+        stepIdx++;
+        textEl.textContent = steps[stepIdx].msg;
+      }
+      if (timeEl) timeEl.textContent = `${elapsed}s`;
+    }, 1000);
+  },
+
+  _stopAiProgress(statusEl) {
+    if (this._aiProgressInterval) {
+      clearInterval(this._aiProgressInterval);
+      this._aiProgressInterval = null;
+    }
+    statusEl.innerHTML = '';
   },
 
   async runAnalysis() {
@@ -442,19 +487,31 @@ const ThreshApp = {
     const analysisType = document.getElementById('winnow-prompt').value;
     const customPrompt = document.getElementById('winnow-custom').value;
     const statusEl = document.getElementById('winnow-status');
+    const btn = document.querySelector('#page-winnow .btn-primary');
+    if (btn) btn.disabled = true;
 
-    statusEl.textContent = 'Analyzing...';
+    this._startAiProgress(statusEl, 20);
 
     try {
-      const result = await ClaudeClient.analyze(collection.posts, analysisType, customPrompt);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
 
+      const result = await ClaudeClient.analyze(collection.posts, analysisType, customPrompt);
+      clearTimeout(timeout);
+
+      this._stopAiProgress(statusEl);
       document.getElementById('winnow-response').textContent = result;
       document.getElementById('winnow-result').style.display = 'block';
-      statusEl.textContent = '';
       this.toast('Analysis complete!', 'success');
     } catch (err) {
-      statusEl.textContent = '';
-      this.toast(`Analysis failed: ${err.message}`, 'error');
+      this._stopAiProgress(statusEl);
+      if (err.name === 'AbortError') {
+        this.toast('Analysis timed out after 2 minutes. Try a smaller collection or a simpler analysis type.', 'error');
+      } else {
+        this.toast(`Analysis failed: ${err.message}`, 'error');
+      }
+    } finally {
+      if (btn) btn.disabled = false;
     }
   },
 
@@ -572,6 +629,131 @@ const ThreshApp = {
     });
   },
 
+  _temporalChart: null,
+
+  _renderTemporalChart() {
+    const wrap = document.getElementById('temporal-chart-wrap');
+    if (!wrap || !this.activeCollection) return;
+
+    if (typeof Chart === 'undefined') {
+      wrap.innerHTML = '<p class="text-ash text-sm" style="text-align:center;padding:2rem 0;">Chart library not loaded.</p>';
+      return;
+    }
+
+    const posts = this.activeCollection.posts;
+    if (!posts.length) return;
+
+    // Group posts by date
+    const dateCounts = {};
+    posts.forEach(p => {
+      const date = new Date(p.created_utc * 1000).toISOString().slice(0, 10);
+      dateCounts[date] = (dateCounts[date] || 0) + 1;
+    });
+
+    // Sort by date and fill gaps
+    const dates = Object.keys(dateCounts).sort();
+    if (dates.length < 2) {
+      // Not enough date spread for a meaningful chart
+      wrap.innerHTML = '<p class="text-ash text-sm" style="text-align:center;padding:2rem 0;">All posts from the same day — no temporal spread to chart.</p>';
+      return;
+    }
+
+    // Fill in missing dates with 0
+    const start = new Date(dates[0]);
+    const end = new Date(dates[dates.length - 1]);
+    const labels = [];
+    const values = [];
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const key = d.toISOString().slice(0, 10);
+      labels.push(key);
+      values.push(dateCounts[key] || 0);
+    }
+
+    // Destroy previous chart if exists
+    if (this._temporalChart) {
+      this._temporalChart.destroy();
+    }
+
+    // Create canvas
+    wrap.innerHTML = '<canvas id="temporal-chart"></canvas>';
+    const ctx = document.getElementById('temporal-chart').getContext('2d');
+
+    // Determine label format based on date range
+    const rangeDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
+    const formatDate = (dateStr) => {
+      const d = new Date(dateStr + 'T00:00:00');
+      if (rangeDays <= 14) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      if (rangeDays <= 90) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
+    };
+
+    this._temporalChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.map(formatDate),
+        datasets: [{
+          label: 'Posts',
+          data: values,
+          borderColor: '#C9A227',
+          backgroundColor: 'rgba(201, 162, 39, 0.1)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: values.length > 60 ? 0 : 3,
+          pointBackgroundColor: '#C9A227',
+          pointBorderColor: '#C9A227',
+          pointHoverRadius: 5,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1A1A22',
+            titleColor: '#E8E4DC',
+            bodyColor: '#A8A49C',
+            borderColor: 'rgba(201, 162, 39, 0.3)',
+            borderWidth: 1,
+            displayColors: false,
+            callbacks: {
+              title: (items) => items[0].label,
+              label: (item) => `${item.raw} post${item.raw !== 1 ? 's' : ''}`,
+            },
+          },
+        },
+        scales: {
+          x: {
+            ticks: {
+              color: '#6B6B7B',
+              font: { family: 'IBM Plex Mono', size: 10 },
+              maxTicksLimit: 10,
+              maxRotation: 45,
+            },
+            grid: { color: 'rgba(61, 61, 74, 0.3)' },
+          },
+          y: {
+            beginAtZero: true,
+            ticks: {
+              color: '#6B6B7B',
+              font: { family: 'IBM Plex Mono', size: 10 },
+              stepSize: 1,
+              precision: 0,
+            },
+            grid: { color: 'rgba(61, 61, 74, 0.3)' },
+            title: {
+              display: true,
+              text: 'Posts',
+              color: '#6B6B7B',
+              font: { family: 'IBM Plex Sans', size: 11 },
+            },
+          },
+        },
+      },
+    });
+  },
+
   copyAnalysis() {
     const responseEl = document.getElementById('winnow-response');
     if (!responseEl || !responseEl.textContent.trim()) {
@@ -649,8 +831,8 @@ const ThreshApp = {
     const statusEl = document.getElementById('report-status');
     const btn = document.getElementById('report-generate-btn');
 
-    statusEl.textContent = 'Generating report... this may take 30-60 seconds.';
     btn.disabled = true;
+    this._startAiProgress(statusEl, 45);
 
     try {
       // Compute word frequency for the report
@@ -684,14 +866,14 @@ const ThreshApp = {
       this._lastReport = result;
       this._lastReportMeta = { collection, question, audience };
 
+      this._stopAiProgress(statusEl);
       document.getElementById('report-response').textContent = result;
       document.getElementById('report-result').style.display = 'block';
       document.getElementById('report-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      statusEl.textContent = '';
       btn.disabled = false;
       this.toast('Research report generated!', 'success');
     } catch (err) {
-      statusEl.textContent = '';
+      this._stopAiProgress(statusEl);
       btn.disabled = false;
       this.toast(`Report generation failed: ${err.message}`, 'error');
     }
@@ -949,7 +1131,7 @@ const ThreshApp = {
       // Footer with provenance note
       const footerParagraph = new Paragraph({
         children: [new TextRun({
-          text: 'Generated by The Threshing Floor — A Jacob E. Thomas artifact',
+          text: 'Generated by The Threshing Floor — Built using Latent Dialogic Space',
           font: 'Calibri',
           size: 16,
           color: '999999',

@@ -415,13 +415,39 @@ const RedditClient = {
         total: limit * subreddits.length,
       });
 
-      let posts;
-      if (keyword) {
-        const result = await this.searchPosts(sub, keyword, { sort, timeFilter, limit });
-        posts = result.posts;
-      } else {
-        const result = await this.getPosts(sub, { sort, timeFilter, limit });
-        posts = result.posts;
+      // Paginate: Reddit returns max 100 per request, so loop if limit > 100
+      let posts = [];
+      let after = null;
+      let remaining = limit;
+
+      while (remaining > 0) {
+        const pageSize = Math.min(remaining, 100);
+        let result;
+
+        if (keyword) {
+          // searchPosts doesn't support pagination yet — single page only
+          result = await this.searchPosts(sub, keyword, { sort, timeFilter, limit: pageSize });
+          posts.push(...result.posts);
+          break; // Reddit search pagination is unreliable, stop after first page
+        } else {
+          result = await this.getPosts(sub, { sort, timeFilter, limit: pageSize, after });
+          posts.push(...result.posts);
+          after = result.after;
+        }
+
+        remaining -= result.posts.length;
+
+        onProgress?.({
+          message: `Fetched ${posts.length}${limit > 100 ? '/' + limit : ''} posts from r/${sub}...`,
+          current: totalFetched + posts.length,
+          total: limit * subreddits.length,
+        });
+
+        // If Reddit returned fewer than requested or no cursor, we've reached the end
+        if (result.posts.length < pageSize || !after) break;
+
+        // Respectful delay between pages
+        await new Promise(r => setTimeout(r, this.BASE_DELAY_MS));
       }
 
       // Add subreddit field to each post
@@ -487,8 +513,9 @@ const RedditClient = {
    */
   _estimateRequests(config) {
     const subreddits = config.subreddit.split(',').filter(Boolean).length;
-    // 1 request per subreddit for posts, +1 per post for comments
-    let estimate = subreddits;
+    // Ceil(limit/100) pages per subreddit, +1 per post for comments
+    const pagesPerSub = Math.ceil(config.limit / 100);
+    let estimate = pagesPerSub * subreddits;
     if (config.includeComments) {
       estimate += config.limit * subreddits;
     }
