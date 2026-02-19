@@ -25,7 +25,9 @@ Or deploy your own instance (see below).
 1. **Thresh** — `r/mentalhealth` · Sort by **Top** · **Past month** · 100 posts
 2. **Harvest** — Sort by `score` to find what resonates most with the community
 3. **Winnow** — Run **Identify themes** to map dominant concerns, then **Sentiment analysis** to gauge emotional tone
-4. **Glean** — Export CSV with anonymized usernames for IRB-ready analysis. Or generate an **AI Research Report** and download a full Introduction/Methods/Results/Discussion document. Cite `provenance.txt` in your methods section
+4. **Glean** — Export CSV with anonymized usernames for IRB-ready analysis. Or generate an **AI Research Report** (IMRaD format) and cite `provenance.txt` in your methods section
+
+> **Strategy tip:** Collect the same subreddit monthly and compare word frequency tables. Emerging terms show you what's shifting in the conversation before it shows up in the literature.
 
 ### Journalist
 
@@ -34,7 +36,9 @@ Or deploy your own instance (see below).
 1. **Thresh** — `r/personalfinance` · Sort by **Top** · **Past week** · keyword: `student loans`
 2. **Harvest** — Sort by `num_comments` for the biggest conversations. Click into high-comment posts to read the full thread
 3. **Winnow** — Run **Extract questions** to find what people need answered. Use a **Custom prompt**: *"What specific policy changes are people advocating for?"*
-4. **Glean** — Provenance.txt gives your editor a transparent methodology section
+4. **Glean** — Generate a **Journalist** report (lede-first column format). Provenance.txt gives your editor a transparent methodology section
+
+> **Strategy tip:** Try the same keyword across different subreddits (r/personalfinance, r/studentloans, r/povertyfinance). The same topic sounds different depending on who's talking — that contrast is the story.
 
 ### Graduate Student
 
@@ -45,6 +49,8 @@ Or deploy your own instance (see below).
 3. **Winnow** — Run **Sentiment analysis** on each collection, then a **Custom prompt**: *"Compare the tone and evidence standards between these two communities"*
 4. **Glean** — Two exports, each with its own provenance — cite both in your methods section
 
+> **Strategy tip:** Use the *Academic* report format on each collection separately, then use a Custom prompt to compare them side by side. You now have a draft comparative analysis with proper methodology documentation for your advisor.
+
 ### Community Organizer
 
 > *"What are residents saying in our city's subreddit about the new transit plan?"*
@@ -52,7 +58,31 @@ Or deploy your own instance (see below).
 1. **Thresh** — `r/yourcity` · Sort by **New** · **Past month** · keyword: `transit` · **Include comments**
 2. **Harvest** — Enable comments to hear the full conversation, not just headlines. Search for specific routes or proposals
 3. **Winnow** — Run **Summarize discussion** to distill what people actually want. Run **Extract questions** to identify unaddressed concerns
-4. **Glean** — JSON export feeds directly into your own tools or dashboards
+4. **Glean** — Generate a **Town Hall Brief** for your meeting, or export JSON for your own tools
+
+> **Strategy tip:** Collect once with *Top* sort (what resonates) and once with *Controversial* sort (what divides). The gap between those two collections is where the real debate lives.
+
+### Labor Market Economist
+
+> *"What pain points and unmet needs are job seekers describing in r/jobs right now?"*
+
+1. **Thresh** — `r/jobs` · Sort by **Top** · **Past month** · 100 posts with comments
+2. **Harvest** — Sort by `score` to find which frustrations resonate most widely
+3. **Winnow** — Run **Identify themes** — salary transparency? ghosting? application fatigue? Check the post volume chart to see if complaints spike around specific dates
+4. **Glean** — Generate an **Academic** report for a labor market sentiment brief grounded in real worker voices
+
+> **Strategy tip:** Thresh the same subreddit once a month for three months and compare word frequencies. That's a longitudinal snapshot of worker sentiment — impossible to get from BLS data alone.
+
+### Political Campaign Manager
+
+> *"What issues are people in r/Denver fired up about before our town hall?"*
+
+1. **Thresh** — `r/Denver` · Sort by **Hot** · **Past week** · 100 posts with comments
+2. **Harvest** — Sort by `num_comments` to find what's sparking the most debate
+3. **Winnow** — Run **Extract questions** to see what voters are asking. Then **Identify themes** to categorize by issue
+4. **Glean** — Generate a **Town Hall Brief** for your candidate. Export the data as a CSV backup for your comms team
+
+> **Strategy tip:** Collect from multiple city subreddits (r/Denver, r/DenverFood, r/DenverCirclejerk) to see how the same issues land in different community contexts. Each collection gets its own provenance seal.
 
 ---
 
@@ -62,7 +92,17 @@ Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.
 
 1. **Reddit's public JSON** — Every Reddit page serves JSON alongside HTML. Thresh reads this through a lightweight edge proxy (a Cloudflare Pages Function) that handles browser security restrictions. No Reddit API key is needed.
 2. **Client-side processing** — All data collection, filtering, analysis, and export happens in your browser using JavaScript. Nothing is stored on any server.
-3. **Local persistence** — Collections are saved in your browser's `localStorage` so they survive page refreshes. Clear your browser data to clear Thresh data.
+3. **Automatic pagination** — Reddit returns up to 100 posts per request. When you select 250 or 500 posts, Thresh automatically paginates using Reddit's `after` cursor — making 3-5 requests to build a larger dataset.
+4. **Local persistence** — Collections are saved in your browser's `localStorage` so they survive page refreshes. Clear your browser data to clear Thresh data.
+
+### Building Bigger Datasets
+
+The dropdown goes up to 500 posts per collection, but the real power is **systematic sampling**:
+
+- **Longitudinal snapshots:** Collect the same subreddit once a week (or once a month) over time. Each collection is timestamped with its own provenance record. Compare word frequencies across collections to track how the conversation evolves.
+- **Multi-sort sampling:** Collect the same subreddit with different sort methods. *Top* gives you what resonated. *New* gives you what people are saying right now. *Controversial* gives you what divides the community. Three collections, three lenses.
+- **Cross-community comparison:** Thresh multiple related subreddits (e.g., r/jobs, r/careeradvice, r/recruitinghell) with the same keyword and time filter. Each collection is independently citable.
+- **Comments as data:** When you enable "Include top-level comments," Thresh fetches up to 50 comments per post (sorted by Reddit's "best" ranking), including one level of replies. Each post costs one additional API request. Essential for discourse analysis; skip for headline-level surveys.
 
 ### The Workflow
 
@@ -71,7 +111,7 @@ Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.
 | **The Floor** | The workspace | Dashboard — your recent collections, quick actions |
 | **Thresh** | Beating the grain | Enter a subreddit, configure sort/time/limit, collect |
 | **Harvest** | Gathering what fell | Browse data in sortable tables, filter, inspect posts |
-| **Winnow** | Wind carries away chaff | Analyze with word frequency and optional AI (bring your own key) |
+| **Winnow** | Wind carries away chaff | Analyze with post volume charts, word frequency, and Claude AI |
 | **Glean** | Bundling clean grain | Export as CSV or JSON with provenance, or generate an AI research report |
 
 ### A typical session
@@ -184,6 +224,7 @@ These run entirely in your browser at zero cost:
 
 | Method | Where | What It Does |
 |--------|-------|--------------|
+| **Post Volume Over Time** | Winnow | Line chart showing how many posts were created on each day. Spikes reveal when a topic surged (news event, viral post). Gaps mean the community went quiet. Helps you see *when* the conversation happened, not just *what* was said |
 | **Word Frequency** | Winnow | Top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Tells you the literal vocabulary of the conversation |
 | **Sortable Table** | Harvest | Click any column header to sort ascending/descending. Sort by `score`, `num_comments`, `date`, `author`, or `title` |
 | **Summary Statistics** | Harvest | Post count, average score, average comments, and date range — calculated automatically for every collection |
@@ -359,10 +400,20 @@ The_Threshing_Floor/
 
 | Library | Version | Purpose |
 |---------|---------|---------|
-| **docx.js** | 9.1.1 | DOCX research report generation |
+| **docx.js** | 8.5.0 | DOCX research report generation |
 | **JSZip** | 3.10.1 | ZIP file creation for data exports |
 | **Chart.js** | 4.4.0 | Charting (analysis visualizations) |
 | **Lucide** | 0.263.1 | SVG icon system |
+
+---
+
+## Get in Touch
+
+Found a bug? Have a feature request? Want to share how you're using Thresh?
+
+- **Email:** [JEThomasPhD@gmail.com](mailto:JEThomasPhD@gmail.com)
+- **Bug reports & feature requests:** [Open an issue on GitHub](https://github.com/jethomasphd/The_Threshing_Floor/issues)
+- **Contributions:** Pull requests are welcome
 
 ---
 
@@ -386,4 +437,4 @@ MIT
 
 ---
 
-*A Jacob E. Thomas artifact. The waters rise. The Floor holds.*
+*Built using [Latent Dialogic Space](https://the-companion-dossier.pages.dev/Latent_Dialogic_Space/). The waters rise. The Floor holds.*

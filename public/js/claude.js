@@ -116,7 +116,7 @@ Interpret the results in light of the research question. What do the findings su
 ## Provenance
 Include a brief provenance statement documenting the tool, method, and collection parameters for anyone who wants to replicate or audit this work.
 
-IMPORTANT: The report should be substantive (1500-2500 words). Cite limitations rigorously. Use hedged language throughout. Ground every claim in the actual data. Do not invent data points. If the data is insufficient to answer the research question fully, say so explicitly.`,
+IMPORTANT: Keep the report focused and concise — aim for 800-1200 words (roughly 2-3 pages). Be substantive but not exhaustive. Prioritize the strongest findings and skip minor observations. Cite limitations rigorously. Use hedged language throughout. Ground every claim in the actual data. Do not invent data points. If the data is insufficient to answer the research question fully, say so explicitly.`,
       },
 
       journalism: {
@@ -140,7 +140,7 @@ Interpret the findings. What story is this data telling? What would an editor wa
 ## How We Got This Data
 Brief methodology note: the tool used, subreddit(s) collected, time period, number of posts, and any limitations a reader should know about (Reddit demographics, sampling bias, point-in-time snapshot). Written for transparency, not academic rigor.
 
-IMPORTANT: Write 1500-2500 words. Lead with what matters most. Use active voice. Short paragraphs. Translate every statistic into plain language. Ground every claim in the actual data. Do not invent quotes or data points.`,
+IMPORTANT: Keep it tight — aim for 600-1000 words (roughly 2 pages). Lead with what matters most. Cut anything that doesn't advance the story. Use active voice. Short paragraphs. Translate every statistic into plain language. Ground every claim in the actual data. Do not invent quotes or data points.`,
       },
 
       advocacy: {
@@ -167,7 +167,7 @@ Based on the data, suggest 3-5 concrete next steps. What should be brought up at
 ## Data Source & Limitations
 Brief note on where this data came from, how it was collected, and what it does and doesn't represent. Acknowledge Reddit's demographic skew and the snapshot nature of the data. Written for accountability, not academic formality.
 
-IMPORTANT: Write 1200-2000 words. Use clear, non-technical language throughout. Frame everything around what the findings mean for affected communities and what should happen next. Ground every claim in the actual data. Do not invent data points.`,
+IMPORTANT: Keep it actionable and scannable — aim for 600-1000 words (roughly 2 pages). Busy people will read this before a meeting. Cut anything that doesn't help them prepare. Use clear, non-technical language throughout. Ground every claim in the actual data. Do not invent data points.`,
       },
 
       general: {
@@ -194,7 +194,7 @@ Close with what the findings point toward. More questions to ask? Actions to con
 ## About This Data
 Brief note on collection method, tool used, subreddit(s), time period, and post count. One short paragraph — enough for credibility without belaboring the point.
 
-IMPORTANT: Write 1200-2000 words. Be curious, not dry. Use "I" voice if it helps (the researcher's perspective). Short paragraphs. Ground every claim in the actual data. Do not invent data points.`,
+IMPORTANT: Keep it readable — aim for 600-1000 words (roughly 2 pages). This should feel like a smart newsletter piece, not a term paper. Be curious, not dry. Short paragraphs. Ground every claim in the actual data. Do not invent data points.`,
       },
     };
 
