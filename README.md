@@ -409,11 +409,9 @@ The_Threshing_Floor/
 
 ## Get in Touch
 
-Found a bug? Have a feature request? Want to share how you're using Thresh?
+Found a bug? Have a feature request? Want to share how you're using Thresh? Reach out anytime:
 
-- **Email:** [JEThomasPhD@gmail.com](mailto:JEThomasPhD@gmail.com)
-- **Bug reports & feature requests:** [Open an issue on GitHub](https://github.com/jethomasphd/The_Threshing_Floor/issues)
-- **Contributions:** Pull requests are welcome
+**[JEThomasPhD@gmail.com](mailto:JEThomasPhD@gmail.com)**
 
 ---
 
