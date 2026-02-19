@@ -21,7 +21,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <!-- docx.js for DOCX research report export -->
-  <script src="https://cdn.jsdelivr.net/npm/docx@9.1.1/build/index.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
 
   <!-- Chart.js for analysis -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -131,7 +131,7 @@
       </div>
 
       <div class="sidebar-footer">
-        <span class="text-xs text-ash font-mono">Thresh v1.1</span>
+        <a href="https://the-companion-dossier.pages.dev/Latent_Dialogic_Space/" target="_blank" rel="noopener" class="text-xs font-mono" style="color:var(--ash);text-decoration:none;" title="Built using Latent Dialogic Space">Built using Latent Dialogic Space</a>
       </div>
     </nav>
 
@@ -291,6 +291,38 @@
               </div>
             </div>
           </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Labor Market Economist</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"What pain points and unmet needs are job seekers describing in r/jobs right now?"</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">r/jobs &bull; Top &bull; Past month &bull; 100 posts with comments</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Sort by <code class="font-mono text-ember">score</code> to find which frustrations resonate most widely</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Identify themes</em> &mdash; salary transparency? ghosting? application fatigue? See what the data says</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">Generate an AI Research Report framed for your <em>academic</em> audience. You now have a first draft of a labor market sentiment brief grounded in real worker voices</span></span>
+              </div>
+              <p class="text-ash text-xs" style="margin-top:0.75rem;"><strong>Strategy tip:</strong> Thresh the same subreddit once a month for three months and compare word frequencies over time. That&rsquo;s a longitudinal snapshot of worker sentiment &mdash; impossible to get from BLS data alone.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">Political Campaign Manager</h3>
+            </div>
+            <div class="card-body">
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;"><em>"What issues are people in r/Denver fired up about before our town hall?"</em></p>
+              <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                <span class="text-sm"><strong class="text-bone">Thresh:</strong> <span class="text-bone-muted">r/Denver &bull; Hot &bull; Past week &bull; 100 posts with comments</span></span>
+                <span class="text-sm"><strong class="text-bone">Harvest:</strong> <span class="text-bone-muted">Sort by <code class="font-mono text-ember">num_comments</code> to find what&rsquo;s sparking the most debate</span></span>
+                <span class="text-sm"><strong class="text-bone">Winnow:</strong> <span class="text-bone-muted">Run <em>Extract questions</em> to see what voters are actually asking. Then <em>Identify themes</em> to categorize by issue: housing, crime, transit, cost of living</span></span>
+                <span class="text-sm"><strong class="text-bone">Glean:</strong> <span class="text-bone-muted">Generate a <em>Town Hall Brief</em> for your candidate. Export the data as a CSV backup for your comms team</span></span>
+              </div>
+              <p class="text-ash text-xs" style="margin-top:0.75rem;"><strong>Strategy tip:</strong> Collect from multiple city subreddits (r/Denver, r/DenverFood, r/DenverCirclejerk) to see how the same issues land in different community contexts. Each collection gets its own provenance seal.</p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -344,8 +376,10 @@
                   <option value="25" selected>25</option>
                   <option value="50">50</option>
                   <option value="100">100</option>
+                  <option value="250">250</option>
+                  <option value="500">500</option>
                 </select>
-                <p class="form-help">Posts per subreddit. Start with 25 to preview, then collect 100 for full analysis.</p>
+                <p class="form-help">Posts per subreddit. Start with 25 to preview. 100 is good for focused analysis. 250&ndash;500 collects multiple pages from Reddit (2&ndash;5 requests per subreddit).</p>
               </div>
               <div class="form-group">
                 <label class="label" for="keyword">Keyword Filter</label>
@@ -357,9 +391,9 @@
             <div class="form-group">
               <label class="checkbox">
                 <input type="checkbox" id="include-comments">
-                Include top-level comments (slower)
+                Include top-level comments (slower &mdash; 1 extra request per post)
               </label>
-              <p class="form-help">Collects the top comments on each post (depth 2, up to 50 per post). Essential for discourse analysis; skip for headline-level surveys.</p>
+              <p class="form-help"><strong>What you get:</strong> Up to 50 comments per post, including replies one level deep. Reddit sorts these by "best" by default, so you see the most upvoted responses. Each post costs one additional API request, so 100 posts with comments = ~101 requests. <strong>When to use:</strong> Essential if you want to analyze the conversation (discourse, sentiment, questions). Skip if you only need post titles and bodies.</p>
             </div>
 
             <hr class="divider">
@@ -372,6 +406,20 @@
               <span id="thresh-status" class="text-sm text-ash"></span>
             </div>
           </form>
+        </div>
+
+        <!-- Data Collection Strategy -->
+        <div class="card" style="max-width:700px;margin-top:1.5rem;border-left:3px solid var(--ember-dim);">
+          <div class="card-body" style="padding:1rem 1.25rem;">
+            <h3 style="font-family:var(--font-display);color:var(--ember);font-size:1.1rem;font-weight:600;margin:0 0 0.5rem 0;">Building Bigger Datasets</h3>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.5rem 0;line-height:1.65;">Reddit returns up to 100 posts per request. Thresh automatically paginates for you when you select 250 or 500 posts. But if you need richer data, the real power is <strong>systematic sampling</strong>:</p>
+            <div style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.5rem;">
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Longitudinal snapshots:</strong> Collect 100 posts from the same subreddit once a week (or once a month) over several weeks. Each collection is timestamped and gets its own provenance record. Compare word frequencies across collections to track how the conversation evolves.</span>
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Multi-sort sampling:</strong> Collect the same subreddit with different sort methods. <em>Top</em> gives you what resonated. <em>New</em> gives you what people are saying right now. <em>Controversial</em> gives you what divides the community. Three collections, three lenses on the same data.</span>
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Cross-community comparison:</strong> Thresh multiple related subreddits (e.g., r/jobs, r/careeradvice, r/recruitinghell) with the same keyword and time filter. The provenance records make each collection independently citable.</span>
+            </div>
+            <p class="text-ash text-xs" style="margin:0;line-height:1.5;">Each collection is saved separately in your browser. All exports include full provenance documentation, so every dataset is replicable regardless of when or how you collected it.</p>
+          </div>
         </div>
 
         <!-- Collection Progress -->
@@ -578,12 +626,12 @@
                 <div class="form-group">
                   <label class="label" for="report-audience">Who is this report for?</label>
                   <select id="report-audience" class="select">
-                    <option value="academic">Academic (thesis, journal, IRB)</option>
-                    <option value="journalism">Journalism (editor briefing, story pitch)</option>
-                    <option value="advocacy">Advocacy (community report, policy brief)</option>
-                    <option value="general">General (personal research, curiosity)</option>
+                    <option value="academic">Academic &mdash; IMRaD research report</option>
+                    <option value="journalism">Journalist &mdash; column / investigative piece</option>
+                    <option value="advocacy">Community Organizer &mdash; town hall brief</option>
+                    <option value="general">General &mdash; op-ed / explainer</option>
                   </select>
-                  <p class="form-help">Controls the tone and framing. Academic reports cite limitations and methods rigorously. Journalism reports lead with findings.</p>
+                  <p class="form-help">Each audience gets a different document structure. Academic produces a formal IMRaD paper. Journalist produces a lede-first column. Organizer produces a town hall action brief. General produces a clear op-ed.</p>
                 </div>
                 <div class="form-group">
                   <label class="label" for="report-context">Brief context (optional)</label>
@@ -735,6 +783,17 @@
             </div>
           </div>
 
+          <!-- Post Volume Over Time Chart -->
+          <div class="card" style="margin-bottom:1.5rem;">
+            <div class="card-header">
+              <h3 class="card-title">Post Volume Over Time</h3>
+              <span class="text-xs text-ash">When people are posting</span>
+            </div>
+            <div id="temporal-chart-wrap" style="padding:0.5rem 1rem 1rem;position:relative;height:220px;">
+              <p class="text-ash text-sm" style="text-align:center;padding:2rem 0;">Select a collection above to see posting patterns.</p>
+            </div>
+          </div>
+
           <!-- Word Frequency Table (client-side, no API needed) -->
           <div class="card" style="margin-bottom:1.5rem;">
             <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;">
@@ -828,16 +887,21 @@
               <li><strong>Thresh</strong> (Collect) &mdash; Enter a subreddit, choose your sort method and time filter, set a post limit, and optionally filter by keyword. Click Thresh. The tool gathers posts (and optionally comments) and stores them in your browser.</li>
               <li><strong>Harvest</strong> (Browse) &mdash; Explore your collected data in a sortable, searchable table. Click any post to read its full text and comments. Sort by score to see what resonates, by comments to see what sparks debate, or by date to follow the conversation over time.</li>
               <li><strong>Winnow</strong> (Analyze) &mdash; Start with the built-in word frequency table, then use Claude AI to identify themes, extract sentiment, summarize discussions, or ask custom questions about your data. AI analysis is built in and free to use.</li>
-              <li><strong>Glean</strong> (Export) &mdash; Download your data as CSV or JSON, bundled in a ZIP with a provenance.txt file that documents exactly how it was collected. Or generate an <strong>AI Research Report</strong>: answer two questions about your research, and Claude produces a complete Introduction / Methods / Results / Discussion document you can use as a starting point for your own work.</li>
+              <li><strong>Glean</strong> (Export) &mdash; Download your data as CSV or JSON, bundled in a ZIP with a provenance.txt file that documents exactly how it was collected. Or generate an <strong>AI Report</strong>: answer two questions about your research, choose your audience, and Claude produces a document tailored to your needs &mdash; an IMRaD paper for academics, a data-driven column for journalists, a town hall brief for organizers, or an op-ed for general audiences.</li>
             </ol>
           </div>
 
           <div class="about-section">
-            <h3>The AI Research Report</h3>
-            <p>The Glean page includes an <strong>AI Research Report</strong> generator powered by Claude Opus 4.6, Anthropic's most capable model.</p>
-            <p>Here's what it does: you provide a research question, choose your audience (academic, journalism, advocacy, or general), and optionally add context about why you collected this data. Claude then aggregates everything: your collection metadata, summary statistics, word frequency analysis, and the content of up to 50 posts. It writes a structured report with Introduction, Methods, Results, Discussion, and Provenance sections.</p>
-            <p>The report downloads as a <strong>beautifully formatted Word document (.docx)</strong> that you can open and start editing immediately in Microsoft Word, Google Docs, or any word processor. Markdown and clipboard copy are also available.</p>
-            <p>The report is a starting point, not a finished product. It gives you the structure and the language to build from. For a grad student, it's a draft methods section and results overview. For a journalist, it's a story pitch backed by data. For a community organizer, it's a briefing document with citations.</p>
+            <h3>The AI Report Generator</h3>
+            <p>The Glean page includes an <strong>AI Report Generator</strong> powered by Claude Opus 4.6, Anthropic's most capable model. You provide a research question, choose your audience, and optionally add context. Claude aggregates your collection metadata, summary statistics, word frequency analysis, and the content of up to 50 posts into a complete document.</p>
+            <p>Each audience gets a different document format:</p>
+            <ul>
+              <li><strong>Academic</strong> &mdash; Formal IMRaD paper (Introduction, Methods, Results, Discussion). Hedged language, rigorous limitations, replication-ready methodology. For theses, journal submissions, and IRB documentation.</li>
+              <li><strong>Journalist</strong> &mdash; A data-driven column. Lede-first structure, compelling narrative, quotes from the data, and a methods note for transparency. For newsroom briefings and story pitches.</li>
+              <li><strong>Community Organizer</strong> &mdash; A town hall brief. Key findings as talking points, community voices highlighted, recommended actions, and a statistical snapshot. For city council meetings, campaign prep, and advocacy reports.</li>
+              <li><strong>General</strong> &mdash; An op-ed or explainer piece. Curious tone, narrative arc, accessible statistics, honest caveats. For personal research, newsletters, and public writing.</li>
+            </ul>
+            <p>The report downloads as a <strong>formatted Word document (.docx)</strong> ready for editing in Microsoft Word or Google Docs. Markdown and clipboard copy are also available.</p>
             <p>What was once a dissertation-level undertaking now takes ten minutes and a good question.</p>
           </div>
 
@@ -909,7 +973,7 @@
           </div>
 
           <div class="about-section" style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(201,162,39,0.12);">
-            <p class="text-ash text-sm" style="text-align:center;">A Jacob E. Thomas artifact. Built with deliberate attention.</p>
+            <p class="text-ash text-sm" style="text-align:center;">Built using <a href="https://the-companion-dossier.pages.dev/Latent_Dialogic_Space/" target="_blank" rel="noopener" style="color:var(--ember-dim);text-decoration:underline;">Latent Dialogic Space</a></p>
           </div>
         </div>
       </section>
