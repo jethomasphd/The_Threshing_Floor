@@ -704,9 +704,10 @@
               <h3 class="card-title">Built-in Analysis</h3>
             </div>
             <div class="card-body">
-              <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">These tools run entirely in your browser at no cost:</p>
+              <p class="text-bone-muted text-sm" style="margin-bottom:0.5rem;">These tools run entirely in your browser at no cost. Select a collection below and they update instantly:</p>
               <div style="display:flex;flex-direction:column;gap:0.5rem;">
-                <span class="text-sm"><strong class="text-bone">Word Frequency Table</strong> <span class="text-bone-muted">&mdash; See the top 20 most common words across all post titles and bodies. Common stopwords ("the", "and", "is") are filtered out. Copyable with one click. Tells you what the community is literally talking about.</span></span>
+                <span class="text-sm"><strong class="text-bone">Post Volume Over Time</strong> <span class="text-bone-muted">&mdash; A bar chart showing how many posts appeared on each day. Spikes mean something triggered a surge of conversation &mdash; a news event, a viral post, a policy change. Flat stretches mean steady background chatter. Gaps mean silence. Look for spikes first, then check what posts appeared on those dates in Harvest.</span></span>
+                <span class="text-sm"><strong class="text-bone">Word Frequency Table</strong> <span class="text-bone-muted">&mdash; The top 20 most common words across all post titles and bodies, with stopwords removed. Copyable with one click. This is the literal vocabulary of the conversation &mdash; what people actually say when they talk about this topic.</span></span>
                 <span class="text-sm"><strong class="text-bone">Sortable Data Table</strong> <span class="text-bone-muted">&mdash; On the Harvest page, sort by any column. Sort by <code class="font-mono text-ember">score</code> for resonance, <code class="font-mono text-ember">num_comments</code> for engagement, or <code class="font-mono text-ember">date</code> for recency.</span></span>
                 <span class="text-sm"><strong class="text-bone">Summary Statistics</strong> <span class="text-bone-muted">&mdash; Post count, average score, average comments, and date range are calculated automatically for every collection.</span></span>
               </div>
@@ -736,8 +737,9 @@
             <div class="card-body">
               <p class="text-bone text-sm" style="margin-bottom:0.5rem;font-weight:600;">How to use this page:</p>
               <ol style="margin:0;padding-left:1.25rem;display:flex;flex-direction:column;gap:0.25rem;">
-                <li class="text-bone-muted text-sm"><strong class="text-bone">Pick a collection</strong> from the dropdown below. The word frequency table will update immediately.</li>
-                <li class="text-bone-muted text-sm"><strong class="text-bone">Review the word table</strong> &mdash; it shows you the 20 most common words in your data. Click "Copy" to grab it.</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Pick a collection</strong> from the dropdown below. The chart and word table update immediately.</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Read the post volume chart</strong> &mdash; look for spikes (something happened) and gaps (silence). This tells you <em>when</em> the conversation moved.</li>
+                <li class="text-bone-muted text-sm"><strong class="text-bone">Scan the word frequency table</strong> &mdash; these are the 20 most common words. This tells you <em>what</em> people are saying. Click "Copy" to grab it.</li>
                 <li class="text-bone-muted text-sm"><strong class="text-bone">Run Claude AI analysis</strong> &mdash; choose an analysis type and click "Analyze with Claude." AI analysis is built in and free to use.</li>
                 <li class="text-bone-muted text-sm"><strong class="text-bone">Copy or download</strong> the results. Use "Copy to Clipboard" for quick pasting, or "Save as .txt/.md" to keep a file for your records.</li>
               </ol>
@@ -751,7 +753,7 @@
                 <select id="winnow-collection" class="select" onchange="ThreshApp.loadWinnowCollection(this.value)">
                   <option value="">Select a collection&hellip;</option>
                 </select>
-                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Selecting a collection updates the word frequency table below.</p>
+                <p class="form-help text-xs text-ash" style="margin-top:0.25rem;">Selecting a collection updates the post volume chart and word frequency table below.</p>
               </div>
               <div class="form-group">
                 <label class="label" for="winnow-prompt">Analysis Type</label>
