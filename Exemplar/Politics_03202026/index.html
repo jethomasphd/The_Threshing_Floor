@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Threshing Floor — What 1.2 Million Voices Said About War</title>
+<meta name="description" content="An open-source intelligence analysis of public discourse on the 2026 Iran War, collected and visualized by The Threshing Floor.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400&family=Cinzel:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #030303;
+    --bg-elevated: #0a0a0a;
+    --bg-card: #0f0e0c;
+    --gold: #c9a227;
+    --gold-dim: #8a6f1a;
+    --gold-bright: #e8c547;
+    --gold-glow: rgba(201, 162, 39, 0.15);
+    --gold-glow-strong: rgba(201, 162, 39, 0.3);
+    --text: #d4cfc4;
+    --text-dim: #7a756b;
+    --text-bright: #ece7da;
+    --red: #a03030;
+    --red-dim: #6b2020;
+    --blue: #2a5a8a;
+    --border: rgba(201, 162, 39, 0.12);
+    --border-strong: rgba(201, 162, 39, 0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-dim) var(--bg);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Cormorant Garamond', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ═══════════ GRAIN OVERLAY ═══════════ */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* ═══════════ SCROLL REVEAL ═══════════ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1), transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.15s; }
+  .reveal-delay-2 { transition-delay: 0.3s; }
+  .reveal-delay-3 { transition-delay: 0.45s; }
+  .reveal-delay-4 { transition-delay: 0.6s; }
+
+  /* ═══════════ HERO — CONFUSION PHASE ═══════════ */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 2rem;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 50% 45%, rgba(201, 162, 39, 0.06), transparent),
+      radial-gradient(ellipse 1200px 800px at 50% 50%, rgba(160, 48, 48, 0.03), transparent);
+    pointer-events: none;
+  }
+
+  .hero-noise {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .noise-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.08), transparent);
+    animation: noiseDrift 20s linear infinite;
+  }
+
+  @keyframes noiseDrift {
+    from { transform: translateY(-100vh); }
+    to { transform: translateY(100vh); }
+  }
+
+  .hero-pretitle {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 2.5rem;
+    opacity: 0;
+    animation: fadeIn 2s 0.5s ease forwards;
+  }
+
+  .hero-number {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3.5rem, 10vw, 8rem);
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 2s 1s ease forwards;
+    text-shadow: 0 0 80px rgba(201, 162, 39, 0.3);
+  }
+
+  .hero-subtitle {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+    font-weight: 300;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeIn 2s 1.5s ease forwards;
+  }
+
+  .hero-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-bright);
+    max-width: 700px;
+    opacity: 0;
+    animation: fadeIn 2.5s 2.2s ease forwards;
+    line-height: 1.4;
+  }
+
+  .hero-scroll-cue {
+    position: absolute;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeIn 2s 3.5s ease forwards;
+  }
+
+  .hero-scroll-cue span {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+  }
+
+  .scroll-arrow {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold-dim), transparent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  /* ═══════════ SECTION FRAMEWORK ═══════════ */
+  .section {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+  }
+
+  .section-wide {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 6rem 2rem;
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 1.5rem;
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+  }
+
+  .section-body {
+    font-size: 1.15rem;
+    color: var(--text);
+    max-width: 700px;
+  }
+
+  .section-body p + p {
+    margin-top: 1.2rem;
+  }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold-dim);
+    margin: 6rem auto;
+    opacity: 0.5;
+  }
+
+  /* ═══════════ AWE — THE NUMBERS ═══════════ */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin: 3rem 0;
+  }
+
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2rem 1.5rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .stat-number {
+    font-family: 'Cinzel', serif;
+    font-size: 2.4rem;
+    font-weight: 600;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  /* ═══════════ TIMELINE CHART ═══════════ */
+  .chart-container {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 2rem;
+    margin: 3rem 0;
+    position: relative;
+  }
+
+  .chart-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .chart-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 1.5rem;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    height: 300px;
+  }
+
+  /* ═══════════ UNDERSTANDING — THEMES ═══════════ */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin: 3rem 0;
+  }
+
+  @media (max-width: 700px) {
+    .theme-grid { grid-template-columns: 1fr; }
+  }
+
+  .theme-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 1.8rem;
+    position: relative;
+    transition: border-color 0.4s ease;
+  }
+
+  .theme-card:hover {
+    border-color: var(--border-strong);
+  }
+
+  .theme-card-number {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: var(--gold-dim);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.6rem;
+  }
+
+  .theme-card-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+    line-height: 1.3;
+  }
+
+  .theme-card-body {
+    font-size: 0.95rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .theme-bar-container {
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .theme-bar-track {
+    flex: 1;
+    height: 3px;
+    background: rgba(201, 162, 39, 0.08);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .theme-bar-fill {
+    height: 100%;
+    background: var(--gold-dim);
+    transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+
+  .theme-bar-fill.animated { /* width set by JS */ }
+
+  .theme-bar-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold-dim);
+    white-space: nowrap;
+  }
+
+  /* ═══════════ TOP POSTS ═══════════ */
+  .post-list {
+    margin: 3rem 0;
+  }
+
+  .post-item {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--border);
+    align-items: start;
+  }
+
+  .post-item:first-child {
+    border-top: 1px solid var(--border);
+  }
+
+  .post-rank {
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--gold-dim);
+    text-align: right;
+    padding-top: 0.15rem;
+  }
+
+  .post-content {}
+
+  .post-title-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--text-bright);
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+  }
+
+  .post-meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .post-meta-score {
+    color: var(--gold-dim);
+  }
+
+  /* ═══════════ WORD CLOUD / FREQUENCY ═══════════ */
+  .word-freq {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    align-items: baseline;
+    justify-content: center;
+    padding: 3rem 0;
+  }
+
+  .word-freq-item {
+    font-family: 'Cinzel', serif;
+    color: var(--gold);
+    transition: color 0.3s ease;
+    cursor: default;
+    line-height: 1;
+  }
+
+  .word-freq-item:hover {
+    color: var(--gold-bright);
+  }
+
+  /* ═══════════ ACTION — THE THRESHING FLOOR CTA ═══════════ */
+  .cta-section {
+    background: linear-gradient(180deg, var(--bg) 0%, rgba(201, 162, 39, 0.03) 50%, var(--bg) 100%);
+    padding: 8rem 2rem;
+    text-align: center;
+    position: relative;
+  }
+
+  .cta-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 25%;
+    right: 25%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .cta-sigil {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 2.5rem;
+    position: relative;
+  }
+
+  .cta-sigil::before, .cta-sigil::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid var(--gold-dim);
+    opacity: 0.5;
+  }
+
+  .cta-sigil::before {
+    transform: rotate(45deg);
+  }
+
+  .cta-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 500;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+  }
+
+  .cta-body {
+    font-size: 1.15rem;
+    color: var(--text);
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+  }
+
+  .cta-features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .cta-feature {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+  }
+
+  .cta-btn {
+    display: inline-block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: var(--gold);
+    padding: 1rem 3rem;
+    text-decoration: none;
+    position: relative;
+    transition: all 0.4s ease;
+  }
+
+  .cta-btn:hover {
+    background: var(--gold-bright);
+    box-shadow: 0 0 40px rgba(201, 162, 39, 0.3);
+  }
+
+  .cta-btn-secondary {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    border: 1px solid var(--border-strong);
+    padding: 0.8rem 2rem;
+    text-decoration: none;
+    margin-left: 1rem;
+    transition: all 0.4s ease;
+  }
+
+  .cta-btn-secondary:hover {
+    color: var(--gold);
+    border-color: var(--gold-dim);
+  }
+
+  /* ═══════════ METHODOLOGY FOOTER ═══════════ */
+  .methodology {
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    padding: 4rem 2rem;
+  }
+
+  .methodology-inner {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .methodology h3 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 1.5rem;
+  }
+
+  .methodology p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+
+  .methodology-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin: 2rem 0;
+  }
+
+  .methodology-item {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    line-height: 1.6;
+  }
+
+  .methodology-item strong {
+    display: block;
+    color: var(--gold-dim);
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.6rem;
+  }
+
+  /* ═══════════ COLOPHON ═══════════ */
+  .colophon {
+    text-align: center;
+    padding: 3rem 2rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .colophon a {
+    color: var(--gold-dim);
+    text-decoration: none;
+  }
+
+  /* ═══════════ DOMAIN BAR CHART ═══════════ */
+  .domain-list {
+    margin: 2rem 0;
+  }
+
+  .domain-row {
+    display: grid;
+    grid-template-columns: 140px 1fr 40px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .domain-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: right;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .domain-bar {
+    height: 4px;
+    background: var(--gold-dim);
+    transition: width 2s cubic-bezier(0.22, 1, 0.36, 1);
+    width: 0;
+  }
+
+  .domain-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--gold-dim);
+  }
+
+  /* ═══════════ QUOTE BLOCK ═══════════ */
+  .pull-quote {
+    border-left: 2px solid var(--gold-dim);
+    padding: 1.5rem 0 1.5rem 2rem;
+    margin: 3rem 0;
+    max-width: 600px;
+  }
+
+  .pull-quote p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.4rem;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--text-bright);
+    line-height: 1.5;
+  }
+
+  .pull-quote cite {
+    display: block;
+    margin-top: 0.8rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-style: normal;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ═══════════ LIMITATIONS CALLOUT ═══════════ */
+  .limitations-box {
+    background: rgba(160, 48, 48, 0.05);
+    border: 1px solid rgba(160, 48, 48, 0.15);
+    padding: 2rem;
+    margin: 3rem 0;
+  }
+
+  .limitations-box h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 1rem;
+  }
+
+  .limitations-box p {
+    font-size: 0.9rem;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  /* ═══════════ RESPONSIVE ═══════════ */
+  @media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .post-item { grid-template-columns: 50px 1fr; gap: 1rem; }
+    .cta-btn-secondary { margin-left: 0; margin-top: 1rem; display: block; }
+    .domain-row { grid-template-columns: 100px 1fr 30px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PHASE 1: CONFUSION                     -->
+<!-- ═══════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-noise">
+    <div class="noise-line" style="top: 10%; animation-delay: 0s;"></div>
+    <div class="noise-line" style="top: 30%; animation-delay: -5s;"></div>
+    <div class="noise-line" style="top: 50%; animation-delay: -10s;"></div>
+    <div class="noise-line" style="top: 70%; animation-delay: -15s;"></div>
+    <div class="noise-line" style="top: 90%; animation-delay: -3s;"></div>
+  </div>
+  <div class="hero-pretitle">r/politics · february — march 2026</div>
+  <div class="hero-number" id="heroCounter">1,238,211</div>
+  <div class="hero-subtitle">upvotes cast on 100 posts about a war<br>in the first month it was real</div>
+  <div class="hero-question">What does a nation actually say<br>when the bombs start falling?</div>
+  <div class="hero-scroll-cue">
+    <span>Scroll to find out</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PHASE 2: AWE — THE SCALE               -->
+<!-- ═══════════════════════════════════════ -->
+<div class="divider"></div>
+
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Phase I — The Scale of Attention</div>
+    <h2 class="section-title">A Million Voices,<br>Measured</h2>
+    <div class="section-body">
+      <p>When the United States struck Iran in late February 2026, the discourse machine did what it always does — it roared to life. But beneath the noise, patterns emerged. Structure. Signal.</p>
+      <p>Using <strong>The Threshing Floor</strong>, an open-source intelligence collection tool, we sampled r/politics — one of the largest political forums on the English-speaking internet — collecting the top 100 posts matching the keyword <strong>"Iran"</strong> over the past month, along with 4,956 threaded comments. The keyword filter means this dataset captures only Iran-related discourse; it is not a general sample of the subreddit.</p>
+      <p>Here is what the data reveals.</p>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card reveal reveal-delay-1">
+      <div class="stat-number">100</div>
+      <div class="stat-label">Posts Collected</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-2">
+      <div class="stat-number">4,956</div>
+      <div class="stat-label">Comments Captured</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-3">
+      <div class="stat-number">86,564</div>
+      <div class="stat-label">Total Discussions</div>
+    </div>
+    <div class="stat-card reveal reveal-delay-4">
+      <div class="stat-number">96.7%</div>
+      <div class="stat-label">Avg Upvote Ratio</div>
+    </div>
+  </div>
+
+  <div class="chart-container reveal">
+    <div class="chart-title">Daily Post Volume & Community Engagement</div>
+    <div class="chart-wrapper">
+      <canvas id="timelineChart"></canvas>
+    </div>
+  </div>
+
+  <div class="pull-quote reveal">
+    <p>The average post received 12,382 upvotes and 866 comments — an engagement intensity that suggests not casual browsing, but collective reckoning.</p>
+    <cite>Dataset Summary · March 20, 2026</cite>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PHASE 3: UNDERSTANDING — WHAT THEY SAID -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Phase II — The Language of Dissent</div>
+    <h2 class="section-title">What Rises to the Surface</h2>
+    <div class="section-body">
+      <p>Word frequency analysis on post titles reveals a discourse overwhelmingly organized around three gravitational centers: the conflict itself, its architect, and the question of whether any of it was authorized.</p>
+    </div>
+  </div>
+
+  <div class="word-freq reveal" id="wordCloud">
+    <!-- populated by JS -->
+  </div>
+</section>
+
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Phase III — The Eight Fractures</div>
+    <h2 class="section-title">Eight Fractures in the<br>First Month of War</h2>
+    <div class="section-body">
+      <p>Close reading of all 100 post titles — each surfaced by the keyword filter "Iran" and ranked by community score — reveals eight dominant narrative threads. Not random outrage, but structured concern organized around legitimacy, accountability, and harm.</p>
+    </div>
+  </div>
+
+  <div class="theme-grid" id="themeGrid">
+    <div class="theme-card reveal">
+      <div class="theme-card-number">I</div>
+      <div class="theme-card-title">Presidential Conduct & Accountability</div>
+      <div class="theme-card-body">The community amplified Trump's own contradictory statements as evidence — "maybe we shouldn't even be there" alongside "some people will die." The president's words became the primary exhibit.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="100"></div></div>
+        <div class="theme-bar-count">14 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-1">
+      <div class="theme-card-number">II</div>
+      <div class="theme-card-title">Intra-Party Fractures</div>
+      <div class="theme-card-body">Neither party held together. Republican dissent (Greene, Cruz, Trump voters with regret) and Democratic complicity (five Democrats killed a War Powers vote) were both amplified. The war did not produce clean partisan lines.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="100"></div></div>
+        <div class="theme-bar-count">14 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-2">
+      <div class="theme-card-number">III</div>
+      <div class="theme-card-title">International Response & Alliances</div>
+      <div class="theme-card-body">Israel's involvement, NATO allies' reactions, and the framing of the conflict as driven by external pressure rather than national interest surfaced repeatedly across the dataset.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="71"></div></div>
+        <div class="theme-bar-count">10 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-3">
+      <div class="theme-card-number">IV</div>
+      <div class="theme-card-title">Military Leadership Failure</div>
+      <div class="theme-card-body">SecDef Hegseth appeared in 9 post titles — the fourth most frequent term. Firing the Iran experts team before war, comparing the conflict to Call of Duty. The community saw a pattern of institutional dismantling.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="64"></div></div>
+        <div class="theme-bar-count">9 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal">
+      <div class="theme-card-number">V</div>
+      <div class="theme-card-title">Economic Costs of War</div>
+      <div class="theme-card-body">$1 billion per day. Oil past $110. Healthcare cuts while bombs drop. The community consistently linked military spending to domestic austerity — a guns-vs-butter frame that resonated deeply.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="64"></div></div>
+        <div class="theme-bar-count">9 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-1">
+      <div class="theme-card-number">VI</div>
+      <div class="theme-card-title">War Legitimacy & Authorization</div>
+      <div class="theme-card-body">Only 21% of Americans supported striking Iran. Congress never authorized it. The War Powers Resolution. Impeachment calls. A counterterrorism official resigned saying "no imminent threat." The constitutional question was the baseline.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="57"></div></div>
+        <div class="theme-bar-count">8 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-2">
+      <div class="theme-card-number">VII</div>
+      <div class="theme-card-title">Civilian Casualties — The Girls' School</div>
+      <div class="theme-card-body">A U.S. strike on an Iranian girls' school became the moral flashpoint. When a senator dismissed the outcry as a "leftist craze," it generated the single most-commented post in the dataset: 3,992 responses.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="43"></div></div>
+        <div class="theme-bar-count">6 posts</div>
+      </div>
+    </div>
+    <div class="theme-card reveal reveal-delay-3">
+      <div class="theme-card-number">VIII</div>
+      <div class="theme-card-title">Epstein & The Distraction Theory</div>
+      <div class="theme-card-body">Half of Americans believe the bombing was connected to the Epstein files. Four posts explicitly framed the war as strategic distraction. The conspiracy thread was persistent and viral.</div>
+      <div class="theme-bar-container">
+        <div class="theme-bar-track"><div class="theme-bar-fill" data-width="29"></div></div>
+        <div class="theme-bar-count">4 posts</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- THE HIGHEST SIGNAL POSTS               -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Phase IV — The Highest Signal</div>
+    <h2 class="section-title">What Rose to the Top</h2>
+    <div class="section-body">
+      <p>These 15 posts represent the sharpest edge of collective attention — the specific stories, statements, and revelations that this community of millions found most worthy of amplification.</p>
+    </div>
+  </div>
+
+  <div class="post-list" id="postList">
+    <!-- populated by JS -->
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- SOURCE ECOSYSTEM                        -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Phase V — The Source Ecosystem</div>
+    <h2 class="section-title">Where the Stories Came From</h2>
+    <div class="section-body">
+      <p>All 100 posts were link posts — the community's voice expressed through curation and amplification choices. The New Republic dominated the source landscape, followed by Common Dreams and The Independent.</p>
+    </div>
+  </div>
+
+  <div class="domain-list reveal" id="domainList">
+    <!-- populated by JS -->
+  </div>
+
+  <div class="chart-container reveal" style="margin-top: 3rem;">
+    <div class="chart-title">Theme Distribution Across the Dataset</div>
+    <div class="chart-wrapper">
+      <canvas id="themeChart"></canvas>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- LIMITATIONS — INTELLECTUAL HONESTY      -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section">
+  <div class="reveal">
+    <div class="section-label">Necessary Caveats</div>
+    <h2 class="section-title">What This Data Cannot Tell You</h2>
+  </div>
+
+  <div class="limitations-box reveal">
+    <h4>Selection Bias</h4>
+    <p>This dataset captures only the <strong>top 100 posts</strong> sorted by community score — content that resonated with r/politics' majority viewpoint. Posts expressing support for the war, if they existed, would not surface through this method.</p>
+  </div>
+
+  <div class="limitations-box reveal reveal-delay-1">
+    <h4>Demographic Skew</h4>
+    <p>r/politics skews <strong>left-of-center American</strong>. These findings describe what this community discussed, not what America writ large believes. Comparative analysis across ideologically diverse subreddits would be required for broader claims.</p>
+  </div>
+
+  <div class="limitations-box reveal reveal-delay-2">
+    <h4>Point-in-Time Snapshot</h4>
+    <p>This is a <strong>single capture</strong> from March 20, 2026. Reddit's ranking system is dynamic — these results are not reproducible. Discourse will shift as the conflict evolves.</p>
+  </div>
+
+  <div class="limitations-box reveal reveal-delay-3">
+    <h4>Comments Not Yet Analyzed</h4>
+    <p>While 4,956 comments were collected, this report analyzes <strong>post titles only</strong>. Comment-level sentiment analysis would yield substantially richer findings. All underlying data — <a href="posts.csv" style="color: var(--gold-dim);">posts.csv</a>, <a href="comments.csv" style="color: var(--gold-dim);">comments.csv</a>, <a href="provenance.txt" style="color: var(--gold-dim);">provenance.txt</a>, and the <a href="thresh-report-politics-2026-03-20.docx" style="color: var(--gold-dim);">full research report</a> — are available in this repository for researchers who want to go deeper.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- PHASE 4: ACTION — THE THRESHING FLOOR   -->
+<!-- ═══════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="reveal">
+    <div class="cta-sigil"></div>
+    <div class="section-label" style="text-align: center; margin-bottom: 1.5rem;">The Tool That Made This Possible</div>
+    <h2 class="cta-title">The Threshing Floor</h2>
+    <div class="cta-body">
+      <p>An open-source Reddit intelligence collection tool. No API key. No authentication. No cost. Point it at any subreddit, any keyword, any time window — and it separates the wheat from the chaff.</p>
+      <p style="margin-top: 1rem; font-size: 0.95rem; color: var(--text-dim);">Built by a data scientist who believes the tools of public discourse analysis should be public. Every dataset Thresh produces — posts, comments, provenance records — ships alongside this report as open data.</p>
+    </div>
+  </div>
+
+  <div class="cta-features reveal">
+    <div class="cta-feature">No API Key Required</div>
+    <div class="cta-feature">Real-Time Collection</div>
+    <div class="cta-feature">CSV + JSON Export</div>
+    <div class="cta-feature">Comment Threading</div>
+    <div class="cta-feature">Author Anonymization</div>
+    <div class="cta-feature">Full Provenance Chain</div>
+    <div class="cta-feature">100% Client-Side</div>
+    <div class="cta-feature">Open Source</div>
+  </div>
+
+  <div class="reveal reveal-delay-2" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem;">
+    <a href="https://the-threshing-floor.com" class="cta-btn" target="_blank" rel="noopener">Use Thresh Now</a>
+    <a href="https://github.com/jacobethomas/threshing-floor" class="cta-btn-secondary" target="_blank" rel="noopener">View Source on GitHub</a>
+  </div>
+
+  <div class="reveal reveal-delay-3" style="margin-top: 2.5rem; text-align: center;">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 0.6rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1rem;">Underlying Data — Open Access</div>
+    <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 0.8rem;">
+      <a href="posts.csv" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--gold-dim); text-decoration: none; padding: 0.4rem 1rem; border: 1px solid var(--border); transition: border-color 0.3s;">posts.csv</a>
+      <a href="comments.csv" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--gold-dim); text-decoration: none; padding: 0.4rem 1rem; border: 1px solid var(--border); transition: border-color 0.3s;">comments.csv</a>
+      <a href="provenance.txt" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--gold-dim); text-decoration: none; padding: 0.4rem 1rem; border: 1px solid var(--border); transition: border-color 0.3s;">provenance.txt</a>
+      <a href="thresh-report-politics-2026-03-20.docx" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; color: var(--gold-dim); text-decoration: none; padding: 0.4rem 1rem; border: 1px solid var(--border); transition: border-color 0.3s;">research report (.docx)</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- METHODOLOGY                             -->
+<!-- ═══════════════════════════════════════ -->
+<section class="methodology" id="methodology">
+  <div class="methodology-inner">
+    <h3>Provenance & Methodology</h3>
+    <p>Data collected March 20, 2026 (UTC) using The Threshing Floor v1.0.0 — a Cloudflare Pages application that retrieves publicly available data from Reddit's JSON endpoints without authentication. Collection targeted r/politics, sorted by top posts over the past month, with a keyword filter of <strong>"Iran"</strong>. This means every post in the dataset matched that keyword; this is not a general sample of r/politics content.</p>
+
+    <div class="methodology-grid">
+      <div class="methodology-item">
+        <strong>Source</strong>
+        Reddit public JSON endpoint
+      </div>
+      <div class="methodology-item">
+        <strong>Subreddit</strong>
+        r/politics
+      </div>
+      <div class="methodology-item">
+        <strong>Sort</strong>
+        Top · Past Month
+      </div>
+      <div class="methodology-item">
+        <strong>Keyword Filter</strong>
+        "Iran" (all posts matched)
+      </div>
+      <div class="methodology-item">
+        <strong>Posts Returned</strong>
+        100 of 500 requested
+      </div>
+      <div class="methodology-item">
+        <strong>Comments</strong>
+        4,956 (depth ≤ 2)
+      </div>
+      <div class="methodology-item">
+        <strong>Authors</strong>
+        Anonymized on export
+      </div>
+      <div class="methodology-item">
+        <strong>Authentication</strong>
+        None (public endpoints)
+      </div>
+    </div>
+
+    <p>This analysis captures a point-in-time snapshot of community-curated content. Reddit's public JSON endpoints return a maximum of ~100 posts per request. Scores and comment counts reflect values at collection time. Deleted or removed content is excluded. The methodology is fully replicable using the same tool and parameters, though results will vary with collection date.</p>
+
+    <p style="margin-top: 2rem; font-style: italic; color: var(--text-dim);">This data was collected from publicly accessible Reddit posts. Researchers should consider re-identification risks and consult their IRB before using in human subjects research.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!-- COLOPHON                                -->
+<!-- ═══════════════════════════════════════ -->
+<footer class="colophon">
+  <p>A production of <a href="https://the-threshing-floor.com">The Threshing Floor</a> · Jacob E. Thomas, PhD · March 2026</p>
+  <p style="margin-top: 0.5rem; opacity: 0.5;">Data is not opinion. But what a community chooses to amplify is signal.</p>
+  <p style="margin-top: 0.5rem; opacity: 0.35;">Exemplar/Politics_03202026 · <a href="https://github.com/jacobethomas/threshing-floor" style="color: var(--gold-dim);">github.com/jacobethomas/threshing-floor</a></p>
+</footer>
+
+<script>
+// ═══════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════
+const dailyData = {"2026-02-21":{"posts":1,"total_score":12120,"total_comments":291},"2026-02-28":{"posts":12,"total_score":153606,"total_comments":11183},"2026-03-01":{"posts":5,"total_score":65328,"total_comments":5325},"2026-03-02":{"posts":9,"total_score":128961,"total_comments":6672},"2026-03-03":{"posts":7,"total_score":106555,"total_comments":8767},"2026-03-04":{"posts":7,"total_score":108754,"total_comments":6963},"2026-03-05":{"posts":8,"total_score":144141,"total_comments":9742},"2026-03-06":{"posts":3,"total_score":26237,"total_comments":2107},"2026-03-07":{"posts":1,"total_score":7855,"total_comments":355},"2026-03-08":{"posts":4,"total_score":31830,"total_comments":3311},"2026-03-09":{"posts":5,"total_score":36265,"total_comments":1976},"2026-03-10":{"posts":5,"total_score":36574,"total_comments":3308},"2026-03-11":{"posts":2,"total_score":13288,"total_comments":763},"2026-03-12":{"posts":5,"total_score":73500,"total_comments":7258},"2026-03-13":{"posts":2,"total_score":26012,"total_comments":708},"2026-03-14":{"posts":3,"total_score":35543,"total_comments":4782},"2026-03-15":{"posts":4,"total_score":36089,"total_comments":2654},"2026-03-16":{"posts":2,"total_score":39247,"total_comments":3063},"2026-03-17":{"posts":8,"total_score":97193,"total_comments":3588},"2026-03-18":{"posts":3,"total_score":27132,"total_comments":2629},"2026-03-19":{"posts":1,"total_score":7997,"total_comments":230},"2026-03-20":{"posts":3,"total_score":23985,"total_comments":889}};
+
+const topPosts = [
+  {title:"GOP senator allegedly breaks Marine\u2019s hand during protest against Iran war",score:36098,comments:2046,date:"2026-03-05",domain:"lgbtqnation.com"},
+  {title:"Draft Barron Trump website launches as US strikes Iran",score:33342,comments:876,date:"2026-03-02",domain:"newsweek.com"},
+  {title:"Trump Says \u2018I Guess\u2019 Americans Should Worry About Iran Retaliating on U.S. Soil: \u2018Like I Said, Some People Will Die\u2019",score:33253,comments:2312,date:"2026-03-05",domain:"people.com"},
+  {title:"Donald Trump Stuns With \u2018Maybe We Shouldn\u2019t Even Be There\u2019 Admission About Iran War",score:32458,comments:2494,date:"2026-03-16",domain:"huffpost.com"},
+  {title:"MAGA Melts Down Over Iran War No One Voted For",score:30427,comments:2274,date:"2026-02-28",domain:"thedailybeast.com"},
+  {title:"Kash Patel Fired Entire Team of Iran Experts Right Before Trump\u2019s War",score:29336,comments:1015,date:"2026-03-03",domain:"newrepublic.com"},
+  {title:"Half of Americans believe Trump bombed Iran because of Epstein files",score:29082,comments:800,date:"2026-03-17",domain:"telegraph.co.uk"},
+  {title:"John Fetterman Says Iran Girls\u2019 School Strike Is Just a Leftist Craze",score:26685,comments:3992,date:"2026-03-12",domain:"newrepublic.com"},
+  {title:"Military Leaders Say Iran War Is So Trump Can Bring About \u201cArmageddon\u201d",score:26031,comments:2722,date:"2026-03-03",domain:"newrepublic.com"},
+  {title:"Top US counterterrorism official resigns over Iran war",score:25246,comments:799,date:"2026-03-17",domain:"bbc.co.uk"},
+  {title:"Trump Should Be Impeached, Removed From Office for Illegal War on Iran",score:24628,comments:989,date:"2026-03-02",domain:"commondreams.org"},
+  {title:"\u201cHe Could be Impeached.\u201d Donald Trump\u2019s Base Revolts Over War with Iran",score:24408,comments:1457,date:"2026-03-01",domain:"vanityfair.com"},
+  {title:"\u2018We\u2019re not at war right now\u2019: House Speaker Johnson makes stunning claim after Trump\u2019s barrage on Iran",score:23707,comments:2001,date:"2026-03-04",domain:"independent.co.uk"},
+  {title:"While Cost of Living Soars and Healthcare Taken Away, Trump Spending $1 Billion Per Day in War of Choice With Iran",score:21222,comments:697,date:"2026-03-05",domain:"commondreams.org"},
+  {title:"Trump suddenly seems anxious to end the war as American casualties mount and Iran finds ways to hit back",score:21198,comments:1251,date:"2026-03-12",domain:"foxnews.com"}
+];
+
+const domains = [
+  {name:"newrepublic.com",count:21},
+  {name:"commondreams.org",count:11},
+  {name:"independent.co.uk",count:7},
+  {name:"thehill.com",count:6},
+  {name:"huffpost.com",count:5},
+  {name:"thedailybeast.com",count:5},
+  {name:"newsweek.com",count:4},
+  {name:"nbcnews.com",count:3},
+  {name:"reuters.com",count:2},
+  {name:"axios.com",count:2}
+];
+
+const wordFreqs = [
+  {word:"iran",count:100},{word:"war",count:64},{word:"trump",count:40},
+  {word:"strikes",count:8},{word:"hegseth",count:8},{word:"donald",count:7},
+  {word:"americans",count:5},{word:"experts",count:5},{word:"nuclear",count:5},
+  {word:"democrats",count:5},{word:"epstein",count:4},{word:"school",count:4},
+  {word:"israel",count:4},{word:"briefing",count:4},{word:"coverage",count:4},
+  {word:"congress",count:3},{word:"military",count:3},{word:"illegal",count:3},
+  {word:"billion",count:3},{word:"casualties",count:3}
+];
+
+const themes = [
+  {name:"Presidential Conduct",count:14},
+  {name:"Intra-Party Fractures",count:14},
+  {name:"International Response",count:10},
+  {name:"Military Leadership",count:9},
+  {name:"Economic Costs",count:9},
+  {name:"War Legitimacy",count:8},
+  {name:"Civilian Casualties",count:6},
+  {name:"Epstein / Distraction",count:4}
+];
+
+// ═══════════════════════════════════════
+// SCROLL REVEAL
+// ═══════════════════════════════════════
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+
+      // Animate theme bars
+      entry.target.querySelectorAll('.theme-bar-fill').forEach(bar => {
+        const w = bar.getAttribute('data-width');
+        setTimeout(() => { bar.style.width = w + '%'; }, 200);
+      });
+
+      // Animate domain bars
+      entry.target.querySelectorAll('.domain-bar').forEach(bar => {
+        const w = bar.getAttribute('data-width');
+        setTimeout(() => { bar.style.width = w + '%'; }, 200);
+      });
+    }
+  });
+}, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ═══════════════════════════════════════
+// HERO COUNTER ANIMATION
+// ═══════════════════════════════════════
+function animateCounter(el, target, duration) {
+  const start = performance.now();
+  const format = (n) => n.toLocaleString();
+  const step = (now) => {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    el.textContent = format(Math.floor(eased * target));
+    if (progress < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+setTimeout(() => {
+  animateCounter(document.getElementById('heroCounter'), 1238211, 3000);
+}, 1200);
+
+// ═══════════════════════════════════════
+// WORD CLOUD
+// ═══════════════════════════════════════
+const cloudEl = document.getElementById('wordCloud');
+const maxCount = wordFreqs[0].count;
+wordFreqs.forEach(w => {
+  const span = document.createElement('span');
+  span.className = 'word-freq-item';
+  const scale = 0.7 + (w.count / maxCount) * 2.8;
+  span.style.fontSize = scale + 'rem';
+  span.style.opacity = 0.3 + (w.count / maxCount) * 0.7;
+  span.textContent = w.word;
+  span.title = w.count + ' occurrences';
+  cloudEl.appendChild(span);
+});
+
+// ═══════════════════════════════════════
+// POST LIST
+// ═══════════════════════════════════════
+const postListEl = document.getElementById('postList');
+topPosts.forEach((p, i) => {
+  const div = document.createElement('div');
+  div.className = 'post-item reveal' + (i > 2 ? ' reveal-delay-' + Math.min(i % 4 + 1, 4) : '');
+  div.innerHTML = `
+    <div class="post-rank">${i + 1}</div>
+    <div class="post-content">
+      <div class="post-title-text">${p.title}</div>
+      <div class="post-meta">
+        <span class="post-meta-score">\u25B2 ${p.score.toLocaleString()}</span>
+        <span>${p.comments.toLocaleString()} comments</span>
+        <span>${p.date}</span>
+        <span>${p.domain}</span>
+      </div>
+    </div>
+  `;
+  postListEl.appendChild(div);
+  observer.observe(div);
+});
+
+// ═══════════════════════════════════════
+// DOMAIN LIST
+// ═══════════════════════════════════════
+const domainListEl = document.getElementById('domainList');
+const maxDomain = domains[0].count;
+domains.forEach(d => {
+  const row = document.createElement('div');
+  row.className = 'domain-row';
+  const pct = (d.count / maxDomain * 100);
+  row.innerHTML = `
+    <div class="domain-name">${d.name}</div>
+    <div class="theme-bar-track"><div class="domain-bar" data-width="${pct}"></div></div>
+    <div class="domain-count">${d.count}</div>
+  `;
+  domainListEl.appendChild(row);
+});
+
+// ═══════════════════════════════════════
+// CHARTS
+// ═══════════════════════════════════════
+const sortedDates = Object.keys(dailyData).sort();
+const goldColor = 'rgba(201, 162, 39, 0.8)';
+const goldFill = 'rgba(201, 162, 39, 0.1)';
+const redColor = 'rgba(160, 48, 48, 0.6)';
+const redFill = 'rgba(160, 48, 48, 0.05)';
+
+Chart.defaults.color = '#7a756b';
+Chart.defaults.borderColor = 'rgba(201, 162, 39, 0.08)';
+Chart.defaults.font.family = "'IBM Plex Mono', monospace";
+Chart.defaults.font.size = 10;
+
+// Timeline
+new Chart(document.getElementById('timelineChart'), {
+  type: 'bar',
+  data: {
+    labels: sortedDates.map(d => d.slice(5)),
+    datasets: [
+      {
+        label: 'Total Score',
+        data: sortedDates.map(d => dailyData[d].total_score),
+        backgroundColor: goldColor,
+        borderColor: 'transparent',
+        borderRadius: 2,
+        yAxisID: 'y',
+        order: 2,
+      },
+      {
+        label: 'Comments',
+        data: sortedDates.map(d => dailyData[d].total_comments),
+        type: 'line',
+        borderColor: redColor,
+        backgroundColor: redFill,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: redColor,
+        fill: true,
+        tension: 0.3,
+        yAxisID: 'y1',
+        order: 1,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+        align: 'end',
+        labels: { boxWidth: 12, padding: 20, font: { size: 9 } }
+      },
+      tooltip: {
+        backgroundColor: '#0f0e0c',
+        borderColor: 'rgba(201, 162, 39, 0.2)',
+        borderWidth: 1,
+        titleFont: { family: "'IBM Plex Mono', monospace", size: 10 },
+        bodyFont: { family: "'IBM Plex Mono', monospace", size: 10 },
+        callbacks: {
+          label: (ctx) => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString()
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { maxRotation: 45, font: { size: 9 } }
+      },
+      y: {
+        position: 'left',
+        grid: { color: 'rgba(201, 162, 39, 0.05)' },
+        ticks: {
+          callback: v => (v / 1000) + 'K',
+          font: { size: 9 }
+        }
+      },
+      y1: {
+        position: 'right',
+        grid: { display: false },
+        ticks: {
+          callback: v => (v / 1000) + 'K',
+          font: { size: 9 }
+        }
+      }
+    }
+  }
+});
+
+// Theme chart
+new Chart(document.getElementById('themeChart'), {
+  type: 'bar',
+  data: {
+    labels: themes.map(t => t.name),
+    datasets: [{
+      data: themes.map(t => t.count),
+      backgroundColor: themes.map((_, i) => {
+        const opacity = 0.4 + (1 - i / themes.length) * 0.5;
+        return `rgba(201, 162, 39, ${opacity})`;
+      }),
+      borderColor: 'transparent',
+      borderRadius: 2,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f0e0c',
+        borderColor: 'rgba(201, 162, 39, 0.2)',
+        borderWidth: 1,
+        titleFont: { family: "'IBM Plex Mono', monospace", size: 10 },
+        bodyFont: { family: "'IBM Plex Mono', monospace", size: 10 },
+        callbacks: {
+          label: (ctx) => ctx.parsed.x + ' posts'
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(201, 162, 39, 0.05)' },
+        ticks: { stepSize: 2, font: { size: 9 } }
+      },
+      y: {
+        grid: { display: false },
+        ticks: { font: { size: 10 } }
+      }
+    }
+  }
+});
+
+// Re-observe dynamically added elements
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
