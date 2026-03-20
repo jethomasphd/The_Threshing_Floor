@@ -116,6 +116,15 @@
           </button>
         </li>
       </ul>
+
+      <!-- Exemplars Link -->
+      <div style="padding:0.75rem 1rem;margin:0.25rem 0.5rem;border-top:1px solid var(--smoke);">
+        <a href="/Exemplar/" class="sidebar-link" style="display:flex;align-items:center;gap:0.625rem;padding:0.5rem 0.5rem;border-radius:4px;text-decoration:none;color:var(--bone-muted);transition:all 0.2s;font-size:0.8125rem;" onmouseover="this.style.color='var(--ember)';this.style.background='var(--surface-raised)'" onmouseout="this.style.color='var(--bone-muted)';this.style.background='transparent'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+          <span style="font-family:var(--font-body);">Exemplars</span>
+        </a>
+      </div>
+
       <!-- Rate Limit Sentinel -->
       <div id="rate-sentinel" class="rate-sentinel" title="Reddit allows 100 requests per minute. This gauge shows how many requests remain in the current window. When it runs out, Thresh pauses automatically until the limit resets.">
         <div class="rate-sentinel-label">Rate Limit</div>
@@ -329,14 +338,6 @@
           </div>
         </div>
 
-        <!-- Exemplars -->
-        <div style="margin-top:2.5rem;padding:1rem 1.25rem;border:1px solid rgba(201,162,39,0.1);border-radius:8px;background:var(--surface);">
-          <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <span class="text-ash text-xs font-mono" style="letter-spacing:0.1em;text-transform:uppercase;">Exemplars</span>
-            <span class="text-bone-muted text-sm" style="flex:1;min-width:200px;">See Thresh in action on real data &mdash;</span>
-            <a href="/Exemplar/Politics_03202026/" class="text-sm" style="color:var(--ember-dim);text-decoration:none;font-family:var(--font-mono);transition:color 0.2s;" onmouseover="this.style.color='var(--ember)'" onmouseout="this.style.color='var(--ember-dim)'">#1 &mdash; Iran War Discourse in r/politics &rarr;</a>
-          </div>
-        </div>
       </section>
 
 
