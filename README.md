@@ -127,7 +127,7 @@ That provenance file is the receipt. It records everything: what you asked for, 
 
 ## Deploy Your Own
 
-Thresh is designed to be forked and deployed with zero configuration.
+Thresh is designed to be forked and deployed with minimal configuration — one Reddit app registration, two Cloudflare secrets, and you're live.
 
 ### Cloudflare Pages (recommended)
 
@@ -139,8 +139,9 @@ Thresh is designed to be forked and deployed with zero configuration.
    - **Build command:** *(leave empty)*
    - **Build output directory:** `public`
 6. Click **Save and Deploy**
+7. **Register a Reddit app** at [reddit.com/prefs/apps](https://www.reddit.com/prefs/apps) (type: "web app") and add the client ID and secret as Cloudflare Pages secrets (`REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`). Full step-by-step in [`functions/api/SETUP.md`](functions/api/SETUP.md). Without these, every collection will return "Reddit OAuth is not configured" — Reddit blocks anonymous datacenter traffic, so OAuth is non-optional.
 
-That's it. Cloudflare will build and deploy automatically on every push. Your instance will be live at `<project-name>.pages.dev`.
+Cloudflare will build and deploy automatically on every push. Your instance will be live at `<project-name>.pages.dev`.
 
 The free tier includes:
 - 500 deploys per month
@@ -162,7 +163,7 @@ cd The_Threshing_Floor
 npx wrangler pages dev public
 ```
 
-Open **http://localhost:8788** in your browser. The local dev server includes full Pages Function support (the Reddit proxy works locally).
+Open **http://localhost:8788** in your browser. For the Reddit proxy to work locally, create a `.dev.vars` file in the project root with your Reddit app credentials (see [`functions/api/SETUP.md`](functions/api/SETUP.md) → "Local Development"). The Pages Function picks those up automatically.
 
 ---
 
