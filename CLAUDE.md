@@ -31,7 +31,7 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 - **Styling**: Tailwind CSS via CDN + custom CSS in `public/css/thresh.css`
 - **Icons**: Lucide via CDN
 - **Interactivity**: Vanilla JS for all UI (hash-based routing in `app.js`). NO frameworks.
-- **Data source**: Reddit's public JSON endpoints via Cloudflare Pages Function proxy (`functions/api/reddit.js`)
+- **Data source**: Reddit's OAuth API (`oauth.reddit.com`) via Cloudflare Pages Function proxy (`functions/api/reddit.js`). Uses app-only `client_credentials` flow; one Reddit app's client ID/secret are stored as Cloudflare Pages secrets. Users still bring no credentials.
 - **AI integration**: Claude Opus 4.6 via dedicated Cloudflare Worker (`thresh-proxy/`) at `api.the-threshing-floor.com`. API key stored server-side as encrypted Cloudflare secret. No user API keys needed.
 - **DOCX export**: Research reports export as formatted Word documents via docx.js (CDN). Markdown and clipboard copy also available.
 - **Storage**: Browser `localStorage` only. No server database.
@@ -58,7 +58,7 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 - `claude.js` — Claude API integration via managed proxy (analysis + research reports)
 
 ### Cloudflare Pages Functions
-- `functions/api/reddit.js` — Stateless CORS proxy for Reddit public JSON
+- `functions/api/reddit.js` — Reddit OAuth proxy. Holds `REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` as Cloudflare Pages secrets, fetches and caches an app-only bearer token, and forwards client requests to `oauth.reddit.com`. See `functions/api/SETUP.md` for one-time setup.
 
 ## Design Language
 
@@ -166,7 +166,7 @@ Claude API integration via the managed proxy at `api.the-threshing-floor.com`. N
 - `generateReport()` — Glean page research report generator (full Intro/Methods/Results/Discussion document)
 
 ### functions/api/reddit.js
-Cloudflare Pages Function. Stateless CORS proxy that forwards requests to Reddit's public JSON endpoints. No logging, no data storage.
+Cloudflare Pages Function. Proxies requests to Reddit's OAuth API (`oauth.reddit.com`) using the `client_credentials` grant. Caches the app-only bearer token in module state (per isolate) and retries once on 401. Forwards Reddit's `x-ratelimit-*` headers so the client-side rate limiter keeps working. Requires `REDDIT_CLIENT_ID` and `REDDIT_CLIENT_SECRET` as Cloudflare Pages secrets — see `functions/api/SETUP.md`.
 
 ### thresh-proxy/
 Dedicated Cloudflare Worker serving as the AI proxy at `api.the-threshing-floor.com`. Stores the Anthropic API key as an encrypted Cloudflare secret. Uses Claude Opus 4.6 (`claude-opus-4-6`) with 8192 max tokens. See `thresh-proxy/SETUP.md` for deployment instructions.

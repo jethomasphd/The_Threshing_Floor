@@ -1,0 +1,33 @@
+# Fly.io configuration for thresh-fly-proxy
+#
+# The `app` name must be globally unique on Fly. If "thresh-reddit-proxy"
+# is taken, change it to something like "thresh-reddit-proxy-<yourname>".
+
+app = "thresh-reddit-proxy"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8080"
+  NODE_ENV = "production"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

@@ -1,0 +1,34 @@
+name: Deploy thresh-fly-proxy
+
+# Deploys the Reddit JSON relay to Fly.io.
+#
+# Triggers on:
+#   - changes to thresh-fly-proxy/** on the main branch
+#   - manual dispatch from the Actions tab (any branch)
+#
+# Requires GitHub Actions secret: FLY_API_TOKEN
+# See thresh-fly-proxy/SETUP.md for one-time setup.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "thresh-fly-proxy/**"
+      - ".github/workflows/fly-deploy.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Fly.io
+    runs-on: ubuntu-latest
+    concurrency: deploy-fly-proxy
+    defaults:
+      run:
+        working-directory: thresh-fly-proxy
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
