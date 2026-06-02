@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for app-ambergris-firefly-8197 on 2026-06-02T17:11:49Z
+# fly.toml app configuration file generated for thresh-reddit-proxy on 2026-06-02T17:30:50Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'app-ambergris-firefly-8197'
+app = 'thresh-reddit-proxy'
 primary_region = 'iad'
 
 [build]
