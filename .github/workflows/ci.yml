@@ -26,12 +26,6 @@ jobs:
           test -f public/img/favicon.svg
           echo "Static site files: OK"
 
-      - name: Check edge functions exist
-        run: |
-          echo "Checking Cloudflare Pages Functions..."
-          test -f functions/api/reddit.js
-          echo "Edge functions: OK"
-
       - name: Check thresh-proxy worker exists
         run: |
           echo "Checking thresh-proxy worker..."
@@ -58,7 +52,7 @@ jobs:
           node-version: "20"
       - run: |
           # Parse each JS file to catch syntax errors
-          for f in public/js/*.js functions/api/*.js; do
+          for f in public/js/*.js; do
             node --check "$f" && echo "  $f: OK"
           done
           echo "JavaScript syntax: OK"

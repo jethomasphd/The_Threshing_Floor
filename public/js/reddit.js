@@ -1,526 +1,195 @@
 /**
- * Reddit data fetching via Cloudflare Pages proxy.
- * No API key needed — uses Reddit's public JSON endpoints.
+ * The Threshing Floor — Reddit URL builder & paste parser (v2).
  *
- * Includes rate limit tracking, subreddit metadata caching,
- * and exponential backoff on 429 responses.
+ * v2 is human-in-the-loop. Reddit now blocks automated and datacenter-based
+ * access to its public JSON endpoints, so The Threshing Floor no longer fetches
+ * Reddit itself. Instead it builds the exact Reddit URL, the user opens it in
+ * their own browser (a real person on a real connection — still allowed to read
+ * public pages), copies the raw JSON, and pastes it back here. This module:
+ *
+ *   1. Builds the precise .json URLs (listings, search, comments).
+ *   2. Parses pasted JSON into Thresh's internal post/comment shape, with
+ *      friendly, specific errors when the wrong thing is pasted.
+ *
+ * The parsed shape is identical to what the old proxy produced, so everything
+ * downstream (Harvest, Winnow, Glean, exports) is unchanged.
  */
-
-/**
- * Rate limit tracker — monitors Reddit API quota via response headers.
- * Persists state in localStorage so quota survives page reloads.
- */
-const RateLimiter = {
-  STORAGE_KEY: 'thresh_rate_limit',
-  MAX_REQUESTS_PER_MINUTE: 100,
-
-  // Internal state
-  _remaining: 100,
-  _resetAt: 0,        // Unix timestamp (seconds) when quota resets
-  _used: 0,
-  _lastUpdated: 0,
-  _blocked: false,     // True when we've hit a 429
-  _blockUntil: 0,      // Unix timestamp (ms) when block expires
-  _listeners: [],      // UI callbacks
-
-  init() {
-    try {
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved) {
-        const state = JSON.parse(saved);
-        this._remaining = state.remaining ?? 100;
-        this._resetAt = state.resetAt ?? 0;
-        this._used = state.used ?? 0;
-        this._lastUpdated = state.lastUpdated ?? 0;
-        this._blockUntil = state.blockUntil ?? 0;
-      }
-    } catch { /* fresh state */ }
-
-    // If the reset window has passed, restore quota
-    if (Date.now() / 1000 > this._resetAt) {
-      this._remaining = this.MAX_REQUESTS_PER_MINUTE;
-      this._used = 0;
-      this._blocked = false;
-      this._blockUntil = 0;
-    }
-
-    // Check if we're still in a block period
-    this._blocked = Date.now() < this._blockUntil;
-  },
-
-  /**
-   * Update state from Reddit response headers.
-   */
-  updateFromHeaders(headers) {
-    const remaining = headers.get('X-RateLimit-Remaining');
-    const reset = headers.get('X-RateLimit-Reset');
-    const used = headers.get('X-RateLimit-Used');
-
-    if (remaining !== null) {
-      this._remaining = Math.floor(parseFloat(remaining));
-    }
-    if (reset !== null) {
-      // Reset is seconds until quota resets
-      this._resetAt = (Date.now() / 1000) + parseFloat(reset);
-    }
-    if (used !== null) {
-      this._used = parseInt(used, 10);
-    }
-
-    this._lastUpdated = Date.now();
-    this._persist();
-    this._notify();
-  },
-
-  /**
-   * Record a 429 rate limit hit. Sets block period.
-   */
-  recordBlock(retryAfterSec) {
-    const blockDuration = (retryAfterSec || 60) * 1000;
-    this._blocked = true;
-    this._blockUntil = Date.now() + blockDuration;
-    this._remaining = 0;
-    this._persist();
-    this._notify();
-  },
-
-  /**
-   * Clear the block (called when retry succeeds or block expires).
-   */
-  clearBlock() {
-    this._blocked = false;
-    this._blockUntil = 0;
-    this._persist();
-    this._notify();
-  },
-
-  /**
-   * Check if requests are currently blocked.
-   */
-  isBlocked() {
-    if (this._blocked && Date.now() >= this._blockUntil) {
-      this.clearBlock();
-      return false;
-    }
-    return this._blocked;
-  },
-
-  /**
-   * Seconds remaining until the block expires.
-   */
-  blockSecondsLeft() {
-    if (!this._blocked) return 0;
-    return Math.max(0, Math.ceil((this._blockUntil - Date.now()) / 1000));
-  },
-
-  /**
-   * Get current status for UI display.
-   */
-  getStatus() {
-    // If reset window has passed, restore
-    if (Date.now() / 1000 > this._resetAt && this._resetAt > 0) {
-      this._remaining = this.MAX_REQUESTS_PER_MINUTE;
-      this._used = 0;
-      this._blocked = false;
-    }
-
-    return {
-      remaining: this._remaining,
-      used: this._used,
-      max: this.MAX_REQUESTS_PER_MINUTE,
-      percent: Math.round((this._remaining / this.MAX_REQUESTS_PER_MINUTE) * 100),
-      blocked: this.isBlocked(),
-      blockSecondsLeft: this.blockSecondsLeft(),
-      resetAt: this._resetAt,
-    };
-  },
-
-  /**
-   * Register a listener for status changes.
-   */
-  onChange(callback) {
-    this._listeners.push(callback);
-  },
-
-  _notify() {
-    const status = this.getStatus();
-    this._listeners.forEach(fn => fn(status));
-  },
-
-  _persist() {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
-        remaining: this._remaining,
-        resetAt: this._resetAt,
-        used: this._used,
-        lastUpdated: this._lastUpdated,
-        blockUntil: this._blockUntil,
-      }));
-    } catch { /* localStorage full — non-critical */ }
-  },
-};
-
-/**
- * Simple localStorage cache for subreddit metadata.
- * TTL: 15 minutes. Prevents redundant /about requests.
- */
-const SubredditCache = {
-  STORAGE_KEY: 'thresh_subreddit_cache',
-  TTL_MS: 15 * 60 * 1000,
-
-  _cache: {},
-
-  init() {
-    try {
-      const saved = localStorage.getItem(this.STORAGE_KEY);
-      if (saved) this._cache = JSON.parse(saved);
-    } catch {
-      this._cache = {};
-    }
-    this._prune();
-  },
-
-  get(subreddit) {
-    const key = subreddit.toLowerCase();
-    const entry = this._cache[key];
-    if (!entry) return null;
-    if (Date.now() - entry.ts > this.TTL_MS) {
-      delete this._cache[key];
-      this._persist();
-      return null;
-    }
-    return entry.data;
-  },
-
-  set(subreddit, data) {
-    const key = subreddit.toLowerCase();
-    this._cache[key] = { data, ts: Date.now() };
-    this._persist();
-  },
-
-  _prune() {
-    const now = Date.now();
-    let changed = false;
-    for (const key of Object.keys(this._cache)) {
-      if (now - this._cache[key].ts > this.TTL_MS) {
-        delete this._cache[key];
-        changed = true;
-      }
-    }
-    if (changed) this._persist();
-  },
-
-  _persist() {
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this._cache));
-    } catch { /* non-critical */ }
-  },
-};
-
 
 const RedditClient = {
-  PROXY_BASE: '/api/reddit',
-  MAX_RETRIES: 3,
-  BASE_DELAY_MS: 600,      // Delay between requests (up from 200ms)
-  SUBREDDIT_DELAY_MS: 1000, // Delay between subreddits (up from 500ms)
+  BASE: 'https://www.reddit.com',
+  MAX_PAGE: 100, // Reddit returns at most ~100 items per listing request
+
+  // ---------------------------------------------------------------------------
+  // URL building
+  // ---------------------------------------------------------------------------
 
   /**
-   * Fetch JSON from Reddit via the proxy.
-   * Parses rate limit headers and retries on 429 with exponential backoff.
+   * Normalize a user-typed subreddit field into a Reddit URL fragment.
+   * Strips a leading "r/", trims, and converts spaces/commas into Reddit's
+   * native multireddit "+" syntax so several subreddits resolve to ONE url.
+   *   "science, AskScience"  ->  "science+AskScience"
+   */
+  normalizeSub(input) {
+    return (input || '')
+      .trim()
+      .replace(/^\/?r\//i, '')      // drop a leading r/ or /r/
+      .replace(/[\s,]+/g, '+')      // spaces & commas -> +
+      .replace(/\++/g, '+')          // collapse repeats
+      .replace(/^\+|\+$/g, '');     // trim stray +
+  },
+
+  /**
+   * Reddit's search endpoint uses a different set of sort values than listings.
+   * Map listing sorts onto the closest valid search sort.
+   */
+  _searchSort(sort) {
+    switch (sort) {
+      case 'top': return 'top';
+      case 'new': return 'new';
+      case 'hot': return 'hot';
+      case 'controversial': return 'comments';
+      case 'rising': return 'hot';
+      default: return 'relevance';
+    }
+  },
+
+  /**
+   * Build the listing (or search) URL for the current page of a collection.
    *
-   * @param {string} path - Reddit path (e.g., "r/mentalhealth/hot")
-   * @param {Object} params - Additional query params (limit, t, q, etc.)
-   * @returns {Promise<Object>}
+   * @param {Object} config - { subreddit, sort, timeFilter, limit, keyword }
+   * @param {Object} opts   - { after, pageLimit }
+   * @returns {string} A fully-qualified reddit.com/...json URL
    */
-  async fetch(path, params = {}) {
-    // Block if we're in a rate limit cooldown
-    if (RateLimiter.isBlocked()) {
-      const secs = RateLimiter.blockSecondsLeft();
-      throw new Error(`Rate limited by Reddit. Please wait ${secs}s before trying again.`);
-    }
+  buildListingUrl(config, { after = null, pageLimit = null } = {}) {
+    const sub = this.normalizeSub(config.subreddit);
+    const limit = Math.min(pageLimit || config.limit || 25, this.MAX_PAGE);
 
-    const url = new URL(this.PROXY_BASE, window.location.origin);
-    url.searchParams.set('path', path);
+    const params = new URLSearchParams();
+    params.set('limit', String(limit));
+    params.set('raw_json', '1'); // unescaped HTML entities, like the old proxy
+    if (after) params.set('after', after);
 
-    for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, value);
+    let path;
+    if (config.keyword && config.keyword.trim()) {
+      // Keyword search within the subreddit(s)
+      path = `r/${sub}/search.json`;
+      params.set('q', config.keyword.trim());
+      params.set('restrict_sr', 'on');
+      params.set('sort', this._searchSort(config.sort));
+      params.set('t', config.timeFilter || 'all');
+    } else {
+      path = `r/${sub}/${config.sort || 'hot'}.json`;
+      if (['top', 'controversial'].includes(config.sort)) {
+        params.set('t', config.timeFilter || 'week');
       }
     }
 
-    let lastError;
-    for (let attempt = 0; attempt <= this.MAX_RETRIES; attempt++) {
-      if (attempt > 0) {
-        // Exponential backoff: 2s, 4s, 8s
-        const backoff = Math.pow(2, attempt) * 1000;
-        await new Promise(r => setTimeout(r, backoff));
-
-        // Re-check block status after waiting
-        if (RateLimiter.isBlocked()) {
-          const secs = RateLimiter.blockSecondsLeft();
-          throw new Error(`Rate limited by Reddit. Please wait ${secs}s before trying again.`);
-        }
-      }
-
-      const response = await fetch(url.toString());
-
-      // Update rate limit state from headers (even on errors)
-      RateLimiter.updateFromHeaders(response.headers);
-
-      if (response.status === 429) {
-        const retryAfter = response.headers.get('Retry-After');
-        const resetSec = retryAfter ? parseInt(retryAfter, 10) : 60;
-        RateLimiter.recordBlock(resetSec);
-
-        const data = await response.json().catch(() => ({}));
-        lastError = new Error(data.error || `Rate limited by Reddit. Retrying in ${Math.pow(2, attempt + 1)}s...`);
-        continue;
-      }
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || `Reddit returned status ${response.status}`);
-      }
-
-      // If we recovered from a previous 429, clear the block
-      if (attempt > 0) {
-        RateLimiter.clearBlock();
-      }
-
-      return data;
-    }
-
-    // All retries exhausted
-    throw lastError || new Error('Rate limited by Reddit. Please wait and try again.');
+    return `${this.BASE}/${path}?${params.toString()}`;
   },
 
   /**
-   * Get posts from a subreddit.
+   * Build the URL for a single post's comment thread.
+   * @param {string} subreddit - The post's own subreddit (single, not a multireddit)
+   * @param {string} postId    - The base-36 post id (e.g. "1abc2de")
    */
-  async getPosts(subreddit, { sort = 'hot', timeFilter = 'week', limit = 25, after = null } = {}) {
-    const path = `r/${subreddit}/${sort}`;
-    const params = { limit };
-
-    if (['top', 'controversial'].includes(sort)) {
-      params.t = timeFilter;
-    }
-    if (after) {
-      params.after = after;
-    }
-
-    const data = await this.fetch(path, params);
-    return this._parseListing(data);
+  buildCommentsUrl(subreddit, postId) {
+    const sub = this.normalizeSub(subreddit);
+    return `${this.BASE}/r/${sub}/comments/${postId}.json?limit=500&raw_json=1`;
   },
 
-  /**
-   * Search posts within a subreddit.
-   */
-  async searchPosts(subreddit, query, { sort = 'relevance', timeFilter = 'all', limit = 25 } = {}) {
-    const path = `r/${subreddit}/search`;
-    const params = {
-      q: query,
-      restrict_sr: 'on',
-      sort,
-      t: timeFilter,
-      limit,
-    };
-
-    const data = await this.fetch(path, params);
-    return this._parseListing(data);
-  },
+  // ---------------------------------------------------------------------------
+  // Paste parsing
+  // ---------------------------------------------------------------------------
 
   /**
-   * Get comments for a post.
+   * Parse pasted listing JSON (the posts step).
+   * @returns {{ok:true, posts:Array, after:?string} | {ok:false, error:string}}
    */
-  async getComments(subreddit, postId) {
-    const path = `r/${subreddit}/comments/${postId}`;
-    const data = await this.fetch(path, { limit: 50, depth: 2 });
+  parseListingText(raw) {
+    const text = (raw || '').trim();
 
-    // Reddit returns [post_listing, comment_listing]
-    if (!Array.isArray(data) || data.length < 2) {
-      return [];
+    if (!text) {
+      return { ok: false, error: 'Nothing was pasted yet. Copy the JSON from the Reddit tab, then paste it here.' };
+    }
+    if (text[0] === '<') {
+      return { ok: false, error: 'That looks like a web page (HTML), not data. Make sure the address bar ends in “.json”, then select all the text it shows and copy it.' };
     }
 
-    return this._parseComments(data[1]);
-  },
-
-  /**
-   * Get subreddit info (cached for 15 minutes).
-   */
-  async getSubredditAbout(subreddit) {
-    // Check cache first
-    const cached = SubredditCache.get(subreddit);
-    if (cached) return cached;
-
-    const data = await this.fetch(`r/${subreddit}/about`);
-    if (data && data.data) {
-      const d = data.data;
-      const result = {
-        name: d.display_name,
-        title: d.title,
-        description: d.public_description || d.description,
-        subscribers: d.subscribers,
-        active_users: d.accounts_active,
-        created_utc: d.created_utc,
-        over18: d.over18,
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      const looksCut = !/[}\]]\s*$/.test(text);
+      return {
+        ok: false,
+        error: looksCut
+          ? 'The data looks cut off. Click into the Reddit tab, press Ctrl+A (Cmd+A on Mac) to select everything, copy, and paste again.'
+          : 'That isn’t valid JSON. Make sure you opened the “.json” version of the page and copied the whole thing.',
       };
-      SubredditCache.set(subreddit, result);
-      return result;
     }
-    return null;
+
+    // Reddit error object (private/banned/quarantined/misspelled)
+    if (data && !Array.isArray(data) && (data.error || data.reason) && !data.data) {
+      const msg = data.message || data.reason || ('HTTP ' + data.error);
+      return { ok: false, error: `Reddit returned an error: ${msg}. The subreddit may be private, quarantined, banned, or misspelled.` };
+    }
+
+    // A comments thread was pasted into the posts box by mistake
+    if (Array.isArray(data)) {
+      return { ok: false, error: 'That looks like a single post’s comments. For this step, open the listing link Thresh gave you (it ends in /top.json, /hot.json, /new.json, etc.).' };
+    }
+
+    const result = this._parseListing(data);
+    if (!result.posts.length) {
+      return { ok: false, error: 'No posts were found in that data. Double-check you copied a subreddit listing — not a single post, a user page, or a search box.' };
+    }
+
+    return { ok: true, posts: result.posts, after: result.after };
   },
 
   /**
-   * Collect posts, optionally with pagination and comments.
-   * Yields progress updates via callback.
+   * Parse pasted comment-thread JSON (the optional per-post comments step).
+   * Reddit's comment endpoint returns [postListing, commentListing].
+   * @returns {{ok:true, comments:Array} | {ok:false, error:string}}
    */
-  async collect(config, onProgress) {
-    const {
-      subreddit,
-      sort = 'hot',
-      timeFilter = 'week',
-      limit = 25,
-      keyword = '',
-      includeComments = false,
-    } = config;
+  parseCommentsText(raw) {
+    const text = (raw || '').trim();
 
-    // Pre-flight: check if we're blocked
-    if (RateLimiter.isBlocked()) {
-      const secs = RateLimiter.blockSecondsLeft();
-      throw new Error(`Rate limited by Reddit. Please wait ${secs} seconds before collecting.`);
+    if (!text) return { ok: false, error: 'Nothing was pasted yet.' };
+    if (text[0] === '<') {
+      return { ok: false, error: 'That looks like a web page (HTML), not data. Use the “.json” comment link.' };
     }
 
-    // Warn if quota is very low
-    const status = RateLimiter.getStatus();
-    const estimatedRequests = this._estimateRequests(config);
-    if (status.remaining < estimatedRequests && status.remaining < 20) {
-      onProgress?.({
-        message: `Warning: low API quota (${status.remaining} remaining). Collection may be interrupted.`,
-        current: 0,
-        total: limit,
-      });
-      await new Promise(r => setTimeout(r, 1500));
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      return { ok: false, error: 'That isn’t valid JSON. Select everything (Ctrl+A / Cmd+A) on the .json page and copy it again.' };
     }
 
-    const subreddits = subreddit.split(',').map(s => s.trim()).filter(Boolean);
-    const allPosts = [];
-    const allComments = [];
-    let totalFetched = 0;
-
-    for (const sub of subreddits) {
-      onProgress?.({
-        message: `Fetching posts from r/${sub}...`,
-        current: totalFetched,
-        total: limit * subreddits.length,
-      });
-
-      // Paginate: Reddit returns max 100 per request, so loop if limit > 100
-      let posts = [];
-      let after = null;
-      let remaining = limit;
-
-      while (remaining > 0) {
-        const pageSize = Math.min(remaining, 100);
-        let result;
-
-        if (keyword) {
-          // searchPosts doesn't support pagination yet — single page only
-          result = await this.searchPosts(sub, keyword, { sort, timeFilter, limit: pageSize });
-          posts.push(...result.posts);
-          break; // Reddit search pagination is unreliable, stop after first page
-        } else {
-          result = await this.getPosts(sub, { sort, timeFilter, limit: pageSize, after });
-          posts.push(...result.posts);
-          after = result.after;
-        }
-
-        remaining -= result.posts.length;
-
-        onProgress?.({
-          message: `Fetched ${posts.length}${limit > 100 ? '/' + limit : ''} posts from r/${sub}...`,
-          current: totalFetched + posts.length,
-          total: limit * subreddits.length,
-        });
-
-        // If Reddit returned fewer than requested or no cursor, we've reached the end
-        if (result.posts.length < pageSize || !after) break;
-
-        // Respectful delay between pages
-        await new Promise(r => setTimeout(r, this.BASE_DELAY_MS));
-      }
-
-      // Add subreddit field to each post
-      posts.forEach(p => { p.subreddit = sub; });
-
-      totalFetched += posts.length;
-      allPosts.push(...posts);
-
-      onProgress?.({
-        message: `Collected ${posts.length} posts from r/${sub}`,
-        current: totalFetched,
-        total: limit * subreddits.length,
-      });
-
-      // Collect comments if requested
-      if (includeComments) {
-        for (let i = 0; i < posts.length; i++) {
-          onProgress?.({
-            message: `Fetching comments for post ${i + 1}/${posts.length} in r/${sub}...`,
-            current: totalFetched,
-            total: limit * subreddits.length,
-          });
-
-          try {
-            const comments = await this.getComments(sub, posts[i].id);
-            posts[i].fetched_comments = comments;
-            allComments.push(...comments.map(c => ({ ...c, post_id: posts[i].id })));
-          } catch (err) {
-            // If rate limited during comment fetching, stop gracefully
-            if (err.message.includes('Rate limited')) {
-              onProgress?.({
-                message: `Rate limited — stopping comment collection. ${allPosts.length} posts saved.`,
-                current: totalFetched,
-                total: limit * subreddits.length,
-              });
-              break;
-            }
-            // Other errors: skip this post's comments
-            posts[i].fetched_comments = [];
-          }
-
-          // Respectful delay between comment fetches
-          await new Promise(r => setTimeout(r, this.BASE_DELAY_MS));
-        }
-      }
-
-      // Delay between subreddits
-      if (subreddits.length > 1) {
-        await new Promise(r => setTimeout(r, this.SUBREDDIT_DELAY_MS));
-      }
+    let commentListing = null;
+    if (Array.isArray(data) && data.length >= 2) {
+      commentListing = data[1]; // [post, comments]
+    } else if (data && data.data && data.data.children) {
+      commentListing = data; // someone pasted only the comment listing
     }
 
-    return {
-      posts: allPosts,
-      comments: allComments,
-      config,
-      timestamp: new Date().toISOString(),
-    };
+    if (!commentListing) {
+      return { ok: false, error: 'That doesn’t look like a comments page. Open the post and add “.json” to the end of its address.' };
+    }
+
+    const comments = this._parseComments(commentListing);
+    if (!comments.length) {
+      return { ok: false, error: 'No comments were found (the post may have none, or they were collapsed/removed).' };
+    }
+
+    return { ok: true, comments };
   },
 
-  /**
-   * Estimate the number of API requests a collection will make.
-   */
-  _estimateRequests(config) {
-    const subreddits = config.subreddit.split(',').filter(Boolean).length;
-    // Ceil(limit/100) pages per subreddit, +1 per post for comments
-    const pagesPerSub = Math.ceil(config.limit / 100);
-    let estimate = pagesPerSub * subreddits;
-    if (config.includeComments) {
-      estimate += config.limit * subreddits;
-    }
-    return estimate;
-  },
+  // ---------------------------------------------------------------------------
+  // Shape mappers (unchanged from v1 — the JSON is identical whether fetched
+  // by a proxy or pasted by a human)
+  // ---------------------------------------------------------------------------
 
   /**
    * Parse a Reddit listing response into posts.
@@ -593,6 +262,5 @@ const RedditClient = {
   },
 };
 
-// Initialize on load
-RateLimiter.init();
-SubredditCache.init();
+// Exposed for any inline handlers / debugging
+window.RedditClient = RedditClient;

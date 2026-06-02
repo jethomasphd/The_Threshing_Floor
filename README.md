@@ -10,9 +10,31 @@ It exists because public discourse is worth studying, and the people who want to
 
 ## Use It Now
 
-**[the-threshing-floor.pages.dev](https://the-threshing-floor.pages.dev)** — open the live site and start collecting. Nothing to install.
+**[the-threshing-floor.pages.dev](https://the-threshing-floor.pages.dev)** — open the live site and start collecting. Nothing to install. **Use a desktop or laptop** (see Version 2 below).
 
 Or deploy your own instance (see below).
+
+---
+
+## Version 2 — Why You Now Carry the Harvest by Hand
+
+Version 1 fetched Reddit for you through a small relay server. It worked — until Reddit changed the rules.
+
+Beginning with the API upheaval of 2023 and tightening since, Reddit moved to restrict automated access to its data. By 2026 it was actively **blocking the data-center servers** that tools like Thresh run on. The relay started coming back empty. The data isn't private — it's still right there in everyone's browser — but Reddit no longer reliably lets a server fetch it on your behalf.
+
+So **Version 2 puts the fetch back in your hands**, in three steps:
+
+1. **Set the query.** Thresh builds the precise Reddit `.json` link — the whole URL visible, nothing hidden.
+2. **Gather from Reddit.** You open that link in your own browser (a real person on a real connection, which Reddit still serves), select all, and copy.
+3. **Lay it on the Floor.** You paste it back. From there everything is unchanged: parsing, word frequency, AI analysis, provenance, export.
+
+This is *more* transparent, not less — you see every request leave and every byte arrive. **You are the proxy now.** The trade-offs, stated plainly:
+
+- **It's a desktop tool.** Collecting means copying a wall of text between browser tabs — impractical on a phone. You can browse, analyze, and export saved collections on any device, but gather on a laptop/desktop.
+- **It's slower, and paged.** Reddit serves up to 100 posts per page; larger collections are gathered one paste at a time (Thresh hands you each next link automatically).
+- **Comments are per-post**, gathered deliberately on the Harvest page.
+
+No tricks, no IP rotation, no evasion — that would be the opposite of what this tool stands for. Just the honest, ancient shape of the thing: you walk to the floor carrying what you grew.
 
 ---
 
@@ -55,8 +77,8 @@ Or deploy your own instance (see below).
 
 > *"What are residents saying in our city's subreddit about the new transit plan?"*
 
-1. **Thresh** — `r/yourcity` · Sort by **New** · **Past month** · keyword: `transit` · **Include comments**
-2. **Harvest** — Enable comments to hear the full conversation, not just headlines. Search for specific routes or proposals
+1. **Thresh** — `r/yourcity` · Sort by **New** · **Past month** · keyword: `transit`
+2. **Harvest** — Open the posts that matter and **bring in their comments** (per-post, on the detail panel) to hear the full conversation, not just headlines
 3. **Winnow** — Run **Summarize discussion** to distill what people actually want. Run **Extract questions** to identify unaddressed concerns
 4. **Glean** — Generate a **Town Hall Brief** for your meeting, or export JSON for your own tools
 
@@ -88,12 +110,12 @@ Or deploy your own instance (see below).
 
 ## How It Works
 
-Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.com). There is no backend server. Your data never leaves your browser.
+Thresh is a static site deployed to [Cloudflare Pages](https://pages.cloudflare.com). There is no backend server, and (as of v2) no proxy. Your Reddit data never touches a server — you fetch it yourself and paste it in.
 
-1. **Reddit's public JSON** — Every Reddit page serves JSON alongside HTML. Thresh reads this through a lightweight edge proxy (a Cloudflare Pages Function) that handles browser security restrictions. No Reddit API key is needed.
-2. **Client-side processing** — All data collection, filtering, analysis, and export happens in your browser using JavaScript. Nothing is stored on any server.
-3. **Automatic pagination** — Reddit returns up to 100 posts per request. When you select 250 or 500 posts, Thresh automatically paginates using Reddit's `after` cursor — making 3-5 requests to build a larger dataset.
-4. **Local persistence** — Collections are saved in your browser's `localStorage` so they survive page refreshes. Clear your browser data to clear Thresh data.
+1. **You fetch Reddit's public `.json`** — Add `.json` to a Reddit address and you get the same content as structured data. Thresh builds the exact link; you open it in your own browser and copy the result. No Reddit API key, no authentication, no relay server. (See *Version 2* above for why.)
+2. **Client-side processing** — All parsing, filtering, analysis, and export happens in your browser using JavaScript. Nothing is stored on any server.
+3. **Stepwise pagination** — Reddit serves up to 100 posts per page. For 250 or 500, Thresh reads the `after` cursor from each paste and hands you the next page's link — you gather it one paste at a time.
+4. **Local persistence** — Collections (and any in-progress draft) are saved in your browser's `localStorage` so they survive refreshes. Clear your browser data to clear Thresh data.
 
 ### Building Bigger Datasets
 
@@ -102,7 +124,7 @@ The dropdown goes up to 500 posts per collection, but the real power is **system
 - **Longitudinal snapshots:** Collect the same subreddit once a week (or once a month) over time. Each collection is timestamped with its own provenance record. Compare word frequencies across collections to track how the conversation evolves.
 - **Multi-sort sampling:** Collect the same subreddit with different sort methods. *Top* gives you what resonated. *New* gives you what people are saying right now. *Controversial* gives you what divides the community. Three collections, three lenses.
 - **Cross-community comparison:** Thresh multiple related subreddits (e.g., r/jobs, r/careeradvice, r/recruitinghell) with the same keyword and time filter. Each collection is independently citable.
-- **Comments as data:** When you enable "Include top-level comments," Thresh fetches up to 50 comments per post (sorted by Reddit's "best" ranking), including one level of replies. Each post costs one additional API request. Essential for discourse analysis; skip for headline-level surveys.
+- **Comments as data:** On the Harvest page, open a post and use **Bring the comments** to fetch that thread's discussion (Thresh gives you the comment link; you paste the result back, just like posts). Gathered per-post and by hand, so you choose which threads are worth the labor — ideal for close discourse analysis of the posts that matter most.
 
 ### The Workflow
 
@@ -146,23 +168,25 @@ The free tier includes:
 - 500 deploys per month
 - Unlimited bandwidth
 - Unlimited requests
-- Edge functions (the Reddit proxy) included
+
+(v2 is a pure static site — no Pages Functions required. The only server component is the separate AI Worker in `thresh-proxy/`, which is optional and only powers the Winnow/Glean AI features.)
 
 ### Local Development
 
-If you want to run Thresh locally for development:
+v2 is fully static, so any static server works:
 
 ```bash
-# Install Wrangler (Cloudflare's CLI)
-npm install -g wrangler
-
-# Clone and run
+# Clone
 git clone https://github.com/jethomasphd/The_Threshing_Floor.git
 cd The_Threshing_Floor
+
+# Serve the public/ directory however you like, e.g.:
+python3 -m http.server -d public 8788
+# or, if you prefer the Cloudflare toolchain:
 npx wrangler pages dev public
 ```
 
-Open **http://localhost:8788** in your browser. The local dev server includes full Pages Function support (the Reddit proxy works locally).
+Open the served URL in your browser. Because collection is manual copy-paste, nothing about it depends on the dev server — open a real Reddit `.json` page, copy, and paste it into Thresh.
 
 ---
 
@@ -308,9 +332,9 @@ Usernames are anonymized by default. If your work requires real usernames, Thres
 
 ## Ethics and Privacy
 
-- **Your data stays with you.** Everything runs in your browser. The edge proxy forwards Reddit requests and nothing else. No analytics, no tracking, no telemetry.
+- **Your data stays with you.** Everything runs in your browser, and the Reddit data is fetched by *you* and pasted in — it never passes through any Threshing Floor server. No analytics, no tracking, no telemetry.
 - **Anonymization by default.** Reddit usernames can be traced to real people. Thresh replaces them in exports unless you explicitly choose otherwise.
-- **Rate-limit respect.** The edge proxy adds small delays between requests. Reddit's public JSON endpoints are accessed the same way any browser would.
+- **Courteous access.** You load Reddit pages by hand, at human pace, exactly as any visitor would — no automated hammering. Be a good guest: don't spam-reload, and leave a breath between pages.
 - **Institutional review.** If your organization requires ethics board approval for social media research, the provenance document provides the methodological transparency reviewers need.
 - **Reddit Terms of Service.** Thresh accesses only public data — the same content visible to any browser. It is your responsibility to ensure your use of collected data complies with applicable policies and laws.
 
@@ -323,10 +347,10 @@ Usernames are anonymized by default. If your work requires real usernames, Thres
 | What | Where | localStorage Key |
 |------|-------|------------------|
 | Your collections (posts, comments, config) | Browser localStorage | `thresh_collections` |
-| Rate limit state | Browser localStorage | `thresh_rate_limit` |
-| Subreddit metadata cache (15-min TTL) | Browser localStorage | `thresh_subreddit_cache` |
+| In-progress draft (a collection you're still gathering) | Browser localStorage | `thresh_draft` |
+| Desktop-only notice dismissal | Browser localStorage | `thresh_mobile_ack` |
 
-The Reddit CORS proxy (`/api/reddit`) is a **stateless proxy** — it forwards requests and returns responses. It does not log, store, or inspect your data. AI analysis is routed through the managed proxy at `api.the-threshing-floor.com`, which holds the API key server-side and does not log request content.
+There is **no Reddit proxy** in v2 — you fetch Reddit's public pages yourself and paste them in, so that data never reaches any server. AI analysis is the only outbound call Thresh makes: it's routed through the managed Worker at `api.the-threshing-floor.com`, which holds the API key server-side and does not log request content.
 
 This means:
 - Your data **does not sync** across browsers or devices
@@ -350,22 +374,20 @@ To erase all Thresh data:
 4. Find the Thresh site entry
 5. Delete individual keys (e.g., just `thresh_collections` to clear collections) or click **Clear All**
 
-This removes all saved collections, rate limit state, and cached data. **It cannot be undone.**
+This removes all saved collections and any in-progress draft. **It cannot be undone.**
 
 ---
 
-## The Rate Limit Gauge
+## The Manual Harvest — A Desktop Process
 
-The **Rate Limit** gauge at the bottom of the sidebar tracks your current Reddit rate limit status. Reddit allows **100 requests per minute** to its public JSON endpoints.
+Because v2 gathers data through *your* browser, collecting is a hands-on, two-tab process. A few things follow:
 
-| Gauge State | Meaning |
-|-------------|---------|
-| **Gold bar (full)** | Plenty of requests remaining. Normal operation. |
-| **Yellow bar (below 30%)** | Requests running low. Consider pausing between collections. |
-| **Red pulsing bar (below 10%)** | Critical. Thresh will pause automatically if the limit is reached. |
-| **Cooldown timer** | You've hit the limit. A countdown shows when requests resume. The collect button is disabled until the cooldown expires. |
-
-The rate limit resets automatically each minute. Under normal use (25–100 posts per collection), you will rarely see it drop below gold. The gauge reads from Reddit's actual rate limit response headers, so it reflects your real remaining quota — not an estimate.
+| What | Why |
+|------|-----|
+| **Desktop only** | Copying a wall of JSON between tabs is impractical on a phone. Browse, analyze, and export anywhere; **gather** on a laptop/desktop. A notice makes this explicit on small screens. |
+| **No rate-limit gauge** | Thresh makes no automated requests — you load Reddit pages yourself, at human pace. There's no quota to track. Just be courteous: don't hammer reload. |
+| **Big collections come in pages** | Reddit serves up to 100 posts per page. For 250–500, Thresh reads Reddit's own `after` marker from each paste and hands you the next link, one paste at a time. |
+| **Drafts are safe** | A collection you're still gathering is held in your browser, so a mid-harvest refresh won't lose progress. Save it to the Floor when done, or discard it. |
 
 ---
 
@@ -373,26 +395,25 @@ The rate limit resets automatically each minute. Under normal use (25–100 post
 
 ```
 The_Threshing_Floor/
-├── public/                     # Static site (Cloudflare Pages build output)
+├── public/                     # Static site (this is the whole app)
 │   ├── index.html              # Single-page app with cinematic intro
 │   ├── css/thresh.css          # Design system
 │   ├── js/
-│   │   ├── app.js              # Router, state, UI orchestration, DOCX export
-│   │   ├── reddit.js           # Reddit JSON fetching via proxy
+│   │   ├── app.js              # Router, state, the manual-collection wizard, DOCX export
+│   │   ├── reddit.js           # Builds Reddit .json URLs + parses pasted JSON (no fetching)
 │   │   ├── exporter.js         # CSV/JSON + provenance ZIP generation
-│   │   └── claude.js           # Claude API via managed proxy
+│   │   └── claude.js           # Claude API via managed AI Worker
 │   └── img/                    # Sigil and favicon SVGs
-├── functions/                  # Cloudflare Pages Functions (edge)
-│   └── api/
-│       └── reddit.js           # CORS proxy for Reddit public JSON
-├── thresh-proxy/               # Cloudflare Worker — AI proxy at api.the-threshing-floor.com
+├── thresh-proxy/               # Cloudflare Worker — AI ONLY, at api.the-threshing-floor.com
 │   ├── src/index.js            # Worker code (Claude Opus 4.6, 8192 max tokens)
 │   ├── wrangler.toml           # Worker config
 │   ├── package.json            # Worker scripts
 │   └── SETUP.md                # Deployment guide
-├── package.json                # Dev scripts (wrangler)
+├── package.json                # Dev scripts
 └── wrangler.toml               # Cloudflare local dev config
 ```
+
+> **v2 note:** there is no `functions/` directory and no Reddit proxy. Reddit blocks datacenter fetches, so collection is done by hand (see *Version 2* above). The only server component is the optional AI Worker, which never sees Reddit data.
 
 **No build step.** No bundler, no framework, no transpiler. The `public/` directory is served as-is. JavaScript is vanilla ES6+. CSS is handwritten. Fonts and libraries load from CDNs.
 
@@ -421,7 +442,7 @@ If you use Thresh in published work:
 
 ```
 Thomas, J. E. (2026). The Threshing Floor: A browser-based tool for Reddit
-data collection and export (Version 1.0.0) [Computer software].
+data collection and export (Version 2.0.0) [Computer software].
 https://github.com/jethomasphd/The_Threshing_Floor
 ```
 

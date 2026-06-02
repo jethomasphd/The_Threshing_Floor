@@ -387,64 +387,40 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
 }
 .sidebar-link.active .sidebar-step { background: rgba(201, 162, 39, 0.25); }
 
-/* --- Rate Limit Sentinel --- */
-.rate-sentinel {
+/* --- Method Note (v2: manual harvest, replaces the old rate-limit sentinel) --- */
+.method-note {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--smoke);
   margin-top: auto;
 }
 
-.rate-sentinel-label {
+.method-note-label {
   font-family: var(--font-body);
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--bone-muted);
-  margin-bottom: 0.375rem;
-}
-
-.rate-sentinel-gauge {
-  height: 6px;
-  background: var(--smoke);
-  border-radius: 3px;
-  overflow: hidden;
   margin-bottom: 0.25rem;
 }
 
-.rate-gauge-fill {
-  height: 100%;
-  border-radius: 3px;
-  background: var(--ember);
-  transition: width 0.4s ease, background-color 0.4s ease;
+.method-note-value {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ember);
 }
 
-.rate-gauge-fill.low {
-  background: var(--warning);
-}
+.method-note-value svg { flex-shrink: 0; }
 
-.rate-gauge-fill.critical {
-  background: var(--error);
-  animation: pulse-critical 1.5s ease-in-out infinite;
-}
-
-@keyframes pulse-critical {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-
-.rate-sentinel-info {
+.method-note-sub {
   font-family: var(--font-data);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
+  letter-spacing: 0.04em;
   color: var(--ash);
-  text-align: right;
-}
-
-.rate-blocked-msg {
-  font-family: var(--font-data);
-  font-size: 0.6875rem;
-  color: var(--error);
-  margin-top: 0.25rem;
-  text-align: center;
+  margin-top: 0.125rem;
 }
 
 .sidebar-footer {
@@ -1286,4 +1262,185 @@ a:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: v
   .main-content { margin-left: 0 !important; }
   body { background: white; color: black; }
   body::before { display: none; }
+}
+
+/* ==========================================================
+   v2 — MANUAL HARVEST COMPONENTS
+   ========================================================== */
+
+/* Desktop-only notice (hidden on desktop, shown on small screens) */
+.mobile-notice {
+  display: none;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--surface-raised);
+  border: 1px solid rgba(123, 163, 201, 0.35);
+  border-left: 3px solid var(--link);
+  border-radius: var(--radius-md);
+  padding: 0.875rem 1rem;
+  margin-bottom: 1.25rem;
+}
+.mobile-notice-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+.mobile-notice-body svg { color: var(--link); flex-shrink: 0; margin-top: 0.125rem; }
+.mobile-notice-body strong { display: block; color: var(--bone); font-size: 0.875rem; margin-bottom: 0.2rem; }
+.mobile-notice-body span { display: block; color: var(--bone-muted); font-size: 0.8125rem; line-height: 1.55; }
+.mobile-notice-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--smoke);
+  color: var(--bone-muted);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mobile-notice-close:hover { color: var(--bone); border-color: var(--link); }
+
+/* Thresh intro card */
+.thresh-intro { border-left: 3px solid var(--ember); }
+
+/* Numbered step cards */
+.thresh-step { position: relative; }
+.thresh-step-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.step-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(201, 162, 39, 0.15);
+  border: 1px solid rgba(201, 162, 39, 0.4);
+  color: var(--ember);
+  font-family: var(--font-display);
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.thresh-step-title {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--bone);
+  margin: 0;
+  line-height: 1.1;
+}
+.thresh-step-sub {
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  color: var(--ash);
+  margin: 0.125rem 0 0;
+}
+
+/* URL display box (the link the user opens) */
+.url-box {
+  display: block;
+  width: 100%;
+  background: var(--ground);
+  border: 1px solid var(--smoke);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--link-hover);
+  word-break: break-all;
+  line-height: 1.5;
+  user-select: all;
+  -webkit-user-select: all;
+}
+
+/* Step-by-step how-to list */
+.thresh-howto {
+  margin: 1rem 0 0.75rem;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.thresh-howto li {
+  color: var(--bone-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+kbd {
+  display: inline-block;
+  background: var(--surface-raised);
+  border: 1px solid var(--smoke);
+  border-bottom-width: 2px;
+  border-radius: 3px;
+  padding: 0.05rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--bone);
+  white-space: nowrap;
+}
+
+/* Inline error under the paste box */
+.thresh-error {
+  background: rgba(196, 75, 75, 0.1);
+  border: 1px solid rgba(196, 75, 75, 0.4);
+  border-left: 3px solid var(--error);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  color: #E8A0A0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+/* "More pages to go" hint */
+.thresh-next-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  background: rgba(201, 162, 39, 0.08);
+  border: 1px solid rgba(201, 162, 39, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 0.625rem 0.75rem;
+  color: var(--bone-muted);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+.thresh-next-hint svg { color: var(--ember); margin-top: 0.15rem; }
+.thresh-next-hint strong { color: var(--bone); }
+
+/* Per-post comment fetch (Harvest detail panel) */
+.comment-fetch {
+  margin-top: 1.25rem;
+  border-top: 1px solid var(--smoke);
+  padding-top: 0.875rem;
+}
+.comment-fetch > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ember);
+  user-select: none;
+}
+.comment-fetch > summary::-webkit-details-marker { display: none; }
+.comment-fetch > summary svg { flex-shrink: 0; }
+.comment-fetch > summary:hover { color: var(--ember-glow); }
+.comment-fetch-body { padding-top: 0.75rem; }
+
+/* Show the desktop-only notice on small screens */
+@media (max-width: 768px) {
+  .mobile-notice { display: flex; }
 }

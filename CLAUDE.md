@@ -10,6 +10,25 @@ The name comes from the biblical threshing floor — the place where grain is se
 
 The user may be a scientist, a student, a journalist, or anyone who believes public discourse is worth measuring. They should never need to write code or touch a terminal. Every interaction should feel guided, warm, and defensible. The aesthetic is atmospheric but the interface is clear.
 
+## Version 2 — How Data Is Gathered (READ BEFORE CHANGING COLLECTION)
+
+**Thresh no longer fetches Reddit automatically. Do not re-introduce a Reddit proxy, scraper, or server-side fetch.**
+
+Reddit now blocks automated and datacenter-based access to its public `.json` endpoints (the old v1 Cloudflare Pages Function proxy returned 403/429 from cloud IPs). v2 is therefore **human-in-the-loop**:
+
+1. The user sets a query; `reddit.js` builds the exact Reddit `.json` URL (`RedditClient.buildListingUrl`).
+2. The user opens that URL in **their own browser** (a real person on a residential connection — still served by Reddit), selects all, and copies the JSON.
+3. The user pastes it back; `reddit.js` parses it (`RedditClient.parseListingText`) into the same internal post shape v1 produced, so Harvest/Winnow/Glean/export are unchanged.
+
+Consequences baked into the design:
+- **Desktop-only for collection.** The copy-between-tabs step is impractical on mobile; this is stated explicitly in the UI (mobile banner, Thresh notice, About). Don't pretend mobile collection works.
+- **No rate limiting / no rate gauge.** Thresh makes no automated requests, so there's nothing to throttle. (The old `RateLimiter`/`SubredditCache` are gone.)
+- **Pagination is manual & stepwise.** >100 posts walks the user page-by-page; the next page's `after` cursor comes from each paste.
+- **Comments are per-post.** Gathered deliberately in the Harvest detail panel (`ingestPostComments`), not in bulk.
+- **The only server we run is the AI Worker** (`thresh-proxy/`, Anthropic). Reddit data never touches a server.
+
+This constraint is also a feature: it is more transparent (the user sees the exact URL and the exact bytes), and it deepens the metaphor — *you carry the harvest to the floor by hand.* Be truthful about why v2 exists; never use evasion/IP-rotation to defeat Reddit's blocking.
+
 ## The Metaphor System
 
 These names appear throughout the codebase, UI, and navigation. Every page has both its metaphor name and a plain subtitle so the user is never lost.
@@ -31,8 +50,8 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 - **Styling**: Tailwind CSS via CDN + custom CSS in `public/css/thresh.css`
 - **Icons**: Lucide via CDN
 - **Interactivity**: Vanilla JS for all UI (hash-based routing in `app.js`). NO frameworks.
-- **Data source**: Reddit's public JSON endpoints via Cloudflare Pages Function proxy (`functions/api/reddit.js`)
-- **AI integration**: Claude Opus 4.6 via dedicated Cloudflare Worker (`thresh-proxy/`) at `api.the-threshing-floor.com`. API key stored server-side as encrypted Cloudflare secret. No user API keys needed.
+- **Data source**: Reddit's public `.json` pages, fetched **manually by the user's own browser** and pasted in (v2 human-in-the-loop). NO proxy, NO scraper, NO server-side Reddit fetch. `reddit.js` only builds URLs and parses pasted JSON.
+- **AI integration**: Claude Opus 4.6 via dedicated Cloudflare Worker (`thresh-proxy/`) at `api.the-threshing-floor.com`. API key stored server-side as encrypted Cloudflare secret. No user API keys needed. (This is the ONLY server component — it handles AI only, never Reddit.)
 - **DOCX export**: Research reports export as formatted Word documents via docx.js (CDN). Markdown and clipboard copy also available.
 - **Storage**: Browser `localStorage` only. No server database.
 - **Runs with**: `npx wrangler pages dev public` (local) or deploy to Cloudflare Pages (production)
@@ -52,13 +71,13 @@ These names appear throughout the codebase, UI, and navigation. Every page has b
 ### JavaScript
 - Vanilla JS only. ES6+. No jQuery. No frameworks.
 - All JS in `public/js/`, loaded with defer
-- `app.js` — Router, state management, UI orchestration
-- `reddit.js` — Reddit JSON fetching via CORS proxy, rate limiting
+- `app.js` — Router, state management, UI orchestration, the manual-collection wizard (draft state, paste ingestion), per-post comment ingestion
+- `reddit.js` — Builds Reddit `.json` URLs and parses pasted JSON into posts/comments. NO fetching. (v2)
 - `exporter.js` — CSV/JSON export + provenance ZIP generation
 - `claude.js` — Claude API integration via managed proxy (analysis + research reports)
 
 ### Cloudflare Pages Functions
-- `functions/api/reddit.js` — Stateless CORS proxy for Reddit public JSON
+- None. (v2 removed the Reddit CORS proxy; do not re-add it. The site is pure static + the separate AI Worker in `thresh-proxy/`.)
 
 ## Design Language
 
@@ -113,13 +132,10 @@ This is a Jacob E. Thomas artifact. Dark ground, ember gold, intentional typogra
 
 ## Critical Behaviors
 
-### Rate Limiting
-Reddit allows 100 requests/minute. Thresh MUST:
-- Track via Reddit's response headers (`x-ratelimit-remaining`, `x-ratelimit-reset`)
-- Cache rate limit state in `localStorage` (key: `thresh_rate_limit`)
-- Show remaining quota in a sidebar sentinel widget (ember gauge that dims as quota depletes)
-- Disable collection buttons when cooldown is active
-- Never allow unbounded API calls
+### Rate Limiting (N/A in v2)
+Thresh makes **no automated requests to Reddit**, so there is nothing to rate-limit and no gauge. The user loads Reddit pages by hand, at human pace, in their own browser. (The old `thresh_rate_limit` state and sidebar gauge were removed in v2.) The UI should gently encourage courteous browsing (don't hammer reload; pause between pages) but must not pretend to track a quota it can't see.
+
+The only outbound calls Thresh itself makes are POSTs to the AI Worker (`api.the-threshing-floor.com`) for Winnow/Glean. Those have their own timeouts in `app.js`.
 
 ### Provenance (Non-Negotiable)
 Every export MUST include `provenance.txt` documenting:
@@ -152,10 +168,10 @@ This is the seal on every bundle. Academic reproducibility depends on it.
 Single-page application shell. Includes: Google Fonts (Cormorant Garamond, IBM Plex Sans, IBM Plex Mono), Lucide CDN, JSZip CDN, docx.js CDN, Chart.js CDN. Navigation sidebar with six pages (Floor, Thresh, Harvest, Winnow, Glean, About). Mobile bottom navigation with all six pages. Toast container. Grain texture overlay. Cinematic intro sequence. Footer with version.
 
 ### public/js/app.js
-Core application: hash-based router, state management (`collections[]`, `activeCollection`), UI orchestration for all pages. Persistence via `localStorage`. Includes the AI Research Report generation logic (`generateResearchReport`, `downloadReportDocx`, `downloadReport`, `copyReport`). DOCX generation via docx.js with Markdown-to-DOCX conversion (`_parseMarkdownBlocks`, `_renderInlineRuns`).
+Core application: hash-based router, state management (`collections[]`, `activeCollection`, in-progress `draft`), UI orchestration for all pages. Persistence via `localStorage`. The v2 manual-collection wizard lives here: `buildThreshUrl` → `openThreshUrl`/`copyThreshUrl` → `ingestThreshPaste` (stepwise pagination) → `saveThreshDraft`/`discardThreshDraft`. Per-post comment ingestion: `ingestPostComments`. Desktop-only notice: `_initMobileNotice`/`dismissMobileNotice`. Includes the AI Research Report generation logic (`generateResearchReport`, `downloadReportDocx`, `downloadReport`, `copyReport`). DOCX generation via docx.js with Markdown-to-DOCX conversion (`_parseMarkdownBlocks`, `_renderInlineRuns`).
 
 ### public/js/reddit.js
-Reddit data fetching via the Cloudflare CORS proxy. Handles rate limiting (tracks `x-ratelimit-*` headers), exponential backoff on 429 responses, and comment tree expansion.
+v2 URL builder + paste parser (NO fetching). `buildListingUrl(config, {after, pageLimit})`, `buildCommentsUrl(sub, postId)`, `normalizeSub` (commas → Reddit `+` multireddit), `parseListingText` / `parseCommentsText` (friendly shape-detection errors), and the shared `_parseListing` / `_parseComments` mappers (identical output to v1).
 
 ### public/js/exporter.js
 Client-side export engine. Generates CSV (UTF-8 BOM for Excel) or JSON, bundles with `provenance.txt` in a ZIP via JSZip. Handles username anonymization.
@@ -165,19 +181,20 @@ Claude API integration via the managed proxy at `api.the-threshing-floor.com`. N
 - `analyze()` — Winnow page analysis (themes, sentiment, summary, questions, custom prompt)
 - `generateReport()` — Glean page research report generator (full Intro/Methods/Results/Discussion document)
 
-### functions/api/reddit.js
-Cloudflare Pages Function. Stateless CORS proxy that forwards requests to Reddit's public JSON endpoints. No logging, no data storage.
+### functions/
+Removed in v2. There is no Reddit proxy. Do not re-create `functions/api/reddit.js` — Reddit blocks datacenter fetches, which is the entire reason v2 is manual.
 
 ### thresh-proxy/
 Dedicated Cloudflare Worker serving as the AI proxy at `api.the-threshing-floor.com`. Stores the Anthropic API key as an encrypted Cloudflare secret. Uses Claude Opus 4.6 (`claude-opus-4-6`) with 8192 max tokens. See `thresh-proxy/SETUP.md` for deployment instructions.
 
 ## Testing
-- Manual testing via `npx wrangler pages dev public` (local Cloudflare Pages emulation)
-- Verify export compliance (CSV parseable, JSON valid, provenance.txt present in ZIP)
+- Manual testing via `npx wrangler pages dev public` (local) — or just open `public/index.html`; v2 has no Pages Functions, so a plain static server works too
+- Test the manual-collection wizard: build a URL, open a real Reddit `.json` page, paste it, confirm posts ingest; test stepwise pagination (250+); test friendly errors (paste HTML, truncated JSON, a comments page, a private-sub error)
+- Test per-post comment ingestion in the Harvest detail panel
+- Verify export compliance (CSV parseable, JSON valid, provenance.txt present in ZIP, reflects manual method)
 - Verify DOCX export opens correctly in Word/Google Docs
-- Test rate limit gauge behavior under throttled conditions
 - Test AI features via the managed proxy at `api.the-threshing-floor.com`
-- Test mobile navigation (all 6 pages accessible via bottom nav)
+- Test the desktop-only notice + mobile navigation (all 6 pages accessible via bottom nav)
 
 ## What Success Looks Like
 

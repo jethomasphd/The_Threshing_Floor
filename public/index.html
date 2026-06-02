@@ -125,18 +125,14 @@
         </a>
       </div>
 
-      <!-- Rate Limit Sentinel -->
-      <div id="rate-sentinel" class="rate-sentinel" title="Reddit allows 100 requests per minute. This gauge shows how many requests remain in the current window. When it runs out, Thresh pauses automatically until the limit resets.">
-        <div class="rate-sentinel-label">Rate Limit</div>
-        <div class="rate-sentinel-gauge">
-          <div id="rate-gauge-fill" class="rate-gauge-fill" style="width:100%"></div>
+      <!-- Method Note (v2: manual, human-in-the-loop) -->
+      <div class="method-note" title="Version 2 gathers Reddit data through your own browser — Thresh builds the link, you open it and paste the data back. Reddit now blocks automated proxies, so the harvest is done by hand. This is a desktop tool.">
+        <div class="method-note-label">Method</div>
+        <div class="method-note-value">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V6a3 3 0 0 1 6 0v5"/><path d="M5 11h14l-1 9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/></svg>
+          Manual Harvest
         </div>
-        <div class="rate-sentinel-info">
-          <span id="rate-remaining">100</span>/<span>100</span> <span class="text-ash" style="font-size:0.5625rem;">req/min</span>
-        </div>
-        <div id="rate-blocked-msg" class="rate-blocked-msg" style="display:none">
-          <span id="rate-countdown"></span>
-        </div>
+        <div class="method-note-sub">v2 &middot; desktop &middot; by hand</div>
       </div>
 
       <div class="sidebar-footer">
@@ -169,6 +165,18 @@
     <!-- Main Content -->
     <main class="main-content">
 
+      <!-- Desktop-only notice (shown on small screens) -->
+      <div id="mobile-notice" class="mobile-notice" role="alert">
+        <div class="mobile-notice-body">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><path d="M12 18h.01"/></svg>
+          <div>
+            <strong>The Threshing Floor is a desktop tool.</strong>
+            <span>Gathering data means opening a Reddit link and copying its text between browser tabs — impractical on a phone. You can read, browse saved collections, and export here, but to collect new data, come back on a laptop or desktop.</span>
+          </div>
+        </div>
+        <button class="mobile-notice-close" onclick="ThreshApp.dismissMobileNotice()" aria-label="Dismiss">Got it &times;</button>
+      </div>
+
       <!-- ===== THE FLOOR (Dashboard) ===== -->
       <section id="page-floor" class="page-section active">
         <div class="page-header">
@@ -185,6 +193,19 @@
             <p class="text-bone text-sm" style="margin:0 0 0.6rem 0;line-height:1.7;font-weight:500;">Thresh pulls it out.</p>
             <p class="text-bone-muted text-sm" style="margin:0 0 0.6rem 0;line-height:1.7;">Point it at any subreddit. Tell it what you're looking for. It hands you a clean dataset with a complete record of how it was collected. No accounts, no API keys, no code. Everything runs in your browser. Everything stays on your machine.</p>
             <p class="text-bone-muted text-sm" style="margin:0;line-height:1.7;">The threshing floor is among the oldest inventions in human history. High ground, flat stone, wind. The place where you brought the harvest and beat it until the grain fell free. Every civilization built one. Covenants were sealed on threshing floors. Altars were raised on them. Prophets used them to talk about judgment. They were never passive places. They were where you did the work of separation. The flood is information now, and the grain is what people are actually saying to each other when they think no one important is listening.</p>
+          </div>
+        </div>
+
+        <!-- Why Version 2? -->
+        <div class="card" style="margin-bottom:1.5rem;border-left:3px solid var(--link);">
+          <div class="card-body" style="padding:1rem 1.25rem;">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin:0 0 0.5rem 0;">
+              <span class="badge" style="background:var(--link);color:var(--ground);font-weight:600;">Version 2</span>
+              <h3 style="font-family:var(--font-display);color:var(--link-hover);font-size:1.25rem;font-weight:600;margin:0;">Why the Method Changed</h3>
+            </div>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.6rem 0;line-height:1.7;">Version 1 of Thresh fetched Reddit data for you in the background, through a small relay server. It worked beautifully &mdash; until Reddit changed the rules. Over the past few years Reddit progressively locked down automated access to its data, and by 2026 it was actively <strong class="text-bone">blocking the data-center servers</strong> that tools like Thresh run on. The relay started coming back empty. Not because the data is private &mdash; it's still right there, public, in everyone's browser &mdash; but because Reddit no longer lets a server fetch it on your behalf.</p>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.6rem 0;line-height:1.7;">So Version 2 moves the harvest back into your hands. Thresh builds the precise link to the data you want; <strong class="text-bone">you</strong> open it in your own browser &mdash; a real person on a real connection, which Reddit still serves &mdash; and paste what you see back onto the Floor. Everything after that is exactly as before: cleaning, word frequencies, AI analysis, provenance, export.</p>
+            <p class="text-bone-muted text-sm" style="margin:0;line-height:1.7;">It's slower, and it's a desktop process. But it's honest, transparent, and unblockable &mdash; and it deepens the old metaphor. The threshing floor was always a place of <em>manual labor</em>. You carry the harvest in yourself. <a href="#" onclick="ThreshApp.navigate('about');return false;" class="text-link">Read the fuller story &rarr;</a></p>
           </div>
         </div>
 
@@ -210,7 +231,7 @@
               <div style="display:flex;flex-direction:column;gap:0.75rem;">
                 <div style="display:flex;align-items:start;gap:0.75rem;">
                   <span class="badge badge-ember" style="min-width:20px;justify-content:center;">1</span>
-                  <span class="text-bone-muted text-sm"><strong class="text-bone">Thresh</strong> &mdash; Enter a subreddit and collection parameters</span>
+                  <span class="text-bone-muted text-sm"><strong class="text-bone">Thresh</strong> &mdash; Set a query, open the link Thresh builds, paste the data back</span>
                 </div>
                 <div style="display:flex;align-items:start;gap:0.75rem;">
                   <span class="badge badge-ember" style="min-width:20px;justify-content:center;">2</span>
@@ -345,16 +366,33 @@
       <section id="page-thresh" class="page-section">
         <div class="page-header">
           <h1 class="page-title">Step 1 &mdash; Thresh</h1>
-          <p class="page-subtitle">Configure and collect Reddit data. No API key needed.</p>
+          <p class="page-subtitle">Build a Reddit link, open it, and bring the data back to the Floor.</p>
           <p class="page-epigraph">&ldquo;Attention is the rarest and purest form of generosity.&rdquo;<span class="epigraph-source">&mdash; Simone Weil, philosopher</span></p>
         </div>
 
-        <div class="card" style="max-width:700px;">
-          <form id="thresh-form" onsubmit="return ThreshApp.startCollection(event)">
+        <!-- How collection works in v2 -->
+        <div class="card thresh-intro" style="max-width:700px;margin-bottom:1.5rem;">
+          <div class="card-body" style="padding:1rem 1.25rem;">
+            <p class="text-bone text-sm" style="margin:0 0 0.5rem;font-weight:500;">You carry the harvest in by hand.</p>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.5rem;line-height:1.7;">Reddit no longer lets tools fetch its data automatically &mdash; it blocks the servers they run on. So The Threshing Floor does it the honest way: it builds the <em>exact</em> link to the data you want, <strong>you</strong> open it in your own browser and copy what Reddit shows you, and you paste it back here. Thresh takes over from there &mdash; cleaning, organizing, and preparing it for analysis and export.</p>
+            <p class="text-ash text-xs" style="margin:0;line-height:1.6;">Three steps: <strong class="text-bone-muted">set the query</strong> &rarr; <strong class="text-bone-muted">gather from Reddit</strong> &rarr; <strong class="text-bone-muted">lay it on the Floor</strong>. This is a desktop process &mdash; it needs two browser tabs and a copy-paste. <a href="#" onclick="ThreshApp.navigate('about');return false;" class="text-link">Why the method changed &rarr;</a></p>
+          </div>
+        </div>
+
+        <!-- STEP 1: Set the query -->
+        <div class="card thresh-step" style="max-width:700px;">
+          <div class="thresh-step-head">
+            <span class="step-num">1</span>
+            <div>
+              <h3 class="thresh-step-title">Set the query</h3>
+              <p class="thresh-step-sub">Tell Thresh what to gather</p>
+            </div>
+          </div>
+          <form id="thresh-form" onsubmit="return ThreshApp.buildThreshUrl(event)">
             <div class="form-group">
               <label class="label" for="subreddit">Subreddit</label>
               <input type="text" id="subreddit" class="input" placeholder="e.g. mentalhealth, publichealth, science" required>
-              <p class="form-help">Enter the subreddit name without the r/ prefix. You can enter multiple separated by commas.</p>
+              <p class="form-help">Enter the subreddit name without the r/ prefix. To gather several at once, separate them with commas &mdash; Thresh combines them into a single Reddit link (e.g. <code class="font-mono">science, AskScience</code> &rarr; one page).</p>
             </div>
 
             <div class="form-row">
@@ -378,7 +416,7 @@
                   <option value="year">Past year</option>
                   <option value="all">All time</option>
                 </select>
-                <p class="form-help">Controls which posts are eligible. <strong>Past week</strong> is a good default. Use <strong>Past year</strong> or <strong>All time</strong> for broader studies.</p>
+                <p class="form-help">Controls which posts are eligible. <strong>Past week</strong> is a good default. Use <strong>Past year</strong> or <strong>All time</strong> for broader studies. (Applies to Top &amp; Controversial.)</p>
               </div>
             </div>
 
@@ -393,60 +431,101 @@
                   <option value="250">250</option>
                   <option value="500">500</option>
                 </select>
-                <p class="form-help">Posts per subreddit. Start with 25 to preview. 100 is good for focused analysis. 250&ndash;500 collects multiple pages from Reddit (2&ndash;5 requests per subreddit).</p>
+                <p class="form-help">Reddit shows up to 100 posts per page. Up to 100 is a single copy-paste. 250&ndash;500 means Thresh walks you through 3&ndash;5 pages, one paste each &mdash; it hands you the next link automatically after every paste.</p>
               </div>
               <div class="form-group">
                 <label class="label" for="keyword">Keyword Filter</label>
-                <input type="text" id="keyword" class="input" placeholder="Optional — filter post titles">
-                <p class="form-help">Searches post titles. Leave empty to collect everything matching your sort/time settings.</p>
+                <input type="text" id="keyword" class="input" placeholder="Optional — search post titles">
+                <p class="form-help">Searches the subreddit for this term. Leave empty to gather everything matching your sort/time settings. (Keyword searches are a single page.)</p>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label class="checkbox">
-                <input type="checkbox" id="include-comments">
-                Include top-level comments (slower &mdash; 1 extra request per post)
-              </label>
-              <p class="form-help"><strong>What you get:</strong> Up to 50 comments per post, including replies one level deep. Reddit sorts these by "best" by default, so you see the most upvoted responses. Each post costs one additional API request, so 100 posts with comments = ~101 requests. <strong>When to use:</strong> Essential if you want to analyze the conversation (discourse, sentiment, questions). Skip if you only need post titles and bodies.</p>
             </div>
 
             <hr class="divider">
 
             <div style="display:flex;gap:0.75rem;align-items:center;">
-              <button type="submit" class="btn btn-primary btn-lg" id="thresh-submit">
-                <i data-lucide="wheat" style="width:18px;height:18px"></i>
-                Thresh
+              <button type="submit" class="btn btn-primary btn-lg" id="thresh-build-btn">
+                <i data-lucide="link" style="width:18px;height:18px"></i>
+                Build the Reddit link
               </button>
-              <span id="thresh-status" class="text-sm text-ash"></span>
             </div>
           </form>
+        </div>
+
+        <!-- STEP 2: Gather from Reddit -->
+        <div id="thresh-step2" class="card thresh-step" style="max-width:700px;margin-top:1.5rem;display:none;">
+          <div class="thresh-step-head">
+            <span class="step-num">2</span>
+            <div>
+              <h3 class="thresh-step-title">Gather from Reddit</h3>
+              <p class="thresh-step-sub" id="thresh-page-label">Open this link in Reddit</p>
+            </div>
+          </div>
+          <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;">Here's the exact address for your data. Open it (it loads Reddit's raw data view), then select everything and copy it.</p>
+          <code id="thresh-url" class="url-box"></code>
+          <div style="display:flex;gap:0.5rem;margin-top:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="ThreshApp.openThreshUrl()">
+              <i data-lucide="external-link" style="width:16px;height:16px"></i>
+              Open in Reddit
+            </button>
+            <button class="btn btn-secondary" onclick="ThreshApp.copyThreshUrl()">
+              <i data-lucide="clipboard-copy" style="width:16px;height:16px"></i>
+              Copy link
+            </button>
+          </div>
+          <ol class="thresh-howto">
+            <li>The link opens a page of raw data (JSON) in a new tab. It looks like a wall of text &mdash; that's correct.</li>
+            <li>Click anywhere on that page, then press <kbd>Ctrl</kbd>+<kbd>A</kbd> (<kbd>&#8984; Cmd</kbd>+<kbd>A</kbd> on Mac) to select all of it.</li>
+            <li>Press <kbd>Ctrl</kbd>+<kbd>C</kbd> (<kbd>&#8984; Cmd</kbd>+<kbd>C</kbd>) to copy.</li>
+            <li>Return to this tab and paste it into Step 3.</li>
+          </ol>
+          <p class="text-ash text-xs" style="margin:0;line-height:1.6;">This is the same public data your browser already loads when you visit Reddit &mdash; you're just fetching it yourself instead of through a blocked server. Nothing is hidden, and there's nothing to log in to.</p>
+        </div>
+
+        <!-- STEP 3: Lay it on the Floor -->
+        <div id="thresh-step3" class="card thresh-step" style="max-width:700px;margin-top:1.5rem;display:none;">
+          <div class="thresh-step-head">
+            <span class="step-num">3</span>
+            <div>
+              <h3 class="thresh-step-title">Lay it on the Floor</h3>
+              <p class="thresh-step-sub">Paste the data &mdash; Thresh beats the grain free</p>
+            </div>
+          </div>
+          <p class="text-bone-muted text-sm" style="margin-bottom:0.75rem;">Paste everything you copied. Thresh reads it, separates out the posts, and adds them to your collection. It never leaves your browser.</p>
+          <textarea id="thresh-paste" class="input" rows="6" placeholder="Paste the copied Reddit data (JSON) here…" style="font-family:var(--font-mono);font-size:0.8125rem;" oninput="document.getElementById('thresh-paste-error').style.display='none'"></textarea>
+          <div id="thresh-paste-error" class="thresh-error" style="display:none;margin-top:0.5rem;"></div>
+          <div style="display:flex;gap:0.75rem;align-items:center;margin-top:0.75rem;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="ThreshApp.ingestThreshPaste()">
+              <i data-lucide="wheat" style="width:16px;height:16px"></i>
+              Thresh it
+            </button>
+            <span id="thresh-gathered" class="text-sm text-ember font-mono"></span>
+          </div>
+
+          <div id="thresh-next-hint" class="thresh-next-hint" style="display:none;">
+            <i data-lucide="corner-up-left" style="width:15px;height:15px;flex-shrink:0;"></i>
+            <span>There are more posts to gather. Scroll up to Step 2 &mdash; the <strong>next page's link is already loaded</strong>. Open it, copy, and paste here again. Or save what you have now.</span>
+          </div>
+
+          <div id="thresh-save-row" style="display:none;gap:0.75rem;align-items:center;margin-top:1.25rem;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-lg" id="thresh-save-btn" onclick="ThreshApp.saveThreshDraft()">
+              <i data-lucide="check" style="width:18px;height:18px"></i>
+              Save to the Floor
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="ThreshApp.discardThreshDraft()">Discard draft</button>
+          </div>
         </div>
 
         <!-- Data Collection Strategy -->
         <div class="card" style="max-width:700px;margin-top:1.5rem;border-left:3px solid var(--ember-dim);">
           <div class="card-body" style="padding:1rem 1.25rem;">
             <h3 style="font-family:var(--font-display);color:var(--ember);font-size:1.1rem;font-weight:600;margin:0 0 0.5rem 0;">Building Bigger Datasets</h3>
-            <p class="text-bone-muted text-sm" style="margin:0 0 0.5rem 0;line-height:1.65;">Reddit returns up to 100 posts per request. Thresh automatically paginates for you when you select 250 or 500 posts. But if you need richer data, the real power is <strong>systematic sampling</strong>:</p>
+            <p class="text-bone-muted text-sm" style="margin:0 0 0.5rem 0;line-height:1.65;">Reddit shows up to 100 posts per page. For 250 or 500, Thresh walks you through the pages one paste at a time &mdash; after each paste it reads Reddit's own &ldquo;next page&rdquo; marker and hands you the following link. But the real power is <strong>systematic sampling</strong>:</p>
             <div style="display:flex;flex-direction:column;gap:0.4rem;margin-bottom:0.5rem;">
-              <span class="text-sm text-bone-muted"><strong class="text-bone">Longitudinal snapshots:</strong> Collect 100 posts from the same subreddit once a week (or once a month) over several weeks. Each collection is timestamped and gets its own provenance record. Compare word frequencies across collections to track how the conversation evolves.</span>
-              <span class="text-sm text-bone-muted"><strong class="text-bone">Multi-sort sampling:</strong> Collect the same subreddit with different sort methods. <em>Top</em> gives you what resonated. <em>New</em> gives you what people are saying right now. <em>Controversial</em> gives you what divides the community. Three collections, three lenses on the same data.</span>
-              <span class="text-sm text-bone-muted"><strong class="text-bone">Cross-community comparison:</strong> Thresh multiple related subreddits (e.g., r/jobs, r/careeradvice, r/recruitinghell) with the same keyword and time filter. The provenance records make each collection independently citable.</span>
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Longitudinal snapshots:</strong> Gather 100 posts from the same subreddit once a week (or once a month) over several weeks. Each collection is timestamped and gets its own provenance record. Compare word frequencies across collections to track how the conversation evolves.</span>
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Multi-sort sampling:</strong> Gather the same subreddit with different sort methods. <em>Top</em> gives you what resonated. <em>New</em> gives you what people are saying right now. <em>Controversial</em> gives you what divides the community. Three collections, three lenses on the same data.</span>
+              <span class="text-sm text-bone-muted"><strong class="text-bone">Cross-community comparison:</strong> Gather multiple related subreddits (e.g., r/jobs, r/careeradvice, r/recruitinghell) with the same keyword and time filter. The provenance records make each collection independently citable.</span>
             </div>
-            <p class="text-ash text-xs" style="margin:0;line-height:1.5;">Each collection is saved separately in your browser. All exports include full provenance documentation, so every dataset is replicable regardless of when or how you collected it.</p>
-          </div>
-        </div>
-
-        <!-- Collection Progress -->
-        <div id="thresh-progress" style="display:none;margin-top:1.5rem;max-width:700px;">
-          <div class="card">
-            <div class="card-header">
-              <h3 class="card-title">Collecting&hellip;</h3>
-              <span id="progress-count" class="badge badge-ember">0 posts</span>
-            </div>
-            <div class="progress" style="margin-bottom:0.75rem;">
-              <div class="progress-fill" id="progress-bar" style="width:0%"></div>
-            </div>
-            <p id="progress-message" class="text-sm text-bone-muted">Starting collection&hellip;</p>
+            <p class="text-ash text-xs" style="margin:0;line-height:1.5;">Each collection is saved separately in your browser. All exports include full provenance documentation, so every dataset is replicable regardless of when or how you gathered it.</p>
           </div>
         </div>
       </section>
@@ -885,8 +964,33 @@
               <p>The waters rise. The feed is a flood. But the threshing floor is high ground, and the work of separation is ancient, and the grain is worth the labor.</p>
               <p style="margin-bottom:0.25rem;">With hope,</p>
               <p style="color:var(--ember);font-family:var(--font-display);font-size:1.0625rem;font-weight:600;margin-bottom:0.125rem;">Jacob E. Thomas, MA, PhD</p>
-              <p style="font-size:0.8125rem;color:var(--ash);margin:0;">February 2026</p>
+              <p style="font-size:0.8125rem;color:var(--ash);margin:0 0 1.25rem;">February 2026</p>
+
+              <div style="border-top:1px solid rgba(201,162,39,0.15);padding-top:1rem;">
+                <p style="font-size:0.8125rem;color:var(--bone-muted);font-style:italic;margin:0 0 0.5rem;">Postscript &mdash; June 2026</p>
+                <p style="margin:0;">Since I wrote the above, Reddit closed the door that Version 1 walked through. It now blocks the servers that tools like this run on. I could have fought it with tricks &mdash; rotating addresses, disguising the traffic &mdash; but that's the opposite of what this tool stands for. So I rebuilt it to ask you for help instead. In Version 2 you open the link yourself and carry the data back by hand. It's more work. It's also more honest, and more transparent, and &mdash; if I'm honest &mdash; truer to what a threshing floor always was: a place you walk to, carrying what you grew.</p>
+              </div>
             </div>
+          </div>
+
+          <!-- Version 2 — the transparent narrative -->
+          <div class="about-section" style="padding:1.5rem;background:var(--surface);border:1px solid rgba(123,163,201,0.25);border-radius:var(--radius-md);margin-bottom:2.5rem;">
+            <div style="display:flex;align-items:center;gap:0.625rem;margin-bottom:1rem;">
+              <span class="badge" style="background:var(--link);color:var(--ground);font-weight:600;">Version 2</span>
+              <h3 style="margin:0;color:var(--link-hover);">Why the Method Changed</h3>
+            </div>
+            <p>For most of Reddit's history, every page quietly offered a machine-readable twin. Add <code>.json</code> to almost any Reddit address and you'd get the same content as structured data &mdash; the same posts, the same comments, just in a form a program could read. It was public, unauthenticated, and open to anyone, including a browser or a small relay server. Version 1 of The Threshing Floor was built on that openness: you typed a subreddit, and a lightweight edge proxy fetched the JSON and handed it to your browser.</p>
+            <p>That openness narrowed. Beginning with the API pricing upheaval of 2023 and tightening steadily after, Reddit moved to restrict automated access to its data. By 2026 the enforcement had reached the data-center IP ranges that cloud platforms &mdash; including the one Thresh's proxy ran on &mdash; use. Requests from those addresses increasingly came back throttled, blocked, or empty. The proxy still worked in principle; Reddit simply stopped answering it.</p>
+            <p>Crucially, <strong>the data never became private.</strong> Anyone can still open those exact pages in a normal browser, on a normal home connection, and read them &mdash; logged in or not. What changed is <em>who</em> Reddit will serve: a person, yes; an anonymous server fetching on that person's behalf, no longer reliably.</p>
+            <p>Version 2 takes that constraint at face value. Instead of fetching for you, Thresh tells you <strong>exactly</strong> what to fetch:</p>
+            <ol>
+              <li>You set your query, and Thresh builds the precise Reddit <code>.json</code> link &mdash; nothing hidden, the whole URL visible.</li>
+              <li>You open it in your own browser. Reddit serves you the data, because you are a real person on a real connection.</li>
+              <li>You copy what you see and paste it back onto the Floor. From there, everything is unchanged: parsing, word frequency, AI analysis, provenance, and export all work exactly as before.</li>
+            </ol>
+            <p>This is, if anything, <strong>more</strong> transparent than before. In Version 1 the fetch happened on a server you couldn't see. In Version 2 you watch every request leave and every byte arrive. You are the proxy now &mdash; the human in the loop &mdash; and the provenance record reflects that: you collected this data, first-hand.</p>
+            <p>The trade-offs are real and worth stating plainly. It is slower. Large collections take several copy-pastes instead of one click. And because it depends on copying text between browser tabs, <strong>it is a desktop tool</strong> &mdash; phones make the select-all-and-copy step painful enough that we don't pretend it works well there. We think that's an honest price for a method that can't be quietly blocked, that hides nothing, and that keeps Thresh working without resorting to the kind of evasion this project exists to oppose.</p>
+            <p class="text-ash text-sm" style="margin-bottom:0;">The waters rose; the old bridge washed out. So we walk across. The floor is still high ground, and the grain is still worth the labor.</p>
           </div>
 
           <div class="about-section">
@@ -897,11 +1001,11 @@
 
           <div class="about-section">
             <h3>How It Works</h3>
-            <p>Reddit's public pages serve JSON data alongside HTML. The Threshing Floor fetches this public data through a lightweight proxy (to handle browser security restrictions), then lets you browse, filter, and export it.</p>
-            <p>No Reddit API key is required. No authentication of any kind. The data collected is limited to what any person could see by visiting Reddit in a web browser.</p>
+            <p>Reddit's public pages serve the same content as machine-readable data when you add <code>.json</code> to the address. The Threshing Floor builds the precise link to the data you want; <strong>you</strong> open it in your own browser and paste what Reddit shows you back onto the Floor. From there, Thresh lets you browse, filter, analyze, and export it &mdash; all in your browser. (See <em>Why the Method Changed</em> above for the full story.)</p>
+            <p>No Reddit API key is required. No authentication of any kind. The data collected is limited to exactly what you can see by visiting Reddit in a web browser &mdash; because that is literally how it is gathered.</p>
             <p>The workflow follows four steps. Each one builds on the last:</p>
             <ol>
-              <li><strong>Thresh</strong> (Collect) &mdash; Enter a subreddit, choose your sort method and time filter, set a post limit, and optionally filter by keyword. Click Thresh. The tool gathers posts (and optionally comments) and stores them in your browser.</li>
+              <li><strong>Thresh</strong> (Collect) &mdash; Set a subreddit, sort method, time filter, post limit, and optional keyword. Thresh builds a Reddit link; you open it, copy the data, and paste it back. For more than 100 posts, Thresh hands you each page's link in turn. Comments can be added later, per post, on the Harvest page. Everything is stored in your browser.</li>
               <li><strong>Harvest</strong> (Browse) &mdash; Explore your collected data in a sortable, searchable table. Click any post to read its full text and comments. Sort by score to see what resonates, by comments to see what sparks debate, or by date to follow the conversation over time.</li>
               <li><strong>Winnow</strong> (Analyze) &mdash; Start with the built-in word frequency table, then use Claude AI to identify themes, extract sentiment, summarize discussions, or ask custom questions about your data. AI analysis is built in and free to use.</li>
               <li><strong>Glean</strong> (Export) &mdash; Download your data as CSV or JSON, bundled in a ZIP with a provenance.txt file that documents exactly how it was collected. Or generate an <strong>AI Report</strong>: answer two questions about your research, choose your audience, and Claude produces a document tailored to your needs &mdash; an IMRaD paper for academics, a data-driven column for journalists, a town hall brief for organizers, or an op-ed for general audiences.</li>
@@ -927,9 +1031,9 @@
             <p><strong>Everything is stored in your browser only.</strong> There is no server database, no account system, and no cloud sync. Specifically:</p>
             <ul>
               <li><strong>Collections</strong> (posts, comments, configuration) are saved in your browser's <code>localStorage</code>.</li>
-              <li><strong>Rate limit state</strong> and <strong>subreddit cache</strong> are also stored locally in your browser.</li>
+              <li><strong>An in-progress draft</strong> (a collection you're still gathering, page by page) is held locally so a refresh won't lose it.</li>
             </ul>
-            <p>AI analysis is powered by Claude Opus 4.6 via a secure managed proxy. No API keys are required or stored on your device.</p>
+            <p>AI analysis is powered by Claude Opus 4.6 via a secure managed proxy. No API keys are required or stored on your device. The Reddit data itself is fetched by you, in your own browser, and pasted in directly &mdash; it never passes through any Threshing Floor server.</p>
             <p>This means your data does not sync across browsers or devices. If you switch browsers, your collections will not follow.</p>
           </div>
 
@@ -942,19 +1046,18 @@
               <li>Select <strong>"Cookies and site data"</strong> (this includes localStorage)</li>
               <li>To clear only Thresh: go to your browser's <strong>Developer Tools</strong> (<code>F12</code>), open the <strong>Application</strong> tab, expand <strong>Local Storage</strong>, find the Thresh site, and delete individual keys or click <strong>Clear All</strong></li>
             </ol>
-            <p>This will remove all saved collections, rate limit state, and cached subreddit data. It cannot be undone.</p>
+            <p>This will remove all saved collections and any in-progress draft. It cannot be undone.</p>
           </div>
 
           <div class="about-section">
-            <h3>The Rate Limit Gauge</h3>
-            <p>The <strong>Rate Limit</strong> gauge at the bottom of the sidebar tracks how many requests remain in your current Reddit rate limit window. Reddit allows <strong>100 requests per minute</strong> to its public JSON endpoints.</p>
+            <h3>The Manual Harvest &mdash; A Desktop Process</h3>
+            <p>Because Version 2 gathers data through your own browser, collecting is a hands-on, two-tab process: Thresh builds a link, you open it, copy the data Reddit shows you, and paste it back. A few things follow from that:</p>
             <ul>
-              <li><strong>Gold bar</strong> &mdash; plenty of requests remaining. Normal operation.</li>
-              <li><strong>Yellow bar (below 30%)</strong> &mdash; requests are running low. Consider pausing collection.</li>
-              <li><strong>Red pulsing bar (below 10%)</strong> &mdash; critical. Thresh will pause automatically if the limit is reached.</li>
-              <li><strong>Cooldown timer</strong> &mdash; if you hit the limit, a countdown appears showing when requests resume. The collect button is disabled until the cooldown expires.</li>
+              <li><strong>It is a desktop tool.</strong> The copy step means selecting a wall of text on the Reddit tab and pasting it here. That is awkward on a phone, so collecting new data is meant for a laptop or desktop. You can still browse, analyze, and export saved collections on any device.</li>
+              <li><strong>You set the pace.</strong> There's no rate-limit gauge anymore, because Thresh isn't making automated requests &mdash; you are simply loading Reddit pages the way you always do. Be a courteous visitor: don't hammer reload, and leave a breath between pages.</li>
+              <li><strong>Big collections come in pages.</strong> Reddit shows up to 100 posts per page. Ask for 250 or 500 and Thresh walks you through the pages one paste at a time, reading Reddit's own &ldquo;next page&rdquo; marker to hand you each following link.</li>
+              <li><strong>Drafts are safe.</strong> A collection you're still gathering is held in your browser, so a refresh mid-harvest won't lose your progress. Save it to the Floor when you're done, or discard it and start over.</li>
             </ul>
-            <p>The rate limit resets automatically each minute. Under normal use (25&ndash;100 posts per collection), you will rarely see it drop below gold.</p>
           </div>
 
           <div class="about-section">
