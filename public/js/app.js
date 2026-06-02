@@ -12,11 +12,17 @@ const ThreshApp = {
 
   // --- Initialization ---
 
-  _countdownInterval: null,
+  // v2: an in-progress, unsaved manual collection (the grain not yet bundled).
+  // { config, signature, posts:[], after, createdAt }
+  draft: null,
+  _currentUrl: null,
 
   init() {
     // Load saved collections from localStorage
     this._loadCollections();
+
+    // Restore any in-progress manual collection
+    this._restoreDraft();
 
     // Run intro animation
     this._runIntro();
@@ -38,8 +44,8 @@ const ThreshApp = {
     // Update collection selectors
     this._updateSelectors();
 
-    // Wire up rate limit sentinel
-    this._initRateSentinel();
+    // Desktop-only notice for small screens
+    this._initMobileNotice();
   },
 
   // --- Intro ---
@@ -94,6 +100,7 @@ const ThreshApp = {
     });
 
     // Page-specific setup
+    if (page === 'thresh') this._setupThresh();
     if (page === 'harvest') this._setupHarvest();
     if (page === 'glean') this._setupGlean();
     if (page === 'winnow') this._setupWinnow();
@@ -105,10 +112,18 @@ const ThreshApp = {
     }, 50);
   },
 
-  // --- Collection ---
+  // --- Thresh (Manual, human-in-the-loop collection) ---
+  //
+  // v2 no longer fetches Reddit (Reddit blocks datacenter proxies). Thresh now
+  // builds the exact Reddit URL; the user opens it in their own browser, copies
+  // the JSON, and pastes it back. A "draft" accumulates posts across pages until
+  // the user saves it to the Floor.
 
-  async startCollection(event) {
-    event.preventDefault();
+  /**
+   * Step 1 → 2/3: build the URL from the form and reveal the gather/paste steps.
+   */
+  buildThreshUrl(event) {
+    if (event) event.preventDefault();
 
     const config = {
       subreddit: document.getElementById('subreddit').value.trim(),
@@ -116,82 +131,225 @@ const ThreshApp = {
       timeFilter: document.getElementById('time-filter').value,
       limit: parseInt(document.getElementById('limit').value, 10),
       keyword: document.getElementById('keyword').value.trim(),
-      includeComments: document.getElementById('include-comments').checked,
+      includeComments: false, // comments are gathered per-post in Harvest (v2)
     };
 
     if (!config.subreddit) {
-      this.toast('Please enter a subreddit name.', 'warning');
+      this.toast('Enter a subreddit name first.', 'warning');
       return false;
     }
 
-    // Check rate limit before starting
-    if (RateLimiter.isBlocked()) {
-      const secs = RateLimiter.blockSecondsLeft();
-      this.toast(`Rate limited — please wait ${secs} seconds before collecting.`, 'warning');
-      return false;
+    // Start a fresh draft if the query changed; otherwise keep accumulating.
+    const signature = JSON.stringify(config);
+    if (!this.draft || this.draft.signature !== signature) {
+      this.draft = { config, signature, posts: [], after: null, createdAt: Date.now() };
+      this._persistDraft();
+      const errEl = document.getElementById('thresh-paste-error');
+      if (errEl) errEl.style.display = 'none';
+      const saveRow = document.getElementById('thresh-save-row');
+      if (saveRow) saveRow.style.display = 'none';
     }
 
-    // Show progress
-    const progressEl = document.getElementById('thresh-progress');
-    const submitBtn = document.getElementById('thresh-submit');
-    const statusEl = document.getElementById('thresh-status');
+    document.getElementById('thresh-step2').style.display = 'block';
+    document.getElementById('thresh-step3').style.display = 'block';
+    this._renderThreshSteps();
 
-    progressEl.style.display = 'block';
-    submitBtn.disabled = true;
-    statusEl.textContent = '';
-
-    try {
-      const result = await RedditClient.collect(config, (progress) => {
-        document.getElementById('progress-message').textContent = progress.message;
-        document.getElementById('progress-count').textContent = `${progress.current} posts`;
-        const pct = progress.total > 0 ? Math.min(100, (progress.current / progress.total) * 100) : 0;
-        document.getElementById('progress-bar').style.width = `${pct}%`;
-      });
-
-      if (result.posts.length === 0) {
-        this.toast('No posts found. Try a different subreddit or search term.', 'warning');
-        progressEl.style.display = 'none';
-        submitBtn.disabled = false;
-        return false;
-      }
-
-      // Save collection
-      const collection = {
-        id: Date.now().toString(36),
-        ...result,
-      };
-
-      this.collections.push(collection);
-      this._saveCollections();
-      this._updateSelectors();
-
-      // Show success
-      document.getElementById('progress-bar').style.width = '100%';
-      document.getElementById('progress-message').textContent = 'Collection complete!';
-      this.toast(`Collected ${result.posts.length} posts from r/${config.subreddit}`, 'success');
-
-      // Navigate to harvest after brief delay
-      setTimeout(() => {
-        progressEl.style.display = 'none';
-        submitBtn.disabled = false;
-        this.activeCollection = collection;
-        this.navigate('harvest');
-        this._renderHarvest();
-      }, 1500);
-
-    } catch (err) {
-      if (err.message.includes('Rate limited')) {
-        this.toast(err.message, 'warning');
-        // Keep button disabled — sentinel countdown will re-enable it
-        submitBtn.disabled = true;
-      } else {
-        this.toast(`Collection failed: ${err.message}`, 'error');
-        submitBtn.disabled = false;
-      }
-      progressEl.style.display = 'none';
-    }
-
+    document.getElementById('thresh-step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
     return false;
+  },
+
+  /**
+   * When navigating back to Thresh, restore an in-progress draft into the form.
+   */
+  _setupThresh() {
+    if (!this.draft) return;
+    const c = this.draft.config;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+    set('subreddit', c.subreddit);
+    set('sort', c.sort);
+    set('time-filter', c.timeFilter);
+    set('limit', c.limit);
+    set('keyword', c.keyword || '');
+
+    document.getElementById('thresh-step2').style.display = 'block';
+    document.getElementById('thresh-step3').style.display = 'block';
+    this._renderThreshSteps();
+    if (this.draft.posts.length) {
+      const saveRow = document.getElementById('thresh-save-row');
+      if (saveRow) saveRow.style.display = 'flex';
+    }
+  },
+
+  // Keyword search pagination via `after` is unreliable; cap it at one page.
+  _draftPaginates() { return this.draft && !this.draft.config.keyword; },
+
+  _currentThreshUrl() {
+    const d = this.draft;
+    const remaining = Math.max(1, d.config.limit - d.posts.length);
+    const pageLimit = Math.min(remaining, RedditClient.MAX_PAGE);
+    return RedditClient.buildListingUrl(d.config, { after: d.after, pageLimit });
+  },
+
+  /**
+   * Refresh the URL display, page counter, and gathered-count for the draft.
+   */
+  _renderThreshSteps() {
+    const d = this.draft;
+    if (!d) return;
+
+    this._currentUrl = this._currentThreshUrl();
+    const urlEl = document.getElementById('thresh-url');
+    if (urlEl) urlEl.textContent = this._currentUrl;
+
+    const gathered = d.posts.length;
+    const target = d.config.limit;
+    const pageNum = Math.floor(gathered / RedditClient.MAX_PAGE) + 1;
+    const totalPages = this._draftPaginates() ? Math.ceil(target / RedditClient.MAX_PAGE) : 1;
+
+    const pageLabel = document.getElementById('thresh-page-label');
+    if (pageLabel) {
+      pageLabel.textContent = totalPages > 1
+        ? `Open page ${pageNum} of ${totalPages} in Reddit`
+        : 'Open this link in Reddit';
+    }
+
+    const gatheredEl = document.getElementById('thresh-gathered');
+    if (gatheredEl) {
+      gatheredEl.textContent = gathered > 0
+        ? `${gathered} of ${target} posts gathered so far`
+        : '';
+    }
+
+    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 20);
+  },
+
+  openThreshUrl() {
+    if (!this._currentUrl) return;
+    window.open(this._currentUrl, '_blank', 'noopener');
+    this.toast('Opened Reddit in a new tab. Select all (Ctrl+A), copy, then come back and paste.', 'info');
+  },
+
+  copyThreshUrl() {
+    if (!this._currentUrl) return;
+    navigator.clipboard.writeText(this._currentUrl).then(
+      () => this.toast('URL copied. Open a new tab, paste it, then copy the data it shows.', 'success'),
+      () => this.toast('Could not copy — select the URL text manually.', 'warning')
+    );
+  },
+
+  /**
+   * Step 3: parse the pasted JSON and fold it into the draft.
+   */
+  ingestThreshPaste() {
+    if (!this.draft) { this.toast('Build a URL first (Step 1).', 'warning'); return; }
+
+    const ta = document.getElementById('thresh-paste');
+    const errEl = document.getElementById('thresh-paste-error');
+    const result = RedditClient.parseListingText(ta.value);
+
+    if (!result.ok) {
+      errEl.textContent = result.error;
+      errEl.style.display = 'block';
+      return;
+    }
+    errEl.style.display = 'none';
+
+    // Append, de-duplicating by post id (pages can overlap slightly)
+    const seen = new Set(this.draft.posts.map(p => p.id));
+    let added = 0;
+    for (const p of result.posts) {
+      if (!seen.has(p.id)) { this.draft.posts.push(p); seen.add(p.id); added++; }
+    }
+    this.draft.after = result.after || null;
+    this._persistDraft();
+    ta.value = '';
+
+    const gathered = this.draft.posts.length;
+    const target = this.draft.config.limit;
+    const moreToGo = this._draftPaginates() && this.draft.after && gathered < target;
+
+    this._renderThreshSteps();
+
+    // Show the save row and a label reflecting the running total
+    const saveRow = document.getElementById('thresh-save-row');
+    if (saveRow) saveRow.style.display = 'flex';
+    const saveBtn = document.getElementById('thresh-save-btn');
+    if (saveBtn) saveBtn.innerHTML = `<i data-lucide="check" style="width:16px;height:16px"></i> Save ${gathered} post${gathered === 1 ? '' : 's'} to the Floor`;
+
+    const nextHint = document.getElementById('thresh-next-hint');
+    if (nextHint) nextHint.style.display = moreToGo ? 'block' : 'none';
+
+    if (moreToGo) {
+      this.toast(`Added ${added} posts (${gathered}/${target}). The next page's link is ready above — open it and paste again, or save what you have.`, 'success');
+      document.getElementById('thresh-step2').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      this.toast(`Gathered ${gathered} post${gathered === 1 ? '' : 's'}. Ready to save to the Floor.`, 'success');
+      if (saveRow) saveRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 20);
+  },
+
+  /**
+   * Finalize the draft into a saved collection and move to Harvest.
+   */
+  saveThreshDraft() {
+    if (!this.draft || !this.draft.posts.length) { this.toast('Nothing gathered to save yet.', 'warning'); return; }
+
+    const d = this.draft;
+    const collection = {
+      id: Date.now().toString(36),
+      posts: d.posts,
+      comments: [],
+      config: d.config,
+      timestamp: new Date().toISOString(),
+      method: 'manual', // v2 human-in-the-loop
+    };
+
+    this.collections.push(collection);
+    this._saveCollections();
+    this._updateSelectors();
+    this.activeCollection = collection;
+
+    // Reset the draft and the wizard
+    this.draft = null;
+    this._currentUrl = null;
+    this._clearDraft();
+    document.getElementById('thresh-step2').style.display = 'none';
+    document.getElementById('thresh-step3').style.display = 'none';
+    const ta = document.getElementById('thresh-paste');
+    if (ta) ta.value = '';
+
+    this.toast(`Saved ${collection.posts.length} posts from r/${collection.config.subreddit}.`, 'success');
+    this.navigate('harvest');
+    this._renderHarvest();
+  },
+
+  discardThreshDraft() {
+    this.draft = null;
+    this._currentUrl = null;
+    this._clearDraft();
+    const ta = document.getElementById('thresh-paste');
+    if (ta) ta.value = '';
+    const errEl = document.getElementById('thresh-paste-error');
+    if (errEl) errEl.style.display = 'none';
+    document.getElementById('thresh-step2').style.display = 'none';
+    document.getElementById('thresh-step3').style.display = 'none';
+    this.toast('Draft discarded. Start a new query whenever you like.', 'info');
+  },
+
+  // Draft persistence (survives a page refresh mid-collection)
+  _persistDraft() {
+    try { localStorage.setItem('thresh_draft', JSON.stringify(this.draft)); } catch { /* non-critical */ }
+  },
+  _clearDraft() {
+    try { localStorage.removeItem('thresh_draft'); } catch { /* non-critical */ }
+  },
+  _restoreDraft() {
+    try {
+      const saved = localStorage.getItem('thresh_draft');
+      if (saved) this.draft = JSON.parse(saved);
+    } catch { this.draft = null; }
   },
 
   // --- Harvest ---
@@ -322,8 +480,11 @@ const ThreshApp = {
 
     // Comments
     const commentsEl = document.getElementById('detail-comments');
-    if (post.fetched_comments && post.fetched_comments.length > 0) {
-      commentsEl.innerHTML = `
+    const hasComments = post.fetched_comments && post.fetched_comments.length > 0;
+
+    let commentsHtml = '';
+    if (hasComments) {
+      commentsHtml = `
         <h5 style="margin-bottom:0.5rem;color:var(--bone-muted);">Comments (${post.fetched_comments.length})</h5>
         <div class="comment-tree">
           ${post.fetched_comments.map(c => `
@@ -339,11 +500,80 @@ const ThreshApp = {
         </div>
       `;
     } else {
-      commentsEl.innerHTML = '<p class="text-ash text-sm">No comments collected for this post.</p>';
+      commentsHtml = '<p class="text-ash text-sm">No comments gathered for this post yet.</p>';
     }
+
+    // v2: comments are brought in by hand, one thread at a time.
+    const commentUrl = RedditClient.buildCommentsUrl(post.subreddit, post.id);
+    commentsHtml += `
+      <details class="comment-fetch"${hasComments ? '' : ' open'}>
+        <summary>
+          <i data-lucide="message-square-plus" style="width:14px;height:14px;"></i>
+          ${hasComments ? 'Re-fetch or add more comments' : 'Bring the comments for this post (optional)'}
+        </summary>
+        <div class="comment-fetch-body">
+          <p class="text-bone-muted text-xs" style="margin:0 0 0.5rem;">Comments are gathered the same way as posts — by hand. Open this post's data, copy it, and paste it below. Comments are included in your export and AI analysis.</p>
+          <code id="cmt-url-${post.id}" class="url-box">${this._escapeHtml(commentUrl)}</code>
+          <div style="display:flex;gap:0.5rem;margin:0.5rem 0;flex-wrap:wrap;">
+            <button class="btn btn-secondary btn-sm" onclick="window.open(document.getElementById('cmt-url-${post.id}').textContent,'_blank','noopener')">
+              <i data-lucide="external-link" style="width:14px;height:14px;"></i> Open in Reddit
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="ThreshApp._copyText(document.getElementById('cmt-url-${post.id}').textContent, 'Comment URL copied.')">
+              <i data-lucide="clipboard-copy" style="width:14px;height:14px;"></i> Copy URL
+            </button>
+          </div>
+          <textarea id="cmt-paste-${post.id}" class="input" rows="3" placeholder="Paste the comment data (JSON) here…"></textarea>
+          <div id="cmt-error-${post.id}" class="thresh-error" style="display:none;margin-top:0.5rem;"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:0.5rem;" onclick="ThreshApp.ingestPostComments('${post.id}')">
+            <i data-lucide="check" style="width:14px;height:14px;"></i> Add these comments
+          </button>
+        </div>
+      </details>
+    `;
+
+    commentsEl.innerHTML = commentsHtml;
 
     detailEl.style.display = 'block';
     detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (typeof lucide !== 'undefined') setTimeout(() => lucide.createIcons(), 30);
+  },
+
+  /**
+   * Parse pasted comment JSON for one post and fold it into the active collection.
+   */
+  ingestPostComments(postId) {
+    if (!this.activeCollection) return;
+    const post = this.activeCollection.posts.find(p => p.id === postId);
+    if (!post) return;
+
+    const ta = document.getElementById('cmt-paste-' + postId);
+    const errEl = document.getElementById('cmt-error-' + postId);
+    const result = RedditClient.parseCommentsText(ta ? ta.value : '');
+
+    if (!result.ok) {
+      if (errEl) { errEl.textContent = result.error; errEl.style.display = 'block'; }
+      return;
+    }
+    if (errEl) errEl.style.display = 'none';
+
+    post.fetched_comments = result.comments;
+
+    // Keep the collection-level comments array in sync (replace this post's set)
+    if (!this.activeCollection.comments) this.activeCollection.comments = [];
+    this.activeCollection.comments = this.activeCollection.comments.filter(c => c.post_id !== postId);
+    this.activeCollection.comments.push(...result.comments.map(c => ({ ...c, post_id: postId })));
+
+    this._saveCollections();
+    this.toast(`Added ${result.comments.length} comments to this post.`, 'success');
+    this.showPostDetail(postId); // re-render with the comments shown
+  },
+
+  /** Small clipboard helper used by inline buttons. */
+  _copyText(text, successMsg) {
+    navigator.clipboard.writeText(text).then(
+      () => this.toast(successMsg || 'Copied.', 'success'),
+      () => this.toast('Could not copy — select the text manually.', 'warning')
+    );
   },
 
   // --- Glean (Export) ---
@@ -1346,61 +1576,24 @@ const ThreshApp = {
     });
   },
 
-  // --- Rate Limit Sentinel ---
+  // --- Desktop-only Notice ---
+  // v2's gather step requires copying data between browser tabs — impractical on
+  // phones. We make the limitation explicit rather than letting it fail silently.
 
-  _initRateSentinel() {
-    // Update UI with current state
-    this._updateRateSentinel(RateLimiter.getStatus());
-
-    // Listen for changes
-    RateLimiter.onChange((status) => this._updateRateSentinel(status));
+  _initMobileNotice() {
+    const notice = document.getElementById('mobile-notice');
+    if (!notice) return;
+    try {
+      if (localStorage.getItem('thresh_mobile_ack') === '1') {
+        notice.style.display = 'none';
+      }
+    } catch { /* ignore */ }
   },
 
-  _updateRateSentinel(status) {
-    const fill = document.getElementById('rate-gauge-fill');
-    const remaining = document.getElementById('rate-remaining');
-    const blockedMsg = document.getElementById('rate-blocked-msg');
-    const countdown = document.getElementById('rate-countdown');
-
-    if (!fill || !remaining) return;
-
-    // Update gauge width and color
-    fill.style.width = `${status.percent}%`;
-    fill.classList.remove('low', 'critical');
-    if (status.percent <= 10) {
-      fill.classList.add('critical');
-    } else if (status.percent <= 30) {
-      fill.classList.add('low');
-    }
-
-    remaining.textContent = status.remaining;
-
-    // Handle blocked state with countdown
-    if (status.blocked && blockedMsg && countdown) {
-      blockedMsg.style.display = 'block';
-      countdown.textContent = `Cooldown: ${status.blockSecondsLeft}s`;
-
-      // Start countdown timer if not already running
-      if (!this._countdownInterval) {
-        this._countdownInterval = setInterval(() => {
-          const s = RateLimiter.getStatus();
-          if (!s.blocked) {
-            blockedMsg.style.display = 'none';
-            clearInterval(this._countdownInterval);
-            this._countdownInterval = null;
-            this._updateRateSentinel(s);
-
-            // Re-enable the thresh button
-            const submitBtn = document.getElementById('thresh-submit');
-            if (submitBtn) submitBtn.disabled = false;
-          } else {
-            countdown.textContent = `Cooldown: ${s.blockSecondsLeft}s`;
-          }
-        }, 1000);
-      }
-    } else if (blockedMsg) {
-      blockedMsg.style.display = 'none';
-    }
+  dismissMobileNotice() {
+    const notice = document.getElementById('mobile-notice');
+    if (notice) notice.style.display = 'none';
+    try { localStorage.setItem('thresh_mobile_ack', '1'); } catch { /* ignore */ }
   },
 
   // --- Toast Notifications ---
@@ -1439,6 +1632,7 @@ const ThreshApp = {
         comments: c.comments || [],
         config: c.config,
         timestamp: c.timestamp,
+        method: c.method || 'manual',
       }));
       localStorage.setItem('thresh_collections', JSON.stringify(toSave));
     } catch (e) {
