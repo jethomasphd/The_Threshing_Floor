@@ -1,0 +1,14 @@
+{
+  "name": "thresh-fly-proxy",
+  "version": "1.0.0",
+  "description": "Reddit JSON proxy for The Threshing Floor. Deployed to Fly.io to bypass Reddit's blocking of Cloudflare datacenter IPs.",
+  "private": true,
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
