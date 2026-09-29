@@ -1,0 +1,2 @@
+collection,subreddit(s),keyword,sort,time_filter,posts,comments,coverage_overall,bot_share,removed_or_deleted_share,commenters,gini,upvote_ratio_mean,vader_mean,share_negative
+r-politics_iran_2026-03-20,politics,Iran,top,month,100,4956,0.0573,0.0202,0.0186,3803,0.176,0.967,-0.176,0.52

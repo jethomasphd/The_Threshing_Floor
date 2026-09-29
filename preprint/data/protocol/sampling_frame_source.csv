@@ -1,0 +1,19 @@
+tier,code,subreddit,register,analytic_role,governance_hypothesis_to_audit,principal_caveat
+Core,C1,MiddleEast,Regional discourse,Broad regional framing of the conflict,Moderation patterns not yet verified against current sidebar,Self-selected regional audience; not representative of regional populations
+Core,C2,geopolitics,Analytical discourse,Analytical/strategic register; high signal-to-noise complement to r/worldnews,Submission statements and quality rules likely; verify,Lower volume; analytic register selects for a particular writer
+Core,C3,politics,US left-leaning baseline,Domestic partisan framing of the war (worked exemplar in this paper),Civility-moderated; AutoModerator present in every thread; headline and paywall flair taxonomy,What appears is the moderated subset; moderator orientation can shape removals
+Core,C4,Libertarian,War-powers / constitutional,Constitutional and war-powers framing,Verify current rules,Ideologically specific community
+Core,C5,CredibleDefense,Military / strategic analysis,Substantive military analysis under strict sourcing norms,Strict sourcing and quality moderation; verify,Heavily curated; low volume; expert-leaning self-selection
+Special case,S1,worldnews,Mass news aggregation,Narrative amplification and test case for coordinated-activity detection,Large-default moderation; verify,Documented 2018 target of an Iranian influence operation; treat as methodologically distinct
+Conditional anchor,A1,iran,Persian / Iranian diaspora,Diaspora and inside-Iran voices,Aggregators report political/religious posting may be restricted to established users; unverified,If political discussion is gated the sample is a curated subset not a community baseline
+Conditional anchor,A2,iranian,Persian / Iranian diaspora,Second diaspora anchor; contrast with r/iran governance,Openness relative to r/iran unknown; verify,Smaller community; sample size constraint
+Secondary,R1,exmuslim,Ex-Muslim diaspora,Deliberately partial perspective on Iran and human rights,Explicitly anti-religious by design,Reflects ex-Muslim diaspora views; never a stand-in for Iranian communities
+Secondary,R2,persianculture,Cultural,Cultural framing with lower political volume,Scope and moderation unverified,Speculative fit; verify scope
+Secondary,R3,tehran,Local (inside Iran),Inside-Iran perspective,Activity level unverified,Small; sample size constraint
+Secondary,R4,arabs,Regional,Framing counterpart to r/MiddleEast,Verify,Self-selection
+Secondary,R5,Conservative,US right-leaning,Right-leaning counterpart to r/politics,2020-2021 sources describe flaired-users-only threads; verify current practice,If participation is gated it is not a symmetric counterpart to r/politics
+Secondary,R6,AskMiddleEast,Regional Q&A,Question-answer register,Verify,Q&A format generates different data; needs analytic adjustment
+Secondary,R7,war,Military framing,Military-framing triangulation,Activity level unverified,Different audience from the others
+Secondary,R8,IsraelPalestine,Contested conflict space,Narrative analysis; site for studying coordinated communication,Verify,Heavily brigaded from multiple directions; sentiment unreliable
+Secondary,R9,syriancivilwar,Comparison conflict,Comparison case for how Reddit discusses other regional conflicts,Established analytic norms; verify,Different conflict; comparison only
+Excluded,X1,iranian_diaspora,—,Proposed but no evidence of an active community was found,—,Drop unless its existence and activity are confirmed

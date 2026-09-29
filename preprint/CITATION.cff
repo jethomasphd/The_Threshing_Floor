@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this preprint, its data, or its code, please cite it as below."
+type: article
+title: "Carrying the Harvest by Hand: The Threshing Floor, a provenance-first, human-in-the-loop instrument for studying public Reddit discourse"
+authors:
+  - family-names: Thomas
+    given-names: Jacob E.
+    email: jethomasphd@gmail.com
+version: "1.0"
+date-released: "2026-09-29"
+license: CC-BY-4.0
+repository-code: "https://github.com/jethomasphd/The_Threshing_Floor"
+keywords:
+  - Reddit
+  - computational social science
+  - research software
+  - data provenance
+  - human-in-the-loop
+  - content moderation
+  - information operations
+references:
+  - type: software
+    title: "The Threshing Floor"
+    version: "2.0.0"
+    authors:
+      - family-names: Thomas
+        given-names: Jacob E.
+    repository-code: "https://github.com/jethomasphd/The_Threshing_Floor"
+    license: MIT

@@ -1,0 +1,14 @@
+{
+  "_about": "Dictionary of analytic frames used in the worked example. Each frame is a list of regular-expression stems matched case-insensitively at word boundaries against comment text. Frames are deliberately transparent and coarse: they index what a comment is about, not its stance. Edit freely; the pipeline re-runs from this file.",
+  "Military operations": ["strikes?", "airstrikes?", "bomb\\w*", "missiles?", "drones?", "troops", "carriers?", "military", "pentagon", "invasion", "ground war"],
+  "Nuclear program": ["nuclear", "nukes?", "enrich\\w*", "uranium", "iaea"],
+  "War powers & Congress": ["congress\\w*", "war powers", "authoriz\\w*", "aumf", "constitution\\w*", "unconstitutional", "impeach\\w*", "declaration of war"],
+  "Partisan & leadership": ["trump\\w*", "maga", "gop", "republicans?", "democrats?", "vance", "hegseth"],
+  "Economic costs": ["oil", "gas prices?", "gasoline", "inflation", "economy", "stock market", "markets?", "recession", "tariffs?"],
+  "Casualties & humanitarian": ["civilians?", "casualt\\w*", "killed", "deaths?", "children", "humanitarian", "refugees?", "wounded"],
+  "Draft & service members": ["draft\\w*", "conscription", "enlist\\w*", "veterans?", "marines?", "soldiers?", "service members?"],
+  "Israel": ["israel\\w*", "netanyahu", "idf", "zionis\\w*"],
+  "Iranian regime & people": ["regime", "khamenei", "ayatollah", "irgc", "mullahs?", "iranian people", "regime change"],
+  "Diplomacy & ceasefire": ["diplomac\\w*", "negotiat\\w*", "ceasefire", "peace", "sanctions?", "jcpoa", "treaty"],
+  "Information integrity": ["propaganda", "bots?", "misinformation", "disinformation", "psyops?", "shills?", "astroturf\\w*", "state media"]
+}

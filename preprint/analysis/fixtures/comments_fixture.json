@@ -1,0 +1,10 @@
+[{"kind":"Listing","data":{"children":[{"kind":"t3","data":{"id":"fx0001"}}]}},
+ {"kind":"Listing","data":{"children":[
+  {"kind":"t1","data":{"id":"cx01","author":"AutoModerator","body":"Synthetic bot notice. I am a bot.","score":1,"created_utc":1772400001,"parent_id":"t3_fx0001","replies":""}},
+  {"kind":"t1","data":{"id":"cx02","author":"fixture_commenter_b","body":"Top-level synthetic comment.","score":40,"created_utc":1772400300,"parent_id":"t3_fx0001","replies":{"kind":"Listing","data":{"children":[
+     {"kind":"t1","data":{"id":"cx03","author":"fixture_commenter_c","body":"Reply at depth one.","score":12,"created_utc":1772400600,"parent_id":"t1_cx02","replies":{"kind":"Listing","data":{"children":[
+        {"kind":"t1","data":{"id":"cx04","author":"fixture_commenter_b","body":"Reply at depth two.","score":3,"created_utc":1772400900,"parent_id":"t1_cx03","replies":""}},
+        {"kind":"more","data":{"count":7,"children":["cx05"]}}
+     ]}}}}
+  ]}}}}
+ ]}}]
