@@ -1,0 +1,12 @@
+frame,comments,share,ci_low,ci_high,mean_vader,median_comment_score
+Partisan & leadership,1279,0.2685,0.2561,0.2812,-0.23,34.0
+Military operations,439,0.0921,0.0843,0.1007,-0.307,38.0
+Israel,314,0.0659,0.0592,0.0733,-0.259,39.0
+Casualties & humanitarian,245,0.0514,0.0455,0.0581,-0.528,40.0
+War powers & Congress,210,0.0441,0.0386,0.0503,-0.263,41.0
+Economic costs,191,0.0401,0.0349,0.046,-0.249,37.0
+Nuclear program,150,0.0315,0.0269,0.0368,-0.281,39.0
+Diplomacy & ceasefire,127,0.0267,0.0225,0.0316,-0.031,59.0
+Draft & service members,114,0.0239,0.02,0.0287,-0.383,37.0
+Iranian regime & people,94,0.0197,0.0162,0.0241,-0.276,35.5
+Information integrity,38,0.008,0.0058,0.0109,-0.374,32.5

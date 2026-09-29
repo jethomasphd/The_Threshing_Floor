@@ -1,0 +1,9 @@
+{
+  "name": "thresh-preprint-manuscript",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Builds the preprint .docx from results/stats.json and results/figures (no hand-typed numbers).",
+  "scripts": { "build": "node build_manuscript.js" },
+  "license": "MIT",
+  "dependencies": { "docx": "9.5.1" }
+}

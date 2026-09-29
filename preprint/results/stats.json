@@ -1,0 +1,332 @@
+{
+  "_about": "Every number quoted in the manuscript. Regenerate with analysis/thresh_analysis.py.",
+  "generated_utc": "2026-09-29T17:30:31+00:00",
+  "software": {
+    "python": "3.11.15",
+    "pandas": "3.0.6",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1",
+    "matplotlib": "3.11.2",
+    "vaderSentiment": "3.3.2"
+  },
+  "seed": 20260320,
+  "n_bootstrap": 2000,
+  "primary": "r-politics_iran_2026-03-20",
+  "collections": {
+    "r-politics_iran_2026-03-20": {
+      "checksums_sha256": {
+        "posts.csv": "07b5c1427bc2c89284dc5daca5a81cf52b9cd1db679d5172c95ed35328672c6a",
+        "comments.csv": "de5fcf0c71c179523af2cb584e985054349cd07d9856f44d4cb0cf361f32c9c0",
+        "provenance.txt": "08002464dea8c06a6287779e95b3c24a14fefec952d13a0a68ebfaecdd913537"
+      },
+      "audit": {
+        "tool_version": "1.0.0",
+        "method": "Reddit public JSON endpoints (no API authentication)",
+        "subreddits": "politics",
+        "sort": "top",
+        "time_filter": "month",
+        "keyword": "Iran",
+        "max_posts_requested": 500,
+        "posts_claimed": 100,
+        "comments_claimed": 4956,
+        "posts_observed": 100,
+        "comments_observed": 4956,
+        "posts_match": true,
+        "comments_match": true,
+        "duplicate_post_ids": 0,
+        "duplicate_comment_ids": 0,
+        "orphan_comments": 0,
+        "collection_timestamp_utc": "2026-03-20T20:48:04.909000+00:00",
+        "post_window_start_utc": "2026-02-21T14:28:38+00:00",
+        "post_window_end_utc": "2026-03-20T12:18:37+00:00",
+        "post_window_days": 26.9,
+        "oldest_post_age_days_at_collection": 27.3,
+        "keyword_in_title_share": 1.0,
+        "self_post_share": 0.0,
+        "comment_depths": {
+          "0": 2540,
+          "1": 2416
+        },
+        "comments_per_post": {
+          "min": 46,
+          "median": 50.0,
+          "max": 50
+        },
+        "reported_comments_total": 86564,
+        "coverage_overall": 0.0573,
+        "coverage_per_post_median": 0.0816,
+        "coverage_per_post_iqr": [
+          0.0451,
+          0.1417
+        ],
+        "hours_to_collection_median": 337.7
+      },
+      "governance": {
+        "automoderator_pseudonym": "user_wzj0fq",
+        "bot_comments": 100,
+        "bot_comment_share": 0.0202,
+        "threads_with_bot_notice": 100,
+        "threads_with_bot_notice_share": 1.0,
+        "bot_notice_first_in_thread_share": 1.0,
+        "removed_bodies": 37,
+        "deleted_bodies": 55,
+        "deleted_authors": 121,
+        "removed_or_deleted_share": 0.0186,
+        "deleted_author_share": 0.0244,
+        "analyzable_comments": 4764,
+        "flair_full": {
+          "No Paywall": 51,
+          "Possible Paywall": 40,
+          "Paywall": 4,
+          "Site Altered Headline | Possible Paywall": 3,
+          "Site Altered Headline | No Paywall": 1,
+          "Site Altered Headline | Paywall": 1
+        },
+        "flair_components": {
+          "No Paywall": 52,
+          "Possible Paywall": 43,
+          "Paywall": 5,
+          "Site Altered Headline": 5
+        },
+        "site_altered_headline_posts": 5,
+        "n_comments": 4956
+      },
+      "engagement": {
+        "post_score_median": 9653,
+        "post_score_iqr": [
+          6592,
+          16129
+        ],
+        "post_score_max": 36098,
+        "post_score_min": 3936,
+        "num_comments_median": 606,
+        "num_comments_max": 3992,
+        "upvote_ratio_mean": 0.967,
+        "upvote_ratio_min": 0.91,
+        "upvote_ratio_share_ge_095": 0.86,
+        "spearman_score_comments": 0.619,
+        "spearman_score_comments_p": 6.81e-12,
+        "comment_score_median": 30.0
+      },
+      "temporal": {
+        "peak_post_day": "2026-02-28",
+        "peak_post_day_posts": 12,
+        "posts_first_72h_from_2026_02_28": 26,
+        "posts_before_2026_02_28": 1,
+        "days_with_posts": 22,
+        "first_post_utc": "2026-02-21T14:28:38+00:00",
+        "comment_peak_hour_et": 11,
+        "comment_trough_hour_et": 4,
+        "overnight_share_01_06_et": 0.088,
+        "overnight_share_if_uniform": 0.25,
+        "rayleigh_R": 0.376,
+        "rayleigh_z": 674.4,
+        "rayleigh_p": 9.43e-305,
+        "circular_mean_hour_et": 13.42,
+        "n_timed_comments": 4764
+      },
+      "sources": {
+        "distinct_domains": 39,
+        "top1_domain": "newrepublic.com",
+        "top1_share": 0.21,
+        "top2_domain": "commondreams.org",
+        "top2_share": 0.11,
+        "top5_share": 0.52,
+        "hhi": 0.08,
+        "effective_number_of_outlets": 12.5,
+        "singleton_domains": 26
+      },
+      "participation": {
+        "pseudonymous_commenters": 3803,
+        "comments_by_identified_humans": 4735,
+        "comments_per_author_mean": 1.25,
+        "comments_per_author_max": 24,
+        "gini": 0.176,
+        "top1pct_share": 0.054,
+        "top10pct_share": 0.235,
+        "single_comment_author_share": 0.848,
+        "authors_in_ge2_threads": 526,
+        "authors_in_ge2_threads_share": 0.138,
+        "authors_in_ge5_threads": 25,
+        "max_threads_by_one_author": 19,
+        "distinct_post_submitters": 69,
+        "submitters_with_ge2_posts": 18,
+        "max_posts_by_one_submitter": 4,
+        "submitters_who_also_comment": 24
+      },
+      "framing_sentiment": {
+        "n_analyzable": 4764,
+        "vader_mean": -0.176,
+        "vader_median": -0.114,
+        "share_negative": 0.52,
+        "share_positive": 0.276,
+        "share_neutral": 0.203,
+        "spearman_comment_score_vs_vader": -0.031,
+        "spearman_comment_score_vs_vader_p": 0.0298,
+        "days_plotted": 22,
+        "daily_mean_min": -0.251,
+        "daily_mean_max": -0.089,
+        "daily_trend_spearman": -0.219,
+        "daily_trend_p": 0.329,
+        "any_frame_share": 0.472,
+        "top_frame": "Partisan & leadership",
+        "top_frame_share": 0.269,
+        "frames": {
+          "Partisan & leadership": {
+            "share": 0.269,
+            "mean_vader": -0.23
+          },
+          "Military operations": {
+            "share": 0.092,
+            "mean_vader": -0.307
+          },
+          "Israel": {
+            "share": 0.066,
+            "mean_vader": -0.259
+          },
+          "Casualties & humanitarian": {
+            "share": 0.051,
+            "mean_vader": -0.528
+          },
+          "War powers & Congress": {
+            "share": 0.044,
+            "mean_vader": -0.263
+          },
+          "Economic costs": {
+            "share": 0.04,
+            "mean_vader": -0.249
+          },
+          "Nuclear program": {
+            "share": 0.032,
+            "mean_vader": -0.281
+          },
+          "Diplomacy & ceasefire": {
+            "share": 0.027,
+            "mean_vader": -0.031
+          },
+          "Draft & service members": {
+            "share": 0.024,
+            "mean_vader": -0.383
+          },
+          "Iranian regime & people": {
+            "share": 0.02,
+            "mean_vader": -0.276
+          },
+          "Information integrity": {
+            "share": 0.008,
+            "mean_vader": -0.374
+          }
+        }
+      },
+      "language_duplication": {
+        "arabic_script_comments": 0,
+        "persian_specific_letters_comments": 0,
+        "hebrew_script_comments": 0,
+        "cyrillic_script_comments": 0,
+        "cjk_script_comments": 1,
+        "spanish_dominant_comments": 0,
+        "long_texts_considered": 4029,
+        "duplicate_text_groups": 4,
+        "duplicate_groups_multi_author": 2,
+        "duplicate_groups_multi_thread": 3,
+        "max_copies_of_one_text": 3
+      }
+    }
+  },
+  "tool_verification": {
+    "generated_utc": "2026-09-29T17:30:28.823Z",
+    "checks": {
+      "url.politics_keyword_search": {
+        "pass": true,
+        "detail": "https://www.reddit.com/r/politics/search.json?limit=100&raw_json=1&q=Iran&restrict_sr=on&sort=top&t=month"
+      },
+      "url.multireddit_normalisation": {
+        "pass": true,
+        "detail": "geopolitics+CredibleDefense"
+      },
+      "url.comments": {
+        "pass": true
+      },
+      "parse.listing_ok": {
+        "pass": true,
+        "detail": {
+          "posts": 2,
+          "after": "t3_fx0002"
+        }
+      },
+      "parse.comments_depth_and_more_stubs": {
+        "pass": true,
+        "detail": {
+          "n": 4,
+          "depths": [
+            0,
+            0,
+            1,
+            2
+          ]
+        }
+      },
+      "schema.posts_v2_equals_v1_exemplar": {
+        "pass": true,
+        "detail": "id,subreddit,title,author,selftext,score,upvote_ratio,num_comments,created_utc,created_date,url,permalink,is_self,flair,domain"
+      },
+      "schema.comments_v2_equals_v1_exemplar": {
+        "pass": true,
+        "detail": "id,post_id,author,body,score,created_utc,created_date,depth,parent_id"
+      },
+      "csv.bom_and_quoting": {
+        "pass": true
+      },
+      "parse.friendly_errors": {
+        "pass": true,
+        "detail": {
+          "html": "That looks like a web page (HTML), not data. Make sure the address bar ends in \u201c.json\u201d, then select all the text it shows and copy it.",
+          "truncated": "The data looks cut off. Click into the Reddit tab, press Ctrl+A (Cmd+A on Mac) to select everything, copy, and paste again.",
+          "comments_in_posts_box": "That looks like a single post\u2019s comments. For this step, open the listing link Thresh gave you (it ends in /top.json, /hot.json, /new.json, etc.).",
+          "private_sub": "Reddit returned an error: Forbidden. The subreddit may be private, quarantined, banned, or misspelled."
+        }
+      },
+      "anon.deterministic": {
+        "pass": true
+      },
+      "anon.deleted_passthrough": {
+        "pass": true
+      },
+      "anon.reversible_by_dictionary": {
+        "pass": true,
+        "detail": "hash(\"AutoModerator\") = user_wzj0fq; appears 100 times in the exemplar comments"
+      }
+    },
+    "example_url": "https://www.reddit.com/r/politics/search.json?limit=100&raw_json=1&q=Iran&restrict_sr=on&sort=top&t=month",
+    "sampling_frame_rows": 18,
+    "friendly_errors": {
+      "html": "That looks like a web page (HTML), not data. Make sure the address bar ends in \u201c.json\u201d, then select all the text it shows and copy it.",
+      "truncated": "The data looks cut off. Click into the Reddit tab, press Ctrl+A (Cmd+A on Mac) to select everything, copy, and paste again.",
+      "comments_in_posts_box": "That looks like a single post\u2019s comments. For this step, open the listing link Thresh gave you (it ends in /top.json, /hot.json, /new.json, etc.).",
+      "private_sub": "Reddit returned an error: Forbidden. The subreddit may be private, quarantined, banned, or misspelled."
+    },
+    "pseudonym": {
+      "scheme": "32-bit unsalted Java-style string hash (h = 31h + c), |h| in base 36, prefixed \"user_\"",
+      "output_space": 2147483648,
+      "automoderator_pseudonym": "user_wzj0fq",
+      "automoderator_occurrences_in_exemplar": 100,
+      "collision_probability": {
+        "1000": 0.0002,
+        "10000": 0.023,
+        "100000": 0.9025,
+        "1000000": 1
+      }
+    },
+    "summary": {
+      "total": 12,
+      "failed": 0
+    }
+  },
+  "sampling_frame": {
+    "Secondary": 9,
+    "Core": 5,
+    "Conditional anchor": 2,
+    "Special case": 1,
+    "Excluded": 1
+  }
+}

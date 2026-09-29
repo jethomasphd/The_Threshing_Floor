@@ -1,0 +1,8 @@
+# Analysis + typesetting dependencies for the preprint (Python >= 3.10).
+# Pinned to the versions used to produce results/stats.json.
+pandas==3.0.6
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.11.2
+vaderSentiment==3.3.2
+fonttools==4.66.1      # subsets + embeds the manuscript fonts (manuscript/embed_fonts.py)

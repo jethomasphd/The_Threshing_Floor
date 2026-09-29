@@ -436,6 +436,12 @@ Found a bug? Have a feature request? Want to share how you're using Thresh? Reac
 
 ---
 
+## Preprint
+
+**[Carrying the Harvest by Hand](preprint/)**: the release preprint for Thresh v2. It describes the human-in-the-loop design and the provenance seal, sets out a pre-specified sampling frame for studying Reddit discourse about the 2026 Iran war, and works an example from r/politics. The manuscript (.docx/.pdf), supplement, data and code are all in `preprint/`. `bash preprint/reproduce.sh` regenerates every figure, table and number.
+
+---
+
 ## Citation
 
 If you use Thresh in published work:
